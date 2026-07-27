@@ -3,7 +3,9 @@
 TQQQ의 실현 변동성에 따라 TQQQ와 현금의 목표 비중을 조절하는 연구 전략군이다. 현재 확정된 기본 전략이 아니며, 후보 간 비교와 검증을 거쳐 채택 여부를 결정한다.
 
 - [계단형 변동성 배분](stepped-volatility.md): 변동성 구간이 바뀔 때만 정해진 비중으로 리밸런싱하는 V1
+- [계단형 변동성 후보](stepped-volatility-candidates.md): 단순한 정수 파라미터로 탐색한 후속 후보와 검증 결과
 - [거듭제곱 Target Volatility](power-target-volatility.md): 변동성에 대한 연속 함수로 매일 목표 비중을 계산하는 비선형 TV
+- [히스테리시스](addons/hysteresis.md): 위험 축소와 복귀 경계를 분리해 경계 부근의 반복 매매를 줄이는 추가 규칙
 
 ## 공통 기준
 

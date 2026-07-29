@@ -10,6 +10,15 @@
 - TQQQ 최초 실제 데이터 이전만 QQQ 기반 3배 합성을 허용한다. 실제 데이터가 시작된 이후의 누락일을 합성해서 채우지 말고 오류로 처리한다.
 - 전체 재생성, 최신 거래일 검증, 검증 완료 후 파일 교체, 변경이 있을 때만 커밋하는 동작을 보존한다.
 
+## Toss Securities Open API
+
+- 토스증권 API 동작과 스키마는 [공식 문서](https://developers.tossinvest.com/docs)와 [공식 OpenAPI 명세](https://openapi.tossinvest.com/openapi-docs/latest/openapi.json)를 기준으로 한다.
+- Client ID와 Client Secret은 루트 `.env`에서만 읽는다. 실제 자격증명, access token과 전체 계좌번호를 코드, 문서, 로그, 테스트 fixture나 커밋에 남기지 않는다.
+- 인증은 OAuth 2.0 Client Credentials Grant를 사용하며 계좌 목록은 `GET /api/v1/accounts`로 조회한다.
+- 계좌별 API에는 계좌 목록 응답의 `accountSeq`를 `X-Tossinvest-Account` 헤더로 전달한다. `accountNo`를 헤더 값으로 사용하지 않는다.
+- 보유주식은 `GET /api/v1/holdings`, 원화·달러 현금 매수 가능 금액은 `GET /api/v1/buying-power`로 조회한다. `cashBuyingPower`를 실제 예수금과 같은 값으로 표현하지 않는다.
+- 사용자가 저장을 요청하지 않은 실시간 계좌 응답은 파일로 기록하지 않고 필요한 값만 응답한다. 계좌번호는 기본적으로 끝 네 자리만 남기고 마스킹한다.
+
 ## Analysis conventions
 
 - 별도 전략을 지정하지 않은 백테스트는 `docs/strategies/volatility-allocation/`의 VO(변동성 배분) 기본 규칙을 따른다. 다른 전략군은 `docs/README.md`에서 상태와 문서를 확인한다.

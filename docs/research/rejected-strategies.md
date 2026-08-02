@@ -18,4 +18,10 @@
 
 ## 기록
 
-아직 등록된 전략이 없다.
+### 1차 배치: 단일 자산 타이밍
+
+- `채택 근거 부족`: Faber 10개월 SMA, 200일 SMA, Golden Cross, 12개월 절대모멘텀, Turtle 55/20, Halloween, Turn of the Month, MACD, Connors RSI(2)
+- `중복`: long/cash 12개월 TSMOM은 현금수익률 0 가정에서 12개월 절대모멘텀과 완전히 같은 신호와 결과를 냈다.
+- `재현 불가`: CPPI는 원전에 단일 기본 배수·플로어가 없고, Bollinger Bands는 지표 정의만으로 진입·청산 규칙이 결정되지 않아 구현하지 않았다.
+
+전략별 규칙, 출처, 성과와 폐기 이유는 [조사 목록](model-census.md)과 [1차 배치 보고서](batches/01-single-asset-timing.md)를 따른다. 재검토는 새로운 미관측 기간이 축적되거나, 현재 제약에 맞는 원저자의 명시적 기본 규칙이 추가로 확인될 때만 한다.

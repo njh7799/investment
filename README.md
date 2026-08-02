@@ -63,6 +63,31 @@ python scripts/update_market_data.py --mode daily
 python -m pytest --quiet
 ```
 
+## 백테스트
+
+공개 모델 1차 배치를 재현합니다.
+
+```bash
+python scripts/backtest_models.py --batch batch-01 --output results/manual-run
+```
+
+개별 전략, 기간, 초기 자산과 수수료를 지정할 수 있습니다.
+
+```bash
+python scripts/backtest_models.py \
+  --strategy faber_10m \
+  --start 2010-02-11 \
+  --initial-cash 100000 \
+  --fee-rate 0.001 \
+  --output results/manual-run
+```
+
+연구 보고서의 전체·롤링·스트레스·비용 민감도 결과는 다음 명령으로 재생성합니다.
+
+```bash
+python scripts/analyze_model_batch.py --output results/research/batch-01
+```
+
 ## 토스증권 계좌 조회
 
 자격증명을 `.env`에 설정하고 실행합니다.

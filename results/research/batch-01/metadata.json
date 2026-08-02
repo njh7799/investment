@@ -1,0 +1,28 @@
+{
+  "actual_tqqq_start": "2010-02-11",
+  "asset_sha256": {
+    "IXIC.csv": "6375562c9c488cebd7765f276faeeac60eb66ac7a6d50b6ac3bbd6c6b494f53c",
+    "QQQ.csv": "2a09be10fb903d681b3bbfa717d8ed865028c61a30ad0b14fcf5209f6cb21878",
+    "TQQQ.csv": "5b301f9d12d29cffa3b583d2d19fbd6112a7648a989602ef81462b3dd7a6592d"
+  },
+  "base_fee_rate": 0.001,
+  "generated_through": "2026-07-31",
+  "initial_cash": 100000,
+  "models": [
+    "tqqq_hold",
+    "qqq_hold",
+    "vo",
+    "three_percent",
+    "vr5",
+    "faber_10m",
+    "sma_200",
+    "golden_cross",
+    "absolute_momentum_12m",
+    "tsmom_12m",
+    "turtle_55_20",
+    "halloween",
+    "turn_of_month",
+    "macd",
+    "rsi2"
+  ]
+}

@@ -11,7 +11,7 @@
 | `assets/` | IXIC·QQQ·TQQQ 일별 조정 OHLC |
 | `scripts/` | 시장 데이터 수집과 검증 |
 | `tests/` | 데이터 생성 로직 테스트 |
-| `docs/strategies/` | 기본 전략, variants와 addons |
+| `docs/` | 전략, 연구 방법론과 참고 자료 |
 | `.github/workflows/` | 일일 데이터 갱신 자동화 |
 
 ## 데이터
@@ -65,36 +65,13 @@ python -m pytest --quiet
 
 ## 토스증권 계좌 조회
 
-토스증권 Open API의 Client ID와 Client Secret을 이용해 본인의 종합매매 계좌
-목록을 조회할 수 있습니다.
-
-- [토스증권 Open API 공식 문서](https://developers.tossinvest.com/docs)
-- [공식 OpenAPI 명세](https://openapi.tossinvest.com/openapi-docs/latest/openapi.json)
-
-인증은 OAuth 2.0 Client Credentials Grant를 사용합니다. `.env.example`을
-`.env`로 복사한 뒤 실제 값을 입력합니다. `.env`는 Git에서 제외됩니다.
-
-```bash
-cp .env.example .env
-```
-
-```dotenv
-TOSS_CLIENT_ID=발급받은_Client_ID
-TOSS_CLIENT_SECRET=발급받은_Client_Secret
-```
-
-토스증권 WTS의 Open API 설정에서 현재 Mac의 공인 IP를 허용한 뒤 실행합니다.
+자격증명을 `.env`에 설정하고 실행합니다.
 
 ```bash
 python scripts/toss_api.py
 ```
 
-성공하면 `accountNo`, `accountSeq`, `accountType`이 JSON으로 출력됩니다. 토큰과
-자격증명은 출력하거나 파일에 저장하지 않습니다.
-
-`accountSeq`는 보유주식과 매수 가능 금액처럼 사용자 계좌를 지정해야 하는 후속
-API의 `X-Tossinvest-Account` 헤더 값입니다. 토스 API의 `cashBuyingPower`는
-예수금 자체가 아니라 미수거래를 제외한 통화별 현금 매수 가능 금액입니다.
+설정, 보안 규칙과 응답 해석은 [토스증권 Open API 연동 문서](docs/integrations/toss-api.md)를 확인합니다.
 
 ## 자동 갱신
 

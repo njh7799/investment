@@ -1,8 +1,15 @@
-# 전략 문서
+# 문서 안내
 
-이 디렉터리는 전략군별 규칙을 관리한다. 시장 데이터와 모든 전략에 공통인 분석·체결 기준은 루트 [README](../README.md)를 따른다.
+이 디렉터리는 전략 규칙, 연구 기준, 공통 참고 자료와 외부 연동 문서를 관리한다. 시장 데이터와 모든 전략에 공통인 분석·체결 기준은 루트 [AGENTS.md](../AGENTS.md)를 따른다.
 
-전략과 무관한 공통 시장 자료는 [IXIC 주요 급락 사건](market-events.md)에서 관리한다.
+## 문서 구성
+
+| 경로 | 역할 |
+| --- | --- |
+| [`strategies/`](strategies/) | 실행 가능한 전략 규칙, variants와 addons |
+| [`research/`](research/) | [평가 방법론](research/methodology.md)과 [폐기 전략 기록](research/rejected-strategies.md) |
+| [`reference/`](reference/) | [차트 사양](reference/chart-conventions.md)과 [IXIC 주요 시장 급락 사건](reference/market-events.md) |
+| [`integrations/`](integrations/) | [토스증권 Open API 연동](integrations/toss-api.md) |
 
 ## 문서 규격
 

@@ -1,0 +1,28 @@
+{
+  "asset_sha256": {
+    "EEM": "fd41f593db01312e80f300cd5a465a8b0880f1adcf9f3f9b79c7cf3d3da1640c",
+    "EWJ": "4806bd9a433e9281f884f458a5009f999c8762b3996dead2253e9e693fd50bd9",
+    "GLD": "a5ab86932ad37acf60ecf5fc9f4e7510a42d12bf705af699ac91ff577b182b44",
+    "GSG": "ce8022e45300d11bb0e0c39d466387a632b50b3ab53142251c72e5305be38373",
+    "HYG": "a3f2c3a1b1f39c4e113c943e2202d8aa86bb8ce95606f4c5c207f7e97f5de565",
+    "IEF": "db2ed06bd892abc66daea5e92fd7de9095c800f65955cb656454500fb03cc78b",
+    "IWM": "856c9434bb55955b65fa88157d910b64a33021224a950feff6e5511420cf7f3c",
+    "IYR": "5293404b713e3a5c94cb72eb9d953f3d079fe959c5023561016e01e757e8089c",
+    "LQD": "d3f669aeb55a30aa1e00d5eac524f01ee383af29946d62c9a921f589d99af1dc",
+    "QQQ": "2a09be10fb903d681b3bbfa717d8ed865028c61a30ad0b14fcf5209f6cb21878",
+    "SHY": "a1c1a8722ae49063819179328a173a81fc68b5acc47e8775a677d39b6fe17c25",
+    "SPY": "224b05080331cce470662844a6419b9e23d9335f9d0671527058a2a04e31c711",
+    "TLT": "b77676de0da86e915c0d7af9029871a98aec66fbfb16c78267d43f8323a02246",
+    "VGK": "82ad7385a74a9c6462119e4f3dbef5054e5ebdbd9c4f03ac85aa3095c514c125"
+  },
+  "base_fee_rate": 0.001,
+  "generated_through": "2026-07-31",
+  "initial_cash": 100000,
+  "models": [
+    "tqqq_hold",
+    "qqq_hold",
+    "vo",
+    "paa_n12_buyhold",
+    "paa2"
+  ]
+}

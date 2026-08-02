@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from analyze_allocation_batch import COMMON_START, run
+from analyze_allocation_batch import run
+from analyze_paa_batch import COMMON_START as PAA_COMMON_START, run as run_paa
 
 font_manager.fontManager.addfont("/System/Library/Fonts/Supplemental/AppleGothic.ttf")
 plt.rcParams["font.family"] = "AppleGothic"
@@ -26,6 +27,7 @@ MODELS = {
     "vo": ("VO", "#FF9100"),
     "gem": ("GEM", "#00C853"),
     "gtaa5": ("GTAA 5", "#D500F9"),
+    "paa2": ("PAA2", "#FF1744"),
 }
 EVENTS = {
     "2018-02-08": "금리·변동성 충격",
@@ -61,17 +63,17 @@ def periods() -> dict[str, tuple[str, str]]:
         "2022": ("2022-01-01", "2022-12-31"),
         "2017-2021": ("2017-01-01", "2021-12-31"),
         "2012-2016": ("2012-01-01", "2016-12-31"),
-        "2007-2011": (COMMON_START, "2011-12-31"),
+        "2007-2011": (PAA_COMMON_START, "2011-12-31"),
     }
 
 
 def main() -> int:
-    output = ROOT / "results" / "research" / "charts" / "batch-03"
+    output = ROOT / "results" / "research" / "charts" / "public-models"
     output.mkdir(parents=True, exist_ok=True)
     for slug, (start, end) in periods().items():
         fig, ax = plt.subplots(figsize=(16, 8))
         for model, (label, color) in MODELS.items():
-            equity = run(model, start, end).equity
+            equity = (run_paa if model == "paa2" else run)(model, start, end).equity
             normalized = equity / 100_000.0
             ax.plot(normalized.index, normalized, color=color, linewidth=0.5, label=label)
         event_number = 0

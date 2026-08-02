@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import pandas as pd
+import numpy as np
 import pytest
 
 from backtests.core import MarketData, run_weight_strategy
 from backtests.models import build_target_weights
 from backtests.documented import causal_reference_high, run_three_percent_rule, run_vr_5
 from backtests.portfolio import run_portfolio_strategy
-from backtests.allocation_models import build_allocation_weights
+from backtests.allocation_models import PAA_DEFENSIVE, PAA_RISKY, build_allocation_weights
 
 
 def prices(values, opens=None, start="2024-01-02"):
@@ -92,6 +93,18 @@ def test_gtaa_waits_for_ten_months_and_allocates_fixed_slots():
     weights = build_allocation_weights("gtaa5", closes)
     assert weights.iloc[8].sum() == 0.0
     assert weights.iloc[9].sum() == pytest.approx(1.0)
+
+
+def test_paa2_uses_breadth_fraction_and_top_six():
+    index = pd.date_range("2023-01-31", periods=13, freq="ME")
+    closes = pd.DataFrame(100.0, index=index, columns=[*PAA_RISKY, *PAA_DEFENSIVE])
+    closes.loc[index[-1], list(PAA_RISKY[:5])] = 80.0
+    closes.loc[index[-1], list(PAA_RISKY[5:])] = 120.0
+    closes.loc[index[-1], "IEF"] = 110.0
+    weights = build_allocation_weights("paa2", closes).iloc[-1]
+    assert weights["IEF"] == pytest.approx(5.0 / 6.0)
+    assert np.allclose(weights[list(PAA_RISKY[5:11])], 1.0 / 36.0)
+    assert weights.sum() == pytest.approx(1.0)
 
 
 def test_vo_boundaries_and_warmup():

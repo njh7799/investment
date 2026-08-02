@@ -41,7 +41,9 @@ TSMOM 원전의 공매도와 변동성 스케일링, Turtle의 복수 선물·AT
 | Global Equities Momentum | 듀얼 모멘텀 | 미국/미국 외 12개월 상대·절대 모멘텀, 약세 시 종합채권 | ETF 프록시·현금수익률 0으로 백테스트 |
 | Moreira–Muir VMP | 변동성 관리 | 직전 월 실현분산의 역수로 익스포저 조절 | 재현 불가: 전체 표본으로 정하는 스케일 상수는 미래정보이며 long-only 상한도 없음 |
 | Harvey 외 변동성 타기팅 | 변동성 관리 | 변동성 목표에 맞춰 익스포저 조절 | 재현 불가: 단일 공식 목표·상한을 기본값으로 제시하지 않음 |
-| Protective Asset Allocation | 방어적 모멘텀 | 복수 위험자산 breadth와 듀얼 모멘텀 | 다음 확장 대상으로 보류: 원전의 12자산 프록시와 방어자산 데이터 필요 |
+| Protective Asset Allocation PAA2 | 방어적 모멘텀 | N12 SMA(12), Top6, breadth 6, SHY/IEF | 4차 배치에서 실제 ETF로 백테스트 |
 | Risk parity | 위험 배분 | 위험기여 균등화 | 재현 불가: 추정창·공분산·레버리지에 단일 공개 기본값 없음 |
 
 정확한 ETF 프록시와 공통기간, 원전 차이는 [3차 배치 보고서](batches/03-multi-asset-allocation.md)에 기록한다.
+
+PAA2의 12개 위험자산, 방어비중 공식과 실제 ETF 적용 결과는 [4차 배치 보고서](batches/04-paa2.md)를 따른다.

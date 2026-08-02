@@ -23,7 +23,7 @@ Nasdaq 계열과 공개 모델 검증에 필요한 미국 상장 ETF의 일별 �
 | `IXIC.csv` | `^IXIC` | Nasdaq Composite 지수 |
 | `QQQ.csv` | `QQQ` | Invesco QQQ ETF |
 | `TQQQ.csv` | `TQQQ` | ProShares UltraPro QQQ 및 상장 전 합성 데이터 |
-| `SPY.csv`, `EFA.csv`, `VEU.csv` | 동일 | 미국·미국 외 주식 프록시 |
+| `SPY.csv`, `EFA.csv`, `VEU.csv` 등 | 동일 | 미국·미국 외 주식 프록시 |
 | `IEF.csv`, `AGG.csv` | 동일 | 미국 중기 국채·종합채권 프록시 |
 | `VNQ.csv`, `DBC.csv`, `GLD.csv` | 동일 | 리츠·원자재·금 프록시 |
 
@@ -95,6 +95,12 @@ python scripts/analyze_model_batch.py --batch batch-01 --output results/research
 
 ```bash
 python scripts/analyze_allocation_batch.py --output results/research/batch-03
+```
+
+PAA2 4차 배치는 다음과 같이 재생성합니다.
+
+```bash
+python scripts/analyze_paa_batch.py --output results/research/batch-04
 ```
 
 ## 토스증권 계좌 조회

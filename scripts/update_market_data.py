@@ -19,7 +19,12 @@ import yfinance as yf
 
 
 OHLC = ["Open", "High", "Low", "Close"]
-SYMBOLS = {"IXIC": "^IXIC", "QQQ": "QQQ", "TQQQ": "TQQQ"}
+SYMBOLS = {
+    "IXIC": "^IXIC",
+    "QQQ": "QQQ",
+    "TQQQ": "TQQQ",
+    "SPY": "SPY",
+}
 NEW_YORK = ZoneInfo("America/New_York")
 ROUNDING_TOLERANCE = 1e-10
 

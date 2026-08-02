@@ -1,0 +1,25 @@
+{
+  "asset_sha256": {
+    "AGG": "0d97b3652cdd6e331add002df6734bc5d1ad022ffeff041d60a0dd07988c2bb2",
+    "DBC": "c3e512f04386059b3e0686f5925857b041ab48ef37a8d451e51beec018ca52d9",
+    "EFA": "3910038abffd55e82fb692437262e2046bd4a3367b6a8261aafc241d5c56f96a",
+    "GLD": "a5ab86932ad37acf60ecf5fc9f4e7510a42d12bf705af699ac91ff577b182b44",
+    "IEF": "db2ed06bd892abc66daea5e92fd7de9095c800f65955cb656454500fb03cc78b",
+    "SPY": "224b05080331cce470662844a6419b9e23d9335f9d0671527058a2a04e31c711",
+    "VEU": "02946141e790fa7af61f4492a3a348efc4286ef6c24fc3cc4d9e6498701dbacd",
+    "VNQ": "e4062eb017ba4fe02cde386288d3a6e80b4340a1b77895c82defdcd4076d21ca"
+  },
+  "base_fee_rate": 0.001,
+  "generated_through": "2026.07.31",
+  "initial_cash": 100000,
+  "models": [
+    "tqqq_hold",
+    "qqq_hold",
+    "vo",
+    "gtaa5_buyhold",
+    "gtaa5",
+    "gem",
+    "stocks_bonds_60_40_buyhold",
+    "permanent_25_buyhold"
+  ]
+}

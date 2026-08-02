@@ -4,6 +4,7 @@ from .core import BacktestResult, MarketData, load_market_data, run_weight_strat
 from .metrics import summarize
 from .models import BATCHES, MODEL_SPECS, build_target_weights
 from .documented import causal_reference_high, run_three_percent_rule, run_vr_5
+from .portfolio import common_index, load_assets, run_portfolio_strategy
 
 __all__ = [
     "BacktestResult",
@@ -17,4 +18,7 @@ __all__ = [
     "causal_reference_high",
     "run_three_percent_rule",
     "run_vr_5",
+    "common_index",
+    "load_assets",
+    "run_portfolio_strategy",
 ]

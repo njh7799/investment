@@ -79,6 +79,24 @@ def test_turtle_uses_prior_window_without_lookahead():
     assert weights.iloc[57] == 0.0
 
 
+def test_bll_vma_one_percent_band_retains_state_at_boundaries():
+    close = [100.0] * 150 + [102.0, 100.5, 98.0]
+    data = market(close)
+    _, weights = build_target_weights("bll_vma_1_150_b1", data)
+    assert weights.iloc[150] == 1.0
+    assert weights.iloc[151] == 1.0
+    assert weights.iloc[152] == 0.0
+
+
+def test_bll_trading_range_uses_only_prior_closes():
+    close = [100.0] * 50 + [101.0, 100.0, 99.0]
+    data = market(close)
+    _, weights = build_target_weights("bll_trb_50", data)
+    assert weights.iloc[50] == 1.0
+    assert weights.iloc[51] == 1.0
+    assert weights.iloc[52] == 0.0
+
+
 def test_calendar_signal_is_advanced_for_next_open_execution():
     index = pd.bdate_range("2024-10-29", "2024-11-04")
     frame = pd.DataFrame({column: 10.0 for column in ["Open", "High", "Low", "Close"]}, index=index)

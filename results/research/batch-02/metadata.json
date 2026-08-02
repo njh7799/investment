@@ -6,7 +6,7 @@
     "TQQQ.csv": "5b301f9d12d29cffa3b583d2d19fbd6112a7648a989602ef81462b3dd7a6592d"
   },
   "base_fee_rate": 0.001,
-  "batch": "batch-01",
+  "batch": "batch-02",
   "generated_through": "2026-07-31",
   "initial_cash": 100000,
   "models": [
@@ -15,15 +15,18 @@
     "vo",
     "three_percent",
     "vr5",
-    "faber_10m",
-    "sma_200",
-    "golden_cross",
-    "absolute_momentum_12m",
-    "tsmom_12m",
-    "turtle_55_20",
-    "halloween",
-    "turn_of_month",
-    "macd",
-    "rsi2"
+    "bll_vma_1_50_b0",
+    "bll_vma_1_50_b1",
+    "bll_vma_1_150_b0",
+    "bll_vma_1_150_b1",
+    "bll_vma_5_150_b0",
+    "bll_vma_5_150_b1",
+    "bll_vma_1_200_b0",
+    "bll_vma_1_200_b1",
+    "bll_vma_2_200_b0",
+    "bll_vma_2_200_b1",
+    "bll_trb_50",
+    "bll_trb_150",
+    "bll_trb_200"
   ]
 }

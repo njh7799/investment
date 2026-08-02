@@ -12,13 +12,13 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from backtests import MODEL_SPECS, build_target_weights, load_market_data, run_three_percent_rule, run_vr_5, run_weight_strategy, summarize
+from backtests import BATCHES, MODEL_SPECS, build_target_weights, load_market_data, run_three_percent_rule, run_vr_5, run_weight_strategy, summarize
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run reproducible investment-model backtests")
     parser.add_argument("--strategy", action="append", choices=sorted(MODEL_SPECS))
-    parser.add_argument("--batch", choices=["batch-01"])
+    parser.add_argument("--batch", choices=sorted(BATCHES))
     parser.add_argument("--start")
     parser.add_argument("--end")
     parser.add_argument("--initial-cash", type=float, default=100_000.0)
@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    models = args.strategy or (list(MODEL_SPECS) if args.batch else None)
+    models = args.strategy or (list(BATCHES[args.batch]) if args.batch else None)
     if not models:
         raise SystemExit("provide --strategy or --batch")
     data = load_market_data(ROOT)

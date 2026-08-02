@@ -2,11 +2,12 @@
 
 from .core import BacktestResult, MarketData, load_market_data, run_weight_strategy
 from .metrics import summarize
-from .models import MODEL_SPECS, build_target_weights
+from .models import BATCHES, MODEL_SPECS, build_target_weights
 from .documented import causal_reference_high, run_three_percent_rule, run_vr_5
 
 __all__ = [
     "BacktestResult",
+    "BATCHES",
     "MarketData",
     "MODEL_SPECS",
     "build_target_weights",

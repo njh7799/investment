@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from backtests import MODEL_SPECS, build_target_weights, load_market_data, run_three_percent_rule, run_vr_5, run_weight_strategy, summarize
+from backtests import BATCHES, MODEL_SPECS, build_target_weights, load_market_data, run_three_percent_rule, run_vr_5, run_weight_strategy, summarize
 
 
 ACTUAL_START = pd.Timestamp("2010-02-11")
@@ -31,7 +31,8 @@ STRESS = {
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Analyze the preregistered first model batch")
+    parser = argparse.ArgumentParser(description="Analyze a preregistered model batch")
+    parser.add_argument("--batch", choices=sorted(BATCHES), required=True)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -51,11 +52,11 @@ def month_starts(index: pd.DatetimeIndex, start: pd.Timestamp, last: pd.Timestam
     return list(series.groupby(eligible.to_period("M")).first())
 
 
-def rolling_rows(data, years: int) -> list[dict[str, object]]:
+def rolling_rows(data, models: tuple[str, ...], years: int) -> list[dict[str, object]]:
     index = data.index
     starts = month_starts(index, ACTUAL_START, index[-1] - pd.DateOffset(years=years))
     rows = []
-    for model in MODEL_SPECS:
+    for model in models:
         values = []
         mdds = []
         tuws = []
@@ -85,25 +86,26 @@ def main() -> int:
     args = parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     data = load_market_data(ROOT)
+    models = BATCHES[args.batch]
 
     period_rows = []
     for period, (start, end) in PERIODS.items():
-        for model in MODEL_SPECS:
+        for model in models:
             period_rows.append({"period": period, "model": model, **summarize(run(model, data, start, end))})
     pd.DataFrame(period_rows).to_csv(args.output / "period-summary.csv", index=False, float_format="%.10f")
 
     stress_rows = []
     for period, (start, end) in STRESS.items():
-        for model in MODEL_SPECS:
+        for model in models:
             stress_rows.append({"period": period, "model": model, **summarize(run(model, data, start, end))})
     pd.DataFrame(stress_rows).to_csv(args.output / "stress-summary.csv", index=False, float_format="%.10f")
 
-    rolling = rolling_rows(data, 5) + rolling_rows(data, 10)
+    rolling = rolling_rows(data, models, 5) + rolling_rows(data, models, 10)
     pd.DataFrame(rolling).to_csv(args.output / "rolling-summary.csv", index=False, float_format="%.10f")
 
     fee_rows = []
     for fee in [0.001, 0.002, 0.005]:
-        for model in MODEL_SPECS:
+        for model in models:
             fee_rows.append({"fee_rate": fee, "model": model, **summarize(run(model, data, ACTUAL_START, fee=fee))})
     pd.DataFrame(fee_rows).to_csv(args.output / "fee-summary.csv", index=False, float_format="%.10f")
 
@@ -115,7 +117,8 @@ def main() -> int:
         "actual_tqqq_start": ACTUAL_START.date().isoformat(),
         "initial_cash": 100_000,
         "base_fee_rate": 0.001,
-        "models": list(MODEL_SPECS),
+        "batch": args.batch,
+        "models": list(models),
         "asset_sha256": hashes,
     }
     (args.output / "metadata.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")

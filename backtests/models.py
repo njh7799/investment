@@ -36,6 +36,42 @@ MODEL_SPECS: dict[str, ModelSpec] = {
     "rsi2": ModelSpec("Connors RSI(2)", "mean_reversion", "Connors & Alvarez, Short Term Trading Strategies That Work", "QQQ", "RSI(2)<10 entry; close>5-day SMA exit", "long/cash and next-open execution"),
 }
 
+BLL_SOURCE = "https://doi.org/10.1111/j.1540-6261.1992.tb04681.x"
+for short, long in [(1, 50), (1, 150), (5, 150), (1, 200), (2, 200)]:
+    for band in (0, 1):
+        key = f"bll_vma_{short}_{long}_b{band}"
+        MODEL_SPECS[key] = ModelSpec(
+            f"BLL VMA {short}-{long} ({band}% band)",
+            "trend",
+            BLL_SOURCE,
+            "QQQ",
+            f"SMA({short}) vs SMA({long}); {band}% band",
+            "sell/short signal mapped to cash; state retained inside band",
+        )
+for lookback in (50, 150, 200):
+    MODEL_SPECS[f"bll_trb_{lookback}"] = ModelSpec(
+        f"BLL trading-range break {lookback}",
+        "breakout",
+        BLL_SOURCE,
+        "QQQ",
+        f"close breaks prior {lookback}-day high/low",
+        "sell/short signal mapped to cash; position retained between boundaries",
+    )
+
+
+BATCHES: dict[str, tuple[str, ...]] = {
+    "batch-01": (
+        "tqqq_hold", "qqq_hold", "vo", "three_percent", "vr5", "faber_10m", "sma_200",
+        "golden_cross", "absolute_momentum_12m", "tsmom_12m", "turtle_55_20", "halloween",
+        "turn_of_month", "macd", "rsi2",
+    ),
+    "batch-02": (
+        "tqqq_hold", "qqq_hold", "vo", "three_percent", "vr5",
+        *(f"bll_vma_{short}_{long}_b{band}" for short, long in [(1, 50), (1, 150), (5, 150), (1, 200), (2, 200)] for band in (0, 1)),
+        "bll_trb_50", "bll_trb_150", "bll_trb_200",
+    ),
+}
+
 
 def _month_end_signal(close: pd.Series, state: pd.Series) -> pd.Series:
     month_end = close.groupby(close.index.to_period("M")).tail(1).index
@@ -111,6 +147,19 @@ def build_target_weights(model: str, data: MarketData) -> tuple[pd.DataFrame, pd
         weights = (macd > macd.ewm(span=9, adjust=False).mean()).astype(float)
     elif model == "rsi2":
         weights = _stateful_entry_exit(_rsi(close, 2) < 10.0, close > close.rolling(5).mean())
+    elif model.startswith("bll_vma_"):
+        _, _, short_text, long_text, band_text = model.split("_")
+        short = int(short_text)
+        long = int(long_text)
+        band = int(band_text.removeprefix("b")) / 100.0
+        short_ma = close if short == 1 else close.rolling(short).mean()
+        long_ma = close.rolling(long).mean()
+        weights = _stateful_entry_exit(short_ma > long_ma * (1.0 + band), short_ma < long_ma * (1.0 - band))
+    elif model.startswith("bll_trb_"):
+        lookback = int(model.rsplit("_", 1)[1])
+        prior_high = close.shift(1).rolling(lookback).max()
+        prior_low = close.shift(1).rolling(lookback).min()
+        weights = _stateful_entry_exit(close > prior_high, close < prior_low)
     else:
         raise KeyError(f"unknown model: {model}")
     return tqqq, weights.astype(float)

@@ -85,7 +85,7 @@ python scripts/backtest_models.py \
 연구 보고서의 전체·롤링·스트레스·비용 민감도 결과는 다음 명령으로 재생성합니다.
 
 ```bash
-python scripts/analyze_model_batch.py --output results/research/batch-01
+python scripts/analyze_model_batch.py --batch batch-01 --output results/research/batch-01
 ```
 
 ## 토스증권 계좌 조회

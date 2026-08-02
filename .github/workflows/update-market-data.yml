@@ -40,14 +40,14 @@ jobs:
       - name: Commit and push changes
         shell: bash
         run: |
-          if git diff --quiet -- assets/IXIC.csv assets/QQQ.csv assets/TQQQ.csv; then
+          if git diff --quiet -- assets/IXIC.csv assets/QQQ.csv assets/TQQQ.csv assets/SPY.csv; then
             echo "Market data is already up to date."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/IXIC.csv assets/QQQ.csv assets/TQQQ.csv
+          git add assets/IXIC.csv assets/QQQ.csv assets/TQQQ.csv assets/SPY.csv
           market_date=$(TZ=America/New_York date +%F)
           git commit -m "Update market data ${market_date}"
           git push

@@ -6,6 +6,8 @@ import pytest
 from backtests.core import MarketData, run_weight_strategy
 from backtests.models import build_target_weights
 from backtests.documented import causal_reference_high, run_three_percent_rule, run_vr_5
+from backtests.portfolio import run_portfolio_strategy
+from backtests.allocation_models import build_allocation_weights
 
 
 def prices(values, opens=None, start="2024-01-02"):
@@ -51,6 +53,45 @@ def test_state_change_only_rebalances_once():
     weights = pd.Series([0.0, 1.0, 1.0, 1.0], index=frame.index)
     result = run_weight_strategy(frame, weights, initial_cash=100, fee_rate=0)
     assert len(result.trades) == 1
+
+
+def test_multi_asset_sells_before_buying_and_uses_integer_shares():
+    index = pd.bdate_range("2024-01-02", periods=3)
+    a = prices([10, 10, 10], start="2024-01-02")
+    b = prices([20, 20, 20], start="2024-01-02")
+    weights = pd.DataFrame({"A": [1.0, 0.0, 0.0], "B": [0.0, 1.0, 1.0]}, index=index)
+    result = run_portfolio_strategy({"A": a, "B": b}, weights, initial_cash=105, fee_rate=0)
+    assert list(result.trades.Side) == ["BUY", "SELL", "BUY"]
+    assert result.positions.iloc[-1].BShares == 5
+
+
+def test_summary_counts_one_rebalance_date_for_multiple_orders():
+    from backtests.metrics import summarize
+
+    index = pd.bdate_range("2024-01-02", periods=3)
+    a = prices([10, 10, 10], start="2024-01-02")
+    b = prices([20, 20, 20], start="2024-01-02")
+    weights = pd.DataFrame({"A": [0.5, 0.0, 0.0], "B": [0.5, 1.0, 1.0]}, index=index)
+    result = run_portfolio_strategy({"A": a, "B": b}, weights, initial_cash=100, fee_rate=0)
+    assert len(result.trades) == 4
+    assert summarize(result)["trade_count"] == 2
+
+
+def test_monthly_rebalance_trades_even_when_target_is_unchanged():
+    index = pd.bdate_range("2024-01-29", "2024-02-02")
+    a = pd.DataFrame({column: [10, 20, 20, 20, 20] for column in ["Open", "High", "Low", "Close"]}, index=index)
+    b = pd.DataFrame({column: [10, 10, 10, 10, 10] for column in ["Open", "High", "Low", "Close"]}, index=index)
+    weights = pd.DataFrame({"A": 0.5, "B": 0.5}, index=index)
+    result = run_portfolio_strategy({"A": a, "B": b}, weights, initial_cash=100, fee_rate=0, rebalance_monthly=True)
+    assert result.trades.index.nunique() == 2
+
+
+def test_gtaa_waits_for_ten_months_and_allocates_fixed_slots():
+    index = pd.date_range("2023-01-31", periods=11, freq="ME")
+    closes = pd.DataFrame({name: range(100, 111) for name in ["SPY", "EFA", "IEF", "VNQ", "DBC"]}, index=index)
+    weights = build_allocation_weights("gtaa5", closes)
+    assert weights.iloc[8].sum() == 0.0
+    assert weights.iloc[9].sum() == pytest.approx(1.0)
 
 
 def test_vo_boundaries_and_warmup():

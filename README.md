@@ -2,13 +2,13 @@
 
 과거 시장 데이터를 일관된 형식으로 관리하고, 이를 이용해 지표 분석과 전략 백테스트를 수행하기 위한 저장소입니다.
 
-현재 Nasdaq Composite 지수와 QQQ·TQQQ의 일별 조정 OHLC 데이터를 수집하고 매일 자동 갱신합니다. 분석과 백테스트의 공통 규칙은 [AGENTS.md](AGENTS.md), 전략별 규칙과 상태는 [전략 문서](docs/)에서 관리합니다.
+Nasdaq 계열과 공개 모델 검증에 필요한 미국 상장 ETF의 일별 조정 OHLC 데이터를 수집하고 매일 자동 갱신합니다. 분석과 백테스트의 공통 규칙은 [AGENTS.md](AGENTS.md), 전략별 규칙과 상태는 [전략 문서](docs/)에서 관리합니다.
 
 ## 구성
 
 | 경로 | 내용 |
 | --- | --- |
-| `assets/` | IXIC·QQQ·TQQQ 일별 조정 OHLC |
+| `assets/` | IXIC·QQQ·TQQQ와 다중자산 ETF의 일별 조정 OHLC |
 | `scripts/` | 시장 데이터 수집과 검증 |
 | `tests/` | 데이터 생성 로직 테스트 |
 | `docs/` | 전략, 연구 방법론과 참고 자료 |
@@ -23,6 +23,9 @@
 | `IXIC.csv` | `^IXIC` | Nasdaq Composite 지수 |
 | `QQQ.csv` | `QQQ` | Invesco QQQ ETF |
 | `TQQQ.csv` | `TQQQ` | ProShares UltraPro QQQ 및 상장 전 합성 데이터 |
+| `SPY.csv`, `EFA.csv`, `VEU.csv` | 동일 | 미국·미국 외 주식 프록시 |
+| `IEF.csv`, `AGG.csv` | 동일 | 미국 중기 국채·종합채권 프록시 |
+| `VNQ.csv`, `DBC.csv`, `GLD.csv` | 동일 | 리츠·원자재·금 프록시 |
 
 CSV 스키마는 모두 `Date,Open,High,Low,Close`입니다.
 
@@ -86,6 +89,12 @@ python scripts/backtest_models.py \
 
 ```bash
 python scripts/analyze_model_batch.py --batch batch-01 --output results/research/batch-01
+```
+
+다중자산 3차 배치는 다음과 같이 재생성합니다.
+
+```bash
+python scripts/analyze_allocation_batch.py --output results/research/batch-03
 ```
 
 ## 토스증권 계좌 조회

@@ -4,7 +4,7 @@
 
 ## Market data
 
-- `assets/IXIC.csv`, `assets/QQQ.csv`, `assets/TQQQ.csv`를 직접 편집하지 않는다. 데이터 변경은 `scripts/update_market_data.py`를 통해 재생성한다.
+- `assets/`의 시장 CSV를 직접 편집하지 않는다. 데이터 변경은 `scripts/update_market_data.py`를 통해 재생성한다.
 - CSV 스키마, 날짜 형식과 기존 데이터 검증 조건을 유지한다.
 - 액면분할과 배당이 반영된 조정 OHLC를 사용하고 원본 가격을 절삭하지 않는다.
 - TQQQ 최초 실제 데이터 이전만 QQQ 기반 3배 합성을 허용한다. 실제 데이터가 시작된 이후의 누락일을 합성해서 채우지 말고 오류로 처리한다.

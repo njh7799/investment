@@ -8,7 +8,7 @@
 | --- | --- |
 | [`strategies/`](strategies/) | 실행 가능한 전략 규칙, variants와 addons |
 | [`research/`](research/) | [프로그램 요약](research/program-summary.md), [평가 방법론](research/methodology.md), [후보](research/candidates.md), [조사 목록](research/model-census.md)과 [폐기 전략 기록](research/rejected-strategies.md) |
-| [`reference/`](reference/) | [시장 데이터 정책](reference/market-data-policy.md), [차트 사양](reference/chart-conventions.md)과 [IXIC 주요 시장 급락 사건](reference/market-events.md) |
+| [`reference/`](reference/) | [시장 데이터 정책](reference/market-data-policy.md), [차트 사양](reference/chart-conventions.md)과 [SPY 기준 주요 시장 하락 사건](reference/market-events.md) |
 | [`integrations/`](integrations/) | [토스증권 Open API 연동](integrations/toss-api.md) |
 
 ## 문서 규격

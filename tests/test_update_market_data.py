@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from scripts.list_market_events import identify_downturns, load_event_labels
 from scripts.update_market_data import (
     DataValidationError,
     OHLC,
@@ -98,3 +99,41 @@ def test_write_csvs_has_stable_schema(tmp_path: Path):
     assert text.splitlines()[0] == "Date,Open,High,Low,Close"
     assert text.splitlines()[1].startswith("2010.01.04,")
     assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_market_event_correction_boundaries_and_recovery():
+    close = pd.Series(
+        [100, 90, 95, 100],
+        index=pd.bdate_range("2020-01-02", periods=4),
+        dtype=float,
+    )
+
+    event = identify_downturns(close)[0]
+
+    assert event.classification == "correction"
+    assert event.drawdown == pytest.approx(-0.10)
+    assert event.end_date == close.index[3]
+    assert event.representative_date == close.index[1]
+
+
+def test_market_event_bear_market_ends_after_twenty_percent_rebound():
+    close = pd.Series(
+        [100, 80, 79, 94.8],
+        index=pd.bdate_range("2020-01-02", periods=4),
+        dtype=float,
+    )
+
+    event = identify_downturns(close)[0]
+
+    assert event.classification == "bear_market"
+    assert event.drawdown == pytest.approx(-0.21)
+    assert event.end_date == close.index[3]
+
+
+def test_market_event_chart_labels_come_from_reviewed_document():
+    document = Path(__file__).parents[1] / "docs" / "reference" / "market-events.md"
+
+    labels = load_event_labels(document)
+
+    assert labels["2020-03-16"] == "코로나19 충격"
+    assert labels["2025-04-04"] == "상호관세 충격"

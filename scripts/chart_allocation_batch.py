@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
 
 from analyze_allocation_batch import run
 from analyze_paa_batch import COMMON_START as PAA_COMMON_START, run as run_paa
+from list_market_events import load_event_labels
 
 font_manager.fontManager.addfont("/System/Library/Fonts/Supplemental/AppleGothic.ttf")
 plt.rcParams["font.family"] = "AppleGothic"
@@ -29,31 +30,6 @@ MODELS = {
     "gtaa5": ("GTAA 5", "#D500F9"),
     "paa2": ("PAA2", "#FF1744"),
 }
-EVENTS = {
-    "2018-02-08": "금리·변동성 충격",
-    "2018-10-24": "기술주 실적 우려",
-    "2019-05-13": "중국 보복관세",
-    "2019-08-05": "미·중 환율전쟁",
-    "2020-03-16": "코로나19 충격",
-    "2020-06-11": "2차 유행 우려",
-    "2020-09-03": "빅테크 급락",
-    "2020-10-28": "코로나 재확산",
-    "2021-02-25": "국채금리 급등",
-    "2022-02-03": "Meta 실적 쇼크",
-    "2022-03-07": "우크라이나 전쟁",
-    "2022-05-05": "연준 긴축 공포",
-    "2022-09-13": "CPI 예상 상회",
-    "2022-12-15": "매파적 연준",
-    "2024-07-24": "빅테크 실적 충격",
-    "2024-08-05": "고용 쇼크·캐리 청산",
-    "2024-12-18": "금리인하 축소",
-    "2025-01-27": "DeepSeek 충격",
-    "2025-04-03": "상호관세 충격",
-    "2025-10-10": "대중 관세 위협",
-    "2026-06-05": "고용 호조·금리 우려",
-}
-
-
 def periods() -> dict[str, tuple[str, str]]:
     return {
         "2026-ytd": ("2026-01-01", "2026-07-31"),
@@ -70,6 +46,7 @@ def periods() -> dict[str, tuple[str, str]]:
 def main() -> int:
     output = ROOT / "results" / "research" / "charts" / "public-models"
     output.mkdir(parents=True, exist_ok=True)
+    events = load_event_labels(ROOT / "docs" / "reference" / "market-events.md")
     for slug, (start, end) in periods().items():
         fig, ax = plt.subplots(figsize=(16, 8))
         for model, (label, color) in MODELS.items():
@@ -77,7 +54,7 @@ def main() -> int:
             normalized = equity / 100_000.0
             ax.plot(normalized.index, normalized, color=color, linewidth=0.5, label=label)
         event_number = 0
-        for date_text, label in EVENTS.items():
+        for date_text, label in events.items():
             date = pd.Timestamp(date_text)
             if pd.Timestamp(start) <= date <= pd.Timestamp(end):
                 ax.axvline(date, color="#78909C", linewidth=0.5, alpha=0.8, linestyle="--", zorder=0)

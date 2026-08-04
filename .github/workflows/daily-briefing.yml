@@ -1,0 +1,53 @@
+name: Daily market and VO briefing
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Update market data
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-market-vo-briefing
+  cancel-in-progress: false
+
+jobs:
+  send:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out latest default branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Korean font
+        run: sudo apt-get update && sudo apt-get install --yes fonts-noto-cjk
+
+      - name: Install dependencies
+        run: python -m pip install --requirement requirements.txt
+
+      - name: Send KakaoTalk market and VO briefing
+        env:
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+          GH_SECRETS_TOKEN: ${{ secrets.GH_SECRETS_TOKEN }}
+          TOSS_CLIENT_ID: ${{ secrets.TOSS_CLIENT_ID }}
+          TOSS_CLIENT_SECRET: ${{ secrets.TOSS_CLIENT_SECRET }}
+          TOSS_ACCOUNT_SEQ: ${{ secrets.TOSS_ACCOUNT_SEQ }}
+        run: python scripts/send_daily_briefing.py

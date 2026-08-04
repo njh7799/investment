@@ -114,6 +114,55 @@ class TossApiClient:
                 )
         return accounts
 
+    def _account_get(
+        self,
+        path: str,
+        account_seq: int,
+        *,
+        params: dict[str, str] | None = None,
+    ) -> Any:
+        token = self._access_token or self.issue_access_token()
+        response = self.session.get(
+            f"{self.base_url}{path}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "X-Tossinvest-Account": str(account_seq),
+            },
+            params=params,
+            timeout=REQUEST_TIMEOUT,
+        )
+        self._raise_for_api_error(response)
+        payload = response.json()
+        if "result" not in payload:
+            raise TossApiError(f"{path} response is missing result")
+        return payload["result"]
+
+    def get_holdings(
+        self, account_seq: int, *, symbol: str | None = None
+    ) -> dict[str, Any]:
+        result = self._account_get(
+            "/api/v1/holdings",
+            account_seq,
+            params={"symbol": symbol} if symbol else None,
+        )
+        if not isinstance(result, dict) or not isinstance(result.get("items"), list):
+            raise TossApiError("holdings response must contain an items list")
+        return result
+
+    def get_buying_power(self, account_seq: int, currency: str) -> dict[str, str]:
+        result = self._account_get(
+            "/api/v1/buying-power",
+            account_seq,
+            params={"currency": currency},
+        )
+        if not isinstance(result, dict):
+            raise TossApiError("buying-power response result must be an object")
+        if result.get("currency") != currency or not isinstance(
+            result.get("cashBuyingPower"), str
+        ):
+            raise TossApiError("buying-power response has invalid fields")
+        return result
+
 
 def main() -> int:
     try:

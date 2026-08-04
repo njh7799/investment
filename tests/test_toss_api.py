@@ -98,3 +98,44 @@ def test_api_error_includes_code_and_request_id_without_credentials():
     assert "access_denied" in message
     assert "request-1" in message
     assert "top-secret" not in message
+
+
+def test_holdings_uses_account_seq_header_and_symbol_filter():
+    session = FakeSession(
+        [
+            FakeResponse(200, {"access_token": "token"}),
+            FakeResponse(200, {"result": {"items": []}}),
+        ]
+    )
+
+    result = TossApiClient("client", "secret", session=session).get_holdings(
+        42, symbol="TQQQ"
+    )
+
+    assert result == {"items": []}
+    call = session.calls[-1]
+    assert call[1].endswith("/api/v1/holdings")
+    assert call[2]["headers"] == {
+        "Authorization": "Bearer token",
+        "X-Tossinvest-Account": "42",
+    }
+    assert call[2]["params"] == {"symbol": "TQQQ"}
+
+
+def test_buying_power_validates_currency_and_cash_amount():
+    session = FakeSession(
+        [
+            FakeResponse(200, {"access_token": "token"}),
+            FakeResponse(
+                200,
+                {"result": {"currency": "USD", "cashBuyingPower": "3500.50"}},
+            ),
+        ]
+    )
+
+    result = TossApiClient("client", "secret", session=session).get_buying_power(
+        7, "USD"
+    )
+
+    assert result["cashBuyingPower"] == "3500.50"
+    assert session.calls[-1][2]["params"] == {"currency": "USD"}

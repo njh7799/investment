@@ -1,0 +1,43 @@
+{
+  "asset_sha256": {
+    "QQQ.csv": "2d7d027137c768d27943f8d4877b4847c9988b81cde414cf6d113a96458ab637",
+    "TQQQ.csv": "a00e9f02742fd7c1ebb86a5e8e14b8b07ea228f2fff5452fe9c1f6e39dd5e539"
+  },
+  "base_fee_rate": 0.001,
+  "generated_through": "2026-08-05",
+  "initial_cash": 100000,
+  "lookback_sessions": 30,
+  "screen": {
+    "actual_pre2026_annual_trades_max": 20.0,
+    "actual_pre2026_cagr_delta_min": 0.0,
+    "actual_pre2026_mdd_delta_min": -0.02,
+    "decade_2016_2025_cagr_delta_min": 0.0,
+    "full_pre2026_cagr_delta_min": -0.005,
+    "full_pre2026_mdd_delta_min": -0.02
+  },
+  "selection_data_end": "2025-12-31",
+  "shortlist": [
+    "filtered_ret_qqq_40_return60_block_cut",
+    "filtered_ret_qqq_40_return200_block_cut",
+    "filtered_ret_qqq_40_sma150_block_cut",
+    "filtered_ret_qqq_40_sma100_block_cut",
+    "ret_qqq_40_block_cut",
+    "filtered_ret_qqq_40_sma200_block_cut",
+    "combo_qqq_30_65_floor50",
+    "magratio_qqq_200_step_up",
+    "magratio_tqqq_200_step_up",
+    "filtered_ret_qqq_60_return60_block_cut",
+    "filtered_ret_qqq_60_return200_block_cut",
+    "ret_qqq_60_block_cut",
+    "filtered_ret_qqq_60_sma150_block_cut",
+    "filtered_ret_qqq_60_sma100_block_cut",
+    "magratio_tqqq_300_floor100",
+    "combo_qqq_50_65_floor50",
+    "combo_tqqq_100_65_floor50",
+    "filtered_ret_tqqq_100_return60_block_cut",
+    "ret_qqq_150_step_up",
+    "combo_tqqq_300_65_block_cut"
+  ],
+  "shortlist_limit": 20,
+  "variant_count": 366
+}

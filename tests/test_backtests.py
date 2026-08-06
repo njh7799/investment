@@ -9,6 +9,7 @@ from backtests.models import build_target_weights
 from backtests.documented import causal_reference_high, run_three_percent_rule, run_vr_5
 from backtests.portfolio import run_portfolio_strategy
 from backtests.allocation_models import PAA_DEFENSIVE, PAA_RISKY, build_allocation_weights
+from backtests.vo_upside import apply_upside_override, directional_features, variant_specs
 
 
 def prices(values, opens=None, start="2024-01-02"):
@@ -111,6 +112,34 @@ def test_vo_boundaries_and_warmup():
     data = market([100.0] * 31)
     _, weights = build_target_weights("vo", data)
     assert (weights == 1.0).all()
+
+
+def test_directional_features_use_exactly_trailing_thirty_returns_without_lookahead():
+    index = pd.bdate_range("2024-01-02", periods=32)
+    close = pd.Series([100.0] * 31 + [200.0], index=index)
+    original = directional_features(close)
+    revised = directional_features(close.where(close.index < index[-1], 50.0))
+
+    assert original.loc[index[30], "total_return"] == pytest.approx(0.0)
+    assert original.loc[index[-1], "total_return"] == pytest.approx(1.0)
+    pd.testing.assert_frame_equal(original.iloc[:-1], revised.iloc[:-1])
+
+
+def test_upside_override_actions_only_change_weights_when_condition_is_true():
+    index = pd.bdate_range("2024-01-02", periods=4)
+    base = pd.Series([1.0, 0.5, 0.0, 0.0], index=index)
+    condition = pd.Series([False, True, True, False], index=index)
+
+    assert list(apply_upside_override(base, condition, "floor50")) == [1.0, 0.5, 0.5, 0.0]
+    assert list(apply_upside_override(base, condition, "floor100")) == [1.0, 1.0, 1.0, 0.0]
+    assert list(apply_upside_override(base, condition, "step_up")) == [1.0, 1.0, 0.5, 0.0]
+    assert list(apply_upside_override(base, condition, "block_cut")) == [1.0, 1.0, 1.0, 0.0]
+
+
+def test_vo_upside_grid_is_fixed_and_unique():
+    specs = variant_specs()
+    assert len(specs) == 366
+    assert len({spec.name for spec in specs}) == len(specs)
 
 
 def test_absolute_momentum_and_tsmom_are_identical():

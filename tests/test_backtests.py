@@ -10,6 +10,9 @@ from backtests.documented import causal_reference_high, run_three_percent_rule, 
 from backtests.portfolio import run_portfolio_strategy
 from backtests.allocation_models import PAA_DEFENSIVE, PAA_RISKY, build_allocation_weights
 from backtests.vo_upside import apply_upside_override, directional_features, variant_specs
+from backtests.ma_research import apply_vo_trend, moving_average_score
+from backtests.ma_research import signal_specs as ma_signal_specs
+from backtests.ma_research import variant_specs as ma_variant_specs
 
 
 def prices(values, opens=None, start="2024-01-02"):
@@ -140,6 +143,44 @@ def test_vo_upside_grid_is_fixed_and_unique():
     specs = variant_specs()
     assert len(specs) == 366
     assert len({spec.name for spec in specs}) == len(specs)
+
+
+def test_moving_average_score_has_full_investment_warmup_and_no_lookahead():
+    index = pd.bdate_range("2024-01-02", periods=52)
+    close = pd.Series([100.0] * 51 + [200.0], index=index)
+    spec = next(item for item in ma_signal_specs() if item.name == "price_sma_50")
+    original = moving_average_score(close, spec)
+    revised = moving_average_score(close.where(close.index < index[-1], 50.0), spec)
+
+    assert (original.iloc[:49] == 1.0).all()
+    pd.testing.assert_series_equal(original.iloc[:-1], revised.iloc[:-1])
+
+
+def test_moving_average_band_retains_state_inside_band():
+    index = pd.bdate_range("2024-01-02", periods=5)
+    fast = pd.Series([100.0, 102.0, 100.5, 98.0, 100.0], index=index)
+    slow = pd.Series(100.0, index=index)
+    from backtests.ma_research import _stateful_band
+
+    assert list(_stateful_band(fast, slow, 0.01)) == [1.0, 1.0, 1.0, 0.0, 0.0]
+
+
+def test_vo_moving_average_confirmation_gates_changes_by_direction():
+    index = pd.bdate_range("2024-01-02", periods=5)
+    base = pd.Series([1.0, 0.5, 0.0, 0.5, 1.0], index=index)
+    score = pd.Series([1.0, 1.0, 0.0, 0.0, 1.0], index=index)
+
+    assert list(apply_vo_trend(base, score, "cut_confirm")) == [1.0, 1.0, 0.0, 0.5, 1.0]
+    assert list(apply_vo_trend(base, score, "raise_confirm")) == [1.0, 0.5, 0.0, 0.0, 1.0]
+    assert list(apply_vo_trend(base, score, "both_confirm")) == [1.0, 1.0, 0.0, 0.0, 1.0]
+
+
+def test_moving_average_research_grid_is_fixed_and_unique():
+    signals = ma_signal_specs()
+    variants = ma_variant_specs()
+    assert len(signals) == 53
+    assert len(variants) == 458
+    assert len({item.name for item in variants}) == len(variants)
 
 
 def test_absolute_momentum_and_tsmom_are_identical():

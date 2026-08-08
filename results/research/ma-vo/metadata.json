@@ -1,0 +1,33 @@
+{
+  "asset_sha256": {
+    "QQQ.csv": "74032ddfc59eb91cdc004c604c16d6a121a7ed1286d7c13df4e7230ceac84349",
+    "TQQQ.csv": "8fe3a45dad0565964f0ffdab08e93dd1208bb3991293be445af33fdb15fee1ba"
+  },
+  "base_fee_rate": 0.001,
+  "generated_through": "2026-08-07",
+  "initial_cash": 100000,
+  "selection_data_end": "2025-12-31",
+  "shortlist": [
+    "standalone_qqq_band_cross_100_200_2_full_cash",
+    "standalone_qqq_band_cross_100_200_3_full_cash",
+    "standalone_qqq_band_cross_100_200_2_half_floor",
+    "standalone_qqq_band_cross_100_200_1_full_cash",
+    "standalone_qqq_band_cross_100_200_1_half_floor",
+    "standalone_qqq_cross_50_200_half_floor",
+    "standalone_qqq_band_cross_100_200_3_half_floor",
+    "standalone_qqq_band_cross_50_200_2_half_floor",
+    "standalone_qqq_cross_20_250_full_cash",
+    "standalone_qqq_cross_100_250_full_cash",
+    "vo_qqq_price_sma_50_both_confirm",
+    "vo_tqqq_triple_50_150_200_cut_confirm",
+    "vo_qqq_cross_100_200_cut_confirm",
+    "vo_qqq_triple_20_100_200_cut_confirm",
+    "vo_tqqq_cross_100_250_trend_floor",
+    "vo_tqqq_cross_100_200_trend_floor",
+    "vo_qqq_cross_100_200_bull_step_up",
+    "vo_qqq_price_sma_50_bull_step_up",
+    "vo_qqq_triple_50_100_200_bull_step_up",
+    "vo_qqq_triple_20_100_200_bull_step_up"
+  ],
+  "variant_count": 458
+}

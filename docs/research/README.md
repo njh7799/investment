@@ -9,6 +9,7 @@
 | [블라인드 조사 프로토콜](discovery-protocol.md) | 탐색·원전 검증·사전등록·통합의 정보 분리 절차 |
 | [승격 기준](promotion-criteria.md) | 독립 전략, VO 대체와 addon의 사전 판정 기준 |
 | [`preregistrations/`](preregistrations/) | 결과 확인 전에 고정한 후보와 배치 명세 |
+| [자동 조사 기록](automation-log.md) | 일일 조사 결과와 3회 연속 포화 여부 |
 | [모델 조사 목록](model-census.md) | 조사한 모델, 원전과 적용 방식 |
 | [연구 후보](candidates.md) | 추가 검증 중이며 아직 승격하지 않은 모델 |
 | [폐기 전략 기록](rejected-strategies.md) | 채택하지 않은 이유와 재검토 조건 |

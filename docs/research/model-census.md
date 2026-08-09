@@ -39,11 +39,11 @@ Antonacci 원전 Parity Portfolio는 미국주식·장기국채·미국신용채
 
 | 모델 | 계열 | 공개 기본 규칙 | 처리 |
 | --- | --- | --- | --- |
-| Faber GTAA 5 | 전술적 자산배분 | 5자산 각 20%, 월말 10개월 SMA | ETF 프록시로 백테스트 |
+| Faber GTAA 5 | 전술적 자산배분 | 5자산 각 20%, 월말 10개월 SMA | DBC ETF 프록시로 백테스트 |
 | Global Equities Momentum | 듀얼 모멘텀 | 미국/미국 외 12개월 상대·절대 모멘텀, 약세 시 종합채권 | ETF 프록시·현금수익률 0으로 백테스트 |
 | Moreira–Muir VMP | 변동성 관리 | 직전 월 실현분산의 역수로 익스포저 조절 | 재현 불가: 전체 표본으로 정하는 스케일 상수는 미래정보이며 long-only 상한도 없음 |
 | Harvey 외 변동성 타기팅 | 변동성 관리 | 변동성 목표에 맞춰 익스포저 조절 | 재현 불가: 단일 공식 목표·상한을 기본값으로 제시하지 않음 |
-| Protective Asset Allocation PAA2 | 방어적 모멘텀 | N12 SMA(12), Top6, breadth 6, SHY/IEF | 4차 배치에서 실제 ETF로 백테스트 |
+| Protective Asset Allocation PAA2 | 방어적 모멘텀 | N12 SMA(12), Top6, breadth 6, 원문 IEF | 4차 배치에서 SHY/IEF 상대선택 변형을 백테스트 |
 | Risk parity | 위험 배분 | 위험기여 균등화 | 재현 불가: 추정창·공분산·레버리지에 단일 공개 기본값 없음 |
 
 정확한 ETF 프록시와 공통기간, 원전 차이는 [3차 배치 보고서](batches/03-multi-asset-allocation.md)에 기록한다.
@@ -64,3 +64,11 @@ PAA2의 12개 위험자산, 방어비중 공식과 실제 ETF 적용 결과는 [
 | Defensive Asset Allocation G12 | 카나리·상대 모멘텀 | EEM/AGG 카나리 비례 방어, G12 Top2 | ETF 프록시로 백테스트 |
 
 두 모델 모두 월말 신호와 다음 거래일 시가 체결로 실행했다. 원문의 VWO/BND는 EEM/AGG로 대체했으며 정확한 규칙과 결과는 [6차 배치 보고서](batches/06-defensive-allocation.md)를 따른다.
+
+## 7차 배치: 블라인드 공개 모델 탐색
+
+| 모델 | 계열 | 공개 기본 규칙 | 처리 |
+| --- | --- | --- | --- |
+| Flexible Asset Allocation | 다중요인 전술배분 | 4개월 수익·변동성·상관 순위 1/0.5/0.5, Top3, 절대모멘텀 SHY | ETF 대체형 백테스트 |
+
+블라인드 탐색이 함께 제안한 GTAA-5와 PAA2는 기존 3·4차와 중복이었다. 원전 재검증 결과 GTAA의 GSCI를 기존 연구가 DBC로 대체했고, 원문 PAA2의 방어자산은 IEF 단독이지만 기존 4차는 SHY/IEF 상대선택 변형을 적용했음을 명확히 했다. FAA의 정확한 계산 관례와 결과는 [7차 배치 보고서](batches/07-flexible-asset-allocation.md)를 따른다.

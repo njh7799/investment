@@ -10,3 +10,4 @@
 | [4차](04-paa2.md) | Protective Asset Allocation PAA2 |
 | [5차](05-moving-average-vo.md) | 이동평균 단독 운용과 VO 결합 규칙 |
 | [6차](06-defensive-allocation.md) | VAA-G4·DAA-G12의 빠른 모멘텀과 카나리 방어 |
+| [7차](07-flexible-asset-allocation.md) | 블라인드 탐색으로 찾은 FAA 기본형의 독립 평가 |

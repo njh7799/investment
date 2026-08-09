@@ -1,0 +1,23 @@
+{
+  "asset_sha256": {
+    "AGG": "0d97b3652cdd6e331add002df6734bc5d1ad022ffeff041d60a0dd07988c2bb2",
+    "EEM": "fd41f593db01312e80f300cd5a465a8b0880f1adcf9f3f9b79c7cf3d3da1640c",
+    "EFA": "3910038abffd55e82fb692437262e2046bd4a3367b6a8261aafc241d5c56f96a",
+    "GSG": "ce8022e45300d11bb0e0c39d466387a632b50b3ab53142251c72e5305be38373",
+    "SHY": "a1c1a8722ae49063819179328a173a81fc68b5acc47e8775a677d39b6fe17c25",
+    "SPY": "edfe53dcbb2de0ea5cca952fb5e08fd1d3973ed8543737add13712890c264e4f",
+    "VNQ": "e4062eb017ba4fe02cde386288d3a6e80b4340a1b77895c82defdcd4076d21ca"
+  },
+  "base_fee_rate": 0.001,
+  "common_start": "2006-12-01",
+  "generated_through": "2026-08-07",
+  "initial_cash": 100000,
+  "models": [
+    "faa7_equal_monthly",
+    "faa_default",
+    "tqqq_hold",
+    "qqq_hold",
+    "vo"
+  ],
+  "preregistration": "docs/research/preregistrations/batch-07-faa.yaml"
+}

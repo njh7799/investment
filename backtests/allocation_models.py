@@ -17,10 +17,41 @@ VAA_G4_RISKY = ("SPY", "EFA", "EEM", "AGG")
 VAA_CASH = ("SHY", "IEF", "LQD")
 DAA_G12_RISKY = ("SPY", "IWM", "QQQ", "VGK", "EWJ", "EEM", "VNQ", "GSG", "GLD", "TLT", "HYG", "LQD")
 DAA_CANARY = ("EEM", "AGG")
+FAA_ASSETS = ("SPY", "EFA", "EEM", "SHY", "AGG", "GSG", "VNQ")
 
 
 def _month_end_dates(close: pd.DataFrame) -> pd.DatetimeIndex:
     return close.groupby(close.index.to_period("M")).tail(1).index
+
+
+def _ordinal_ranks(values: pd.Series, *, ascending: bool) -> pd.Series:
+    names = sorted(values.index, key=lambda name: ((values[name] if ascending else -values[name]), name))
+    return pd.Series({name: rank for rank, name in enumerate(names, start=1)}, dtype=float)
+
+
+def _faa_weights(closes: pd.DataFrame, month_dates: pd.DatetimeIndex) -> pd.DataFrame:
+    month_close = closes.loc[month_dates]
+    sparse = pd.DataFrame(0.0, index=month_dates, columns=closes.columns)
+    for position in range(4, len(month_dates)):
+        date = month_dates[position]
+        prior = month_dates[position - 4]
+        momentum = month_close.loc[date, list(FAA_ASSETS)] / month_close.loc[prior, list(FAA_ASSETS)] - 1.0
+        daily = closes.loc[(closes.index >= prior) & (closes.index <= date), list(FAA_ASSETS)].pct_change().dropna()
+        if momentum.isna().any() or len(daily) < 2:
+            continue
+        volatility = daily.std(ddof=1)
+        correlation = daily.corr().apply(lambda column: column.drop(column.name).mean())
+        if volatility.isna().any() or correlation.isna().any():
+            continue
+        score = (
+            _ordinal_ranks(momentum, ascending=False)
+            + 0.5 * _ordinal_ranks(volatility, ascending=True)
+            + 0.5 * _ordinal_ranks(correlation, ascending=True)
+        )
+        selected = sorted(score.index, key=lambda name: (score[name], name))[:3]
+        for name in selected:
+            sparse.loc[date, name if momentum[name] > 0.0 else "SHY"] += 1.0 / 3.0
+    return sparse.reindex(closes.index).ffill().fillna(0.0)
 
 
 def build_allocation_weights(model: str, closes: pd.DataFrame) -> pd.DataFrame:
@@ -40,6 +71,11 @@ def build_allocation_weights(model: str, closes: pd.DataFrame) -> pd.DataFrame:
         return weights
 
     month_dates = _month_end_dates(closes)
+    if model == "faa7_equal_monthly":
+        weights.loc[:, list(FAA_ASSETS)] = 1.0 / len(FAA_ASSETS)
+        return weights
+    if model == "faa_default":
+        return _faa_weights(closes, month_dates)
     month_close = closes.loc[month_dates].copy()
     month_close.index = month_close.index.to_period("M")
     sparse = pd.DataFrame(0.0, index=month_dates, columns=closes.columns)

@@ -11,11 +11,13 @@ from backtests.portfolio import run_portfolio_strategy
 from backtests.allocation_models import (
     DAA_CANARY,
     DAA_G12_RISKY,
+    FAA_ASSETS,
     PAA_DEFENSIVE,
     PAA_RISKY,
     VAA_CASH,
     VAA_G4_RISKY,
     build_allocation_weights,
+    _ordinal_ranks,
 )
 from backtests.vo_upside import apply_upside_override, directional_features, variant_specs
 from backtests.ma_research import apply_vo_trend, moving_average_score
@@ -147,6 +149,41 @@ def test_daa_g12_halves_cash_and_risky_slots_when_one_canary_is_bad():
     assert weights["QQQ"] == pytest.approx(0.5)
     assert weights["GLD"] == pytest.approx(0.0)
     assert weights.sum() == pytest.approx(1.0)
+
+
+def test_faa_ordinal_ranks_use_requested_direction_and_alphabetical_ties():
+    values = pd.Series({"B": 2.0, "A": 2.0, "C": 1.0})
+
+    assert list(_ordinal_ranks(values, ascending=False).sort_index()) == [1.0, 2.0, 3.0]
+    assert list(_ordinal_ranks(values, ascending=True).sort_index()) == [2.0, 3.0, 1.0]
+
+
+def test_faa_waits_four_months_and_replaces_nonpositive_slots_with_shy():
+    index = pd.date_range("2024-01-31", periods=5, freq="ME")
+    closes = pd.DataFrame(index=index)
+    for offset, name in enumerate(FAA_ASSETS):
+        closes[name] = [100.0 - (offset + 1) * step - (step % 2) * 0.1 * offset for step in range(5)]
+
+    weights = build_allocation_weights("faa_default", closes)
+
+    assert (weights.iloc[:4].sum(axis=1) == 0.0).all()
+    assert weights.iloc[-1]["SHY"] == pytest.approx(1.0)
+    assert weights.iloc[-1].sum() == pytest.approx(1.0)
+
+
+def test_faa_signal_does_not_change_when_future_prices_change():
+    index = pd.date_range("2024-01-31", periods=6, freq="ME")
+    closes = pd.DataFrame(
+        {name: [100.0 + (offset + 1) * step + (step % 2) * offset for step in range(6)] for offset, name in enumerate(FAA_ASSETS)},
+        index=index,
+    )
+    revised = closes.copy()
+    revised.loc[index[-1], "SPY"] *= 10.0
+
+    original_weights = build_allocation_weights("faa_default", closes)
+    revised_weights = build_allocation_weights("faa_default", revised)
+
+    pd.testing.assert_frame_equal(original_weights.iloc[:-1], revised_weights.iloc[:-1])
 
 
 def test_vo_boundaries_and_warmup():

@@ -8,7 +8,15 @@ from backtests.core import MarketData, run_weight_strategy
 from backtests.models import build_target_weights
 from backtests.documented import causal_reference_high, run_three_percent_rule, run_vr_5
 from backtests.portfolio import run_portfolio_strategy
-from backtests.allocation_models import PAA_DEFENSIVE, PAA_RISKY, build_allocation_weights
+from backtests.allocation_models import (
+    DAA_CANARY,
+    DAA_G12_RISKY,
+    PAA_DEFENSIVE,
+    PAA_RISKY,
+    VAA_CASH,
+    VAA_G4_RISKY,
+    build_allocation_weights,
+)
 from backtests.vo_upside import apply_upside_override, directional_features, variant_specs
 from backtests.ma_research import apply_vo_trend, moving_average_score
 from backtests.ma_research import signal_specs as ma_signal_specs
@@ -108,6 +116,36 @@ def test_paa2_uses_breadth_fraction_and_top_six():
     weights = build_allocation_weights("paa2", closes).iloc[-1]
     assert weights["IEF"] == pytest.approx(5.0 / 6.0)
     assert np.allclose(weights[list(PAA_RISKY[5:11])], 1.0 / 36.0)
+    assert weights.sum() == pytest.approx(1.0)
+
+
+def test_vaa_g4_switches_fully_to_best_cash_when_one_risky_asset_is_bad():
+    index = pd.date_range("2023-01-31", periods=13, freq="ME")
+    columns = list(dict.fromkeys([*VAA_G4_RISKY, *VAA_CASH]))
+    closes = pd.DataFrame(100.0, index=index, columns=columns)
+    closes.loc[index[-1], list(VAA_G4_RISKY)] = [120.0, 120.0, 80.0, 120.0]
+    closes.loc[index[-1], list(VAA_CASH)] = [101.0, 110.0, 105.0]
+
+    weights = build_allocation_weights("vaa_g4", closes).iloc[-1]
+
+    assert weights["IEF"] == pytest.approx(1.0)
+    assert weights[list(VAA_G4_RISKY)].sum() == pytest.approx(0.0)
+
+
+def test_daa_g12_halves_cash_and_risky_slots_when_one_canary_is_bad():
+    index = pd.date_range("2023-01-31", periods=13, freq="ME")
+    columns = list(dict.fromkeys([*DAA_G12_RISKY, *DAA_CANARY, *VAA_CASH]))
+    closes = pd.DataFrame(100.0, index=index, columns=columns)
+    closes.loc[index[-1], list(DAA_G12_RISKY)] = 110.0
+    closes.loc[index[-1], ["QQQ", "GLD"]] = [140.0, 130.0]
+    closes.loc[index[-1], list(DAA_CANARY)] = [80.0, 120.0]
+    closes.loc[index[-1], list(VAA_CASH)] = [101.0, 115.0, 105.0]
+
+    weights = build_allocation_weights("daa_g12", closes).iloc[-1]
+
+    assert weights["IEF"] == pytest.approx(0.5)
+    assert weights["QQQ"] == pytest.approx(0.5)
+    assert weights["GLD"] == pytest.approx(0.0)
     assert weights.sum() == pytest.approx(1.0)
 
 

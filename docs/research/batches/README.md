@@ -9,3 +9,4 @@
 | [3차](03-multi-asset-allocation.md) | GTAA·GEM과 정적 다중자산 배분 |
 | [4차](04-paa2.md) | Protective Asset Allocation PAA2 |
 | [5차](05-moving-average-vo.md) | 이동평균 단독 운용과 VO 결합 규칙 |
+| [6차](06-defensive-allocation.md) | VAA-G4·DAA-G12의 빠른 모멘텀과 카나리 방어 |

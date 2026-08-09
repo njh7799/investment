@@ -1,0 +1,48 @@
+id: batch-XX
+status: draft
+preregistered_commit: ""
+blindness: full
+discovered_at: YYYY-MM-DD
+discovery_agent_context: isolated
+existing_research_seen: false
+information_leaks: []
+
+candidates:
+  - name: strategy-name
+    source:
+      title: ""
+      url: ""
+      author: ""
+    original_objective: ""
+    independent_benchmark: ""
+    asset_universe: []
+    signal:
+      observation_time: close
+      frequency: ""
+      formula: ""
+      warmup: ""
+      boundaries: ""
+    parameters: {}
+    execution:
+      fill_time: next_trading_day_open
+      rebalance_rule: ""
+      fee_rate_each_side: 0.001
+      slippage: 0
+      tax: 0
+      cash_return: 0
+    source_differences: []
+
+evaluation:
+  fixed_periods: []
+  rolling_windows_years: [5, 10]
+  stress_periods: []
+  fee_sensitivity: [0.001, 0.002, 0.005]
+  promotion_roles:
+    - independent_strategy
+    - vo_replacement
+    - vo_addon
+
+verification:
+  source_reviewer: ""
+  source_review_complete: false
+  implementation_tests: []

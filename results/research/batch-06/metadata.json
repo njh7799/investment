@@ -1,0 +1,31 @@
+{
+  "asset_sha256": {
+    "AGG": "0d97b3652cdd6e331add002df6734bc5d1ad022ffeff041d60a0dd07988c2bb2",
+    "EEM": "fd41f593db01312e80f300cd5a465a8b0880f1adcf9f3f9b79c7cf3d3da1640c",
+    "EFA": "3910038abffd55e82fb692437262e2046bd4a3367b6a8261aafc241d5c56f96a",
+    "EWJ": "4806bd9a433e9281f884f458a5009f999c8762b3996dead2253e9e693fd50bd9",
+    "GLD": "a5ab86932ad37acf60ecf5fc9f4e7510a42d12bf705af699ac91ff577b182b44",
+    "GSG": "ce8022e45300d11bb0e0c39d466387a632b50b3ab53142251c72e5305be38373",
+    "HYG": "a3f2c3a1b1f39c4e113c943e2202d8aa86bb8ce95606f4c5c207f7e97f5de565",
+    "IEF": "db2ed06bd892abc66daea5e92fd7de9095c800f65955cb656454500fb03cc78b",
+    "IWM": "856c9434bb55955b65fa88157d910b64a33021224a950feff6e5511420cf7f3c",
+    "LQD": "d3f669aeb55a30aa1e00d5eac524f01ee383af29946d62c9a921f589d99af1dc",
+    "QQQ": "74032ddfc59eb91cdc004c604c16d6a121a7ed1286d7c13df4e7230ceac84349",
+    "SHY": "a1c1a8722ae49063819179328a173a81fc68b5acc47e8775a677d39b6fe17c25",
+    "SPY": "edfe53dcbb2de0ea5cca952fb5e08fd1d3973ed8543737add13712890c264e4f",
+    "TLT": "b77676de0da86e915c0d7af9029871a98aec66fbfb16c78267d43f8323a02246",
+    "VGK": "82ad7385a74a9c6462119e4f3dbef5054e5ebdbd9c4f03ac85aa3095c514c125",
+    "VNQ": "e4062eb017ba4fe02cde386288d3a6e80b4340a1b77895c82defdcd4076d21ca"
+  },
+  "base_fee_rate": 0.001,
+  "common_start": "2007-04-11",
+  "generated_through": "2026-08-07",
+  "initial_cash": 100000,
+  "models": [
+    "tqqq_hold",
+    "qqq_hold",
+    "vo",
+    "vaa_g4",
+    "daa_g12"
+  ]
+}

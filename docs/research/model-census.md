@@ -55,3 +55,12 @@ PAA2의 12개 위험자산, 방어비중 공식과 실제 ETF 적용 결과는 [
 기존 200일 SMA, Golden Cross와 BLL VMA의 추가 검증으로 53개 이동평균 신호를 사전 고정했다. QQQ 신호로 TQQQ·현금을 운용하는 단독형 106개와 QQQ·TQQQ 신호를 VO의 비중 상한·하한·증감 확인에 결합한 352개를 비교했다.
 
 이는 새로운 공개 모델의 원전 재현이 아니라 기존 이동평균 아이디어의 내부 견고성 검사다. 정확한 조합과 결과는 [5차 배치 보고서](batches/05-moving-average-vo.md)를 따른다.
+
+## 6차 배치: VAA와 DAA
+
+| 모델 | 계열 | 공개 기본 규칙 | 처리 |
+| --- | --- | --- | --- |
+| Vigilant Asset Allocation G4 | 방어적 듀얼 모멘텀 | G4 전체의 13612W 부호로 위험/방어 전환, Top1 | ETF 프록시로 백테스트 |
+| Defensive Asset Allocation G12 | 카나리·상대 모멘텀 | EEM/AGG 카나리 비례 방어, G12 Top2 | ETF 프록시로 백테스트 |
+
+두 모델 모두 월말 신호와 다음 거래일 시가 체결로 실행했다. 원문의 VWO/BND는 EEM/AGG로 대체했으며 정확한 규칙과 결과는 [6차 배치 보고서](batches/06-defensive-allocation.md)를 따른다.

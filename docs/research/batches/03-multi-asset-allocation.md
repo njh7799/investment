@@ -4,7 +4,7 @@
 
 ## 등록 모델
 
-- **Faber GTAA 5:** SPY·EFA·IEF·VNQ·DBC에 각 20% 슬롯을 두고, 월말 가격이 자신의 10개월 SMA 위일 때만 다음 거래일에 보유한다. 조건을 통과하지 못한 슬롯은 현금이다. [Faber 원문과 저자 설명](https://mebfaber.com/2013/06/08/qtaa-update-global-tactical-5/)을 ETF 프록시로 적용했다.
+- **Faber GTAA 5:** SPY·EFA·IEF·VNQ·DBC에 각 20% 슬롯을 두고, 월말 가격이 자신의 10개월 SMA 위일 때만 다음 거래일에 보유한다. 조건을 통과하지 못한 슬롯은 현금이다. [Faber 원문과 저자 설명](https://mebfaber.com/2013/06/08/qtaa-update-global-tactical-5/)을 ETF 프록시로 적용했다. 원문의 상품 슬리브는 GSCI 총수익지수이며 DBC는 저장소 구현 대체이므로 원전의 정확한 자산이 아니다.
 - **GEM:** SPY와 VEU의 12개월 수익률 중 높은 자산이 현금수익률 0보다 높으면 보유하고, 아니면 AGG를 보유한다. 월말 평가·다음 거래일 체결이다. [Antonacci의 공식 모델 설명](https://www.optimalmomentum.com/global-equities-momentum/)과 달리 T-bill 실제 수익률 대신 저장소 공통 가정인 현금 0을 썼다.
 - **기준선:** GTAA 5 동일비중 최초 매수 후 보유, SPY/IEF 60/40 최초 매수 후 보유, SPY/IEF/GLD/현금 25% 최초 배분 후 보유. 정기 리밸런싱 규칙을 임의로 정하지 않았으므로 독립 공개 전략이 아닌 비교군이다.
 

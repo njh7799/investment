@@ -13,6 +13,10 @@ ALLOCATION_MODELS = {
 
 PAA_RISKY = ("SPY", "QQQ", "IWM", "EEM", "VGK", "EWJ", "IYR", "GSG", "GLD", "TLT", "HYG", "LQD")
 PAA_DEFENSIVE = ("SHY", "IEF")
+VAA_G4_RISKY = ("SPY", "EFA", "EEM", "AGG")
+VAA_CASH = ("SHY", "IEF", "LQD")
+DAA_G12_RISKY = ("SPY", "IWM", "QQQ", "VGK", "EWJ", "EEM", "VNQ", "GSG", "GLD", "TLT", "HYG", "LQD")
+DAA_CANARY = ("EEM", "AGG")
 
 
 def _month_end_dates(close: pd.DataFrame) -> pd.DatetimeIndex:
@@ -39,6 +43,30 @@ def build_allocation_weights(model: str, closes: pd.DataFrame) -> pd.DataFrame:
     month_close = closes.loc[month_dates].copy()
     month_close.index = month_close.index.to_period("M")
     sparse = pd.DataFrame(0.0, index=month_dates, columns=closes.columns)
+    if model in {"vaa_g4", "daa_g12"}:
+        returns = {months: month_close.pct_change(months) for months in (1, 3, 6, 12)}
+        momentum = 12 * returns[1] + 4 * returns[3] + 2 * returns[6] + returns[12]
+        for date, (_, row) in zip(month_dates, momentum.iterrows()):
+            risky_names = VAA_G4_RISKY if model == "vaa_g4" else DAA_G12_RISKY
+            required = [*risky_names, *VAA_CASH]
+            if model == "daa_g12":
+                required.extend(DAA_CANARY)
+            if row[list(dict.fromkeys(required))].isna().any():
+                continue
+            safe = row[list(VAA_CASH)].idxmax()
+            if model == "vaa_g4":
+                if (row[list(VAA_G4_RISKY)] <= 0.0).any():
+                    sparse.loc[date, safe] = 1.0
+                else:
+                    sparse.loc[date, row[list(VAA_G4_RISKY)].idxmax()] = 1.0
+            else:
+                cash_fraction = float((row[list(DAA_CANARY)] <= 0.0).sum()) / 2.0
+                sparse.loc[date, safe] = cash_fraction
+                risky_slots = 2 - int((row[list(DAA_CANARY)] <= 0.0).sum())
+                top = list(row[list(DAA_G12_RISKY)].nlargest(risky_slots).index)
+                for name in top:
+                    sparse.loc[date, name] += (1.0 - cash_fraction) / risky_slots
+        return sparse.reindex(index).ffill().fillna(0.0)
     if model == "paa_n12_buyhold":
         weights.loc[:, list(PAA_RISKY)] = 1.0 / len(PAA_RISKY)
         return weights

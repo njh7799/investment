@@ -1,0 +1,85 @@
+id: batch-07-faa
+status: registered
+preregistered_commit: this_file_introducing_commit
+blindness: full
+discovered_at: 2026-08-09
+discovery_agent_context: isolated
+existing_research_seen: false
+information_leaks: []
+
+candidates:
+  - name: flexible_asset_allocation_default
+    source:
+      title: "Generalized Momentum and Flexible Asset Allocation: An Heuristic Approach"
+      url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2193735"
+      author: "Wouter J. Keller and Hugo S. van Putten"
+      date: "2012-12-24"
+    original_objective: "Combine return, absolute momentum, low volatility and low correlation without numerical portfolio optimization."
+    independent_benchmark: faa7_equal_monthly
+    asset_universe: [SPY, EFA, EEM, SHY, AGG, GSG, VNQ]
+    source_universe: [VTI, VEA, VWO, SHY, BND, GSG, VNQ]
+    signal:
+      observation_time: month_end_close
+      frequency: monthly
+      formula: "For each asset, rank 4-month total return descending, daily-return volatility ascending, and mean correlation with the other six assets ascending. Loss score = return_rank + 0.5 * volatility_rank + 0.5 * correlation_rank. Select the three lowest scores, then replace each selected slot whose 4-month return is <= 0 with SHY."
+      warmup: "Four complete month-end intervals and daily returns within the same four-calendar-month window."
+      boundaries: "Absolute momentum <= 0 is defensive. Rank and score ties use ticker alphabetical order after the metric sort."
+      selection_count: 3
+      slot_weight: 0.3333333333333333
+      return_window: "Current month-end close divided by the close four month-ends earlier minus one."
+      daily_window: "Simple adjusted-close returns strictly after the month-end close four intervals earlier through the current month-end close, using the common asset index."
+      volatility: "Sample standard deviation with ddof=1; annualization is omitted because it does not change ranks."
+      correlation: "Pearson correlation over the common daily window; arithmetic mean of the six pairwise correlations."
+    parameters:
+      months: 4
+      return_weight: 1.0
+      volatility_weight: 0.5
+      correlation_weight: 0.5
+      top_n: 3
+      defensive_asset: SHY
+    execution:
+      fill_time: next_common_trading_day_open
+      rebalance_rule: "Rebalance to equal one-third slots on the first common trading day after each month-end signal, including repeated targets. Aggregate duplicate SHY slots."
+      fee_rate_each_side: 0.001
+      slippage: 0
+      tax: 0
+      cash_return: 0
+    source_differences:
+      - "VTI is replaced with SPY, so US small and mid caps are underrepresented."
+      - "VEA is replaced with EFA, which excludes Canada and small caps."
+      - "VWO is replaced with EEM, with different country and capitalization coverage."
+      - "BND is replaced with AGG, which tracks a non-float-adjusted aggregate bond index."
+      - "The result is an ETF-substitution implementation of FAA, not an exact reproduction of the paper's fund history."
+
+evaluation:
+  fixed_periods:
+    - {name: common_full, start: first_common_trading_day_after_first_valid_signal, end: data_end}
+    - {name: recent_10y, start: "2016-08-01", end: data_end}
+  rolling_windows_years: [5, 10]
+  stress_periods:
+    - {name: global_financial_crisis, start: "2007-10-31", end: "2009-03-09"}
+    - {name: covid_crash, start: "2020-02-19", end: "2020-03-23"}
+    - {name: 2022_bear, start: "2021-11-19", end: "2022-12-28"}
+  fee_sensitivity: [0.001, 0.002, 0.005]
+  integration_benchmarks: [tqqq_hold, qqq_hold, vo]
+  promotion_roles: [independent_strategy]
+  promotion_gate:
+    - "In both fixed periods, CAGR is at least faa7_equal_monthly and MDD is no worse."
+    - "For both 5-year and 10-year rolling windows, median CAGR is at least the benchmark while worst MDD and worst longest TUW are no worse."
+    - "MDD improves in at least two of the three registered stress periods."
+    - "The direction of the fixed-period advantage remains at a 0.2% one-way fee."
+    - "Annual rebalance dates do not exceed 20, unless the 0.5% fee result still passes the fixed-period gate."
+
+verification:
+  source_reviewer: isolated_source_verify_07
+  source_review_complete: true
+  source_notes:
+    - "The 1.0/0.5/0.5 score is the paper's somewhat arbitrary default; the optimized 1.0/0.8/0.6 variant is excluded."
+    - "Top 3 and four months are empirical defaults rather than purely ex-ante constants."
+    - "Absolute momentum is applied after Top-3 selection; it is not a fourth rank term."
+  implementation_tests:
+    - four_month_warmup
+    - rank_directions_and_ties
+    - correlation_uses_other_six_assets
+    - nonpositive_selected_slots_aggregate_to_shy
+    - close_signal_executes_at_next_common_open

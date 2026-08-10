@@ -1,0 +1,122 @@
+id: batch-08-vo-bull-participation
+status: registered
+preregistered_commit: this_file_introducing_commit
+blindness: none
+discovered_at: 2026-08-10
+discovery_agent_context: shared
+existing_research_seen: true
+information_leaks:
+  - "The investigator read all prior VO upside, directional, moving-average and rejected-strategy results before defining this batch."
+  - "The user explicitly identified weak annual upside participation and strong full-period drawdown protection as the research motivation."
+
+sources:
+  - title: "Volatility Managed Portfolios"
+    url: "https://www.nber.org/papers/w22208"
+    author: "Alan Moreira and Tyler Muir"
+    use: "Motivates retaining realized-volatility risk reduction rather than replacing VO with an unscaled trend strategy."
+  - title: "Time Series Momentum"
+    url: "https://doi.org/10.1016/j.jfineco.2011.11.003"
+    author: "Tobias J. Moskowitz, Yao Hua Ooi and Lasse Heje Pedersen"
+    use: "Motivates causal multi-horizon directional signals; this batch is not a reproduction of the futures strategy."
+  - title: "Volatility Targeting Is Trendy: How Trend Following Explains Alpha in Volatility-Managed Strategies"
+    url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4773781"
+    author: "Benjamin Hood and Cameron Raughtigan"
+    use: "Motivates testing whether trend strength and volatility cooling contain information not captured by VO's volatility level alone."
+
+candidate_objective: "Retain the default VO 30-session 60%/90% risk cuts while improving participation after or during broadly confirmed bull moves."
+independent_benchmark: vo
+execution:
+  signal_observation_time: close
+  fill_time: next_trading_day_open
+  rebalance_rule: "Trade only when the derived target state changes; integer TQQQ shares."
+  fee_rate_each_side: 0.001
+  slippage: 0
+  tax: 0
+  cash_return: 0
+  warmup: "Use default VO until every feature required by a variant is available."
+
+families:
+  - name: risk_adjusted_trend
+    formula: "QQQ h-session return divided by QQQ annualized h-session realized volatility; if the score meets the threshold, apply the registered action."
+    parameters:
+      horizons: [20, 60, 120]
+      score_thresholds: [0.5, 1.0, 1.5]
+      actions: [step_up, block_cut]
+  - name: volatility_cooling
+    formula: "QQQ short realized volatility divided by long realized volatility is at or below the ratio and the matching short-horizon QQQ return is positive."
+    parameters:
+      short_windows: [5, 10]
+      long_windows: [30, 60]
+      maximum_ratios: [0.65, 0.80, 0.95]
+      actions: [step_up, block_cut]
+  - name: cross_market_breadth
+    formula: "Count bullish QQQ, SPY and IWM signals. Return signals require positive h-session return; trend signals require close at or above the h-session SMA."
+    parameters:
+      signal_kinds: [return, price_sma]
+      horizons: [20, 60]
+      minimum_bullish_assets: [2, 3]
+      actions: [step_up, block_cut]
+  - name: multi_horizon_consensus
+    formula: "Count positive QQQ returns across a registered three-horizon set."
+    parameters:
+      horizon_sets: [[10, 20, 60], [20, 60, 120]]
+      minimum_positive_horizons: [2, 3]
+      actions: [step_up, block_cut]
+  - name: confirmed_recovery
+    formula: "After a VO cut, first execute the cut. Restore the pre-cut target only after TQQQ has risen by the registered amount from the cut-signal close, at least two of QQQ/SPY/IWM have positive 20-session returns, and QQQ RV10/RV30 <= 0.95. Cancel restoration if TQQQ closes back at or below the cut price or base VO reaches the old target or cuts another step."
+    parameters:
+      tqqq_recovery: [0.10, 0.15]
+      breadth_minimum: [2]
+      volatility_ratio_maximum: [0.95]
+
+actions:
+  step_up: "While the condition is true, raise the default VO target by one 50 percentage-point state, capped at 100%."
+  block_cut: "While the condition is true, block only decreases below the last applied target; allow VO increases immediately."
+
+evaluation:
+  selection_data_end: "2025-12-31"
+  current_data_is_explanatory_only: true
+  fixed_periods:
+    - {name: synthetic_full_pre2026, start: first_common_session, end: "2025-12-31"}
+    - {name: actual_tqqq_pre2026, start: "2010-02-11", end: "2025-12-31"}
+    - {name: decade_2016_2025, start: "2016-01-01", end: "2025-12-31"}
+    - {name: current_full, start: first_common_session, end: data_end}
+    - {name: current_actual, start: "2010-02-11", end: data_end}
+    - {name: current_ytd, start: "2026-01-01", end: data_end}
+  rolling_windows_years: [5, 10]
+  rolling_start_frequency: monthly
+  rolling_universe: actual_tqqq_through_2025
+  stress_periods:
+    - {name: dotcom, start: "2000-03-10", end: "2002-10-09"}
+    - {name: global_financial_crisis, start: "2007-10-31", end: "2009-03-09"}
+    - {name: covid_crash, start: "2020-02-19", end: "2020-03-23"}
+    - {name: 2022_bear, start: "2021-11-19", end: "2022-12-28"}
+  fee_sensitivity: [0.001, 0.002, 0.005]
+  screen:
+    - "Synthetic-full CAGR is no more than 0.5 percentage points below VO."
+    - "Actual-period and 2016-2025 CAGR are both above VO."
+    - "Synthetic-full and actual-period MDD are no more than 2 percentage points worse than VO."
+    - "Actual-period annual trades do not exceed 20."
+  promotion_gate:
+    - "Pass the screen and improve median and worst CAGR in both 5-year and 10-year rolling tests."
+    - "No registered stress-period MDD is more than 5 percentage points worse than VO."
+    - "Actual-period MDD and longest TUW are each no more than 5% worse than VO."
+    - "At a 0.2% one-way fee, actual and recent-decade CAGR remain above VO."
+    - "Positive annual excess return occurs in at least three years and no single year contributes more than half of summed positive annual excess return."
+    - "At least two adjacent parameter settings in the same family show the same fixed and rolling direction."
+
+verification:
+  source_reviewer: primary_agent
+  source_review_complete: true
+  source_notes:
+    - "This is an internally designed VO extension inspired by the cited mechanisms, not an exact paper reproduction."
+    - "Simple raw momentum, moving averages, new-high proximity, downside semivariance and unconfirmed recovery were already tested and are not repeated."
+  implementation_tests:
+    - feature_warmup_defaults_to_vo
+    - exact_threshold_is_inclusive
+    - block_cut_allows_increases
+    - step_up_caps_at_full_weight
+    - breadth_uses_only_same_day_closes
+    - recovery_executes_cut_before_restore
+    - recovery_stop_and_state_reset
+    - close_signal_executes_at_next_open

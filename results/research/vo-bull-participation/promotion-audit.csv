@@ -1,0 +1,15 @@
+model,rolling_pass,stress_pass,actual_risk_pass,fee_0_2_pass,positive_excess_years,largest_positive_year_share,annual_distribution_pass,all_non_parameter_gates_pass
+recovery_10_breadth2_cool95,True,False,True,True,5,0.5989339341,False,False
+consensus_20_60_120_n3_block_cut,True,True,True,True,1,1.0000000000,False,False
+riskadj_h60_t15_step_up,True,False,True,True,2,0.9943593981,False,False
+recovery_15_breadth2_cool95,True,False,True,True,4,0.5017781612,False,False
+cool_s10_l60_r95_block_cut,True,True,True,True,1,1.0000000000,False,False
+cool_s5_l30_r80_block_cut,True,True,True,True,2,0.6228974208,False,False
+cool_s5_l60_r65_block_cut,True,True,True,True,1,1.0000000000,False,False
+cool_s10_l60_r65_block_cut,True,True,True,True,1,1.0000000000,False,False
+riskadj_h60_t15_block_cut,True,True,True,True,1,1.0000000000,False,False
+cool_s10_l30_r80_block_cut,True,True,True,True,1,1.0000000000,False,False
+breadth_price_sma_h60_n3_block_cut,True,True,True,True,2,0.8011932110,False,False
+cool_s10_l30_r95_block_cut,True,True,True,True,1,1.0000000000,False,False
+riskadj_h20_t10_block_cut,True,True,True,True,2,0.7042361915,False,False
+riskadj_h20_t15_block_cut,True,True,True,True,1,1.0000000000,False,False

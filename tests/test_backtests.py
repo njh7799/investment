@@ -23,6 +23,13 @@ from backtests.vo_upside import apply_upside_override, directional_features, var
 from backtests.ma_research import apply_vo_trend, moving_average_score
 from backtests.ma_research import signal_specs as ma_signal_specs
 from backtests.ma_research import variant_specs as ma_variant_specs
+from backtests.vo_bull import (
+    bullish_breadth,
+    confirmed_recovery_weights,
+    multi_horizon_consensus,
+    risk_adjusted_trend,
+    variant_specs as bull_variant_specs,
+)
 
 
 def prices(values, opens=None, start="2024-01-02"):
@@ -360,3 +367,57 @@ def test_three_percent_rule_does_not_recheck_signal_at_next_open():
 
     assert result.trades.iloc[-1].TargetWeight == pytest.approx(0.8)
     assert result.positions.iloc[-1].Shares == 8
+
+
+def test_vo_bull_research_grid_is_preregistered_and_unique():
+    variants = bull_variant_specs()
+    assert len(variants) == 68
+    assert len({variant.name for variant in variants}) == 68
+
+
+def test_risk_adjusted_trend_uses_only_trailing_values():
+    index = pd.bdate_range("2024-01-02", periods=23)
+    close = pd.Series([100.0 + value for value in range(23)], index=index)
+    original = risk_adjusted_trend(close, 20)
+    revised = close.copy()
+    revised.iloc[-1] = 1000.0
+    updated = risk_adjusted_trend(revised, 20)
+    pd.testing.assert_series_equal(original.iloc[:-1], updated.iloc[:-1])
+    assert original.iloc[:20].isna().all()
+
+
+def test_breadth_exact_minimum_is_inclusive_and_requires_warmup():
+    index = pd.bdate_range("2024-01-02", periods=4)
+    closes = pd.DataFrame({
+        "QQQ": [10.0, 10.0, 11.0, 11.0],
+        "SPY": [10.0, 10.0, 11.0, 11.0],
+        "IWM": [10.0, 10.0, 9.0, 9.0],
+    }, index=index)
+    signal = bullish_breadth(closes, kind="return", horizon=2, minimum=2)
+    assert not signal.iloc[1]
+    assert signal.iloc[2]
+
+
+def test_multi_horizon_consensus_counts_exact_boundary():
+    close = pd.Series([10.0, 9.0, 10.0, 11.0], index=pd.bdate_range("2024-01-02", periods=4))
+    signal = multi_horizon_consensus(close, (1, 2, 3), 2)
+    assert not signal.iloc[2]
+    assert signal.iloc[3]
+
+
+def test_confirmed_recovery_cuts_first_then_restores_and_stops():
+    index = pd.bdate_range("2024-01-02", periods=6)
+    base = pd.Series([1.0, 0.5, 0.5, 0.5, 0.5, 1.0], index=index)
+    close = pd.Series([100.0, 100.0, 109.0, 110.0, 99.0, 101.0], index=index)
+    confirmation = pd.Series([True] * 6, index=index)
+    weights = confirmed_recovery_weights(base, close, confirmation, 0.10)
+    assert list(weights) == [1.0, 0.5, 0.5, 1.0, 0.5, 1.0]
+
+
+def test_confirmed_recovery_resets_on_second_cut():
+    index = pd.bdate_range("2024-01-02", periods=5)
+    base = pd.Series([1.0, 0.5, 0.5, 0.0, 0.0], index=index)
+    close = pd.Series([100.0, 100.0, 111.0, 110.0, 122.0], index=index)
+    confirmation = pd.Series([True] * 5, index=index)
+    weights = confirmed_recovery_weights(base, close, confirmation, 0.10)
+    assert list(weights) == [1.0, 0.5, 1.0, 0.0, 0.5]

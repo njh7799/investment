@@ -1,0 +1,32 @@
+{
+  "asset_sha256": {
+    "IWM.csv": "856c9434bb55955b65fa88157d910b64a33021224a950feff6e5511420cf7f3c",
+    "QQQ.csv": "74032ddfc59eb91cdc004c604c16d6a121a7ed1286d7c13df4e7230ceac84349",
+    "SPY.csv": "edfe53dcbb2de0ea5cca952fb5e08fd1d3973ed8543737add13712890c264e4f",
+    "TQQQ.csv": "8fe3a45dad0565964f0ffdab08e93dd1208bb3991293be445af33fdb15fee1ba"
+  },
+  "base_fee_rate": 0.001,
+  "generated_through": "2026-08-07",
+  "initial_cash": 100000,
+  "preregistered_commit": "d5ec4cc",
+  "preregistration": "docs/research/preregistrations/batch-08-vo-bull-participation.yaml",
+  "selection_data_end": "2025-12-31",
+  "shortlist": [
+    "recovery_10_breadth2_cool95",
+    "consensus_20_60_120_n3_block_cut",
+    "riskadj_h60_t15_step_up",
+    "recovery_15_breadth2_cool95",
+    "cool_s10_l60_r95_block_cut",
+    "cool_s5_l30_r80_block_cut",
+    "cool_s5_l60_r65_block_cut",
+    "cool_s10_l60_r65_block_cut",
+    "riskadj_h60_t15_block_cut",
+    "cool_s10_l30_r80_block_cut",
+    "breadth_price_sma_h60_n3_block_cut",
+    "cool_s10_l30_r95_block_cut",
+    "riskadj_h20_t10_block_cut",
+    "riskadj_h20_t15_block_cut"
+  ],
+  "shortlist_limit": 20,
+  "variant_count": 68
+}

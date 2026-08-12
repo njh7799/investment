@@ -6,3 +6,4 @@
 | --- | --- | --- | --- | --- |
 | 2026-08-09 | automation-2 / 1회차 | 신규 후보 | 예 | FAA 기본형 신규 백테스트; GTAA·PAA2 원전 차이 보정; 전략 승격 없음 |
 | 2026-08-10 | automation-2 / 2회차 | 재현 불가 | 예 | ERC 실증 관례로 기존 risk parity 기록 보완; ERC 수치 실패·Dual Momentum T-bill 제약 기록 |
+| 2026-08-12 | automation-2 / 3회차 | 신규 후보 | 예 | Permanent Portfolio 15/35 신규 백테스트·외부 참고 전략 승격; GTAA-5·VAA-G4 중복 확인 |

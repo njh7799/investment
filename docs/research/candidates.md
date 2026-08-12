@@ -2,6 +2,8 @@
 
 아직 VO 기본 전략을 대체하거나 addon으로 승격한 후보는 없다. `가격 회복 확인형 10~15%`는 수익 지표의 반복 개선이 확인됐지만 MDD와 Time underwater가 악화되고, 규칙을 만든 2026년이 표본 내 자료이므로 미관측 기간 검증 후보로만 보류한다. 8차 배치에서 시장 폭과 변동성 냉각 확인을 추가해도 개선이 주로 2020년에 집중되고 닷컴 MDD가 악화돼 후보 지위를 올리지 않았다. 정확한 규칙과 결과는 [VO 급상승 대응 연구](vo-upside-recovery.md)와 [8차 배치](batches/08-vo-bull-participation.md)를 따른다.
 
+10차 Permanent Portfolio 15/35는 연례 동일비중과 비교한 독립 목적 게이트를 통과해 [외부 참고 전략](../strategies/permanent-portfolio/)으로 승격했다. VO와 다른 저위험 자산배분 목적이므로 VO 대체·addon 후보에는 포함하지 않는다. 상세 결과는 [10차 배치 보고서](batches/10-permanent-portfolio.md)를 따른다.
+
 1차 배치에서는 실제 TQQQ 기간, 최근 10년, 5·10년 롤링 기간의 수익·MDD·회복 기간을 함께 비교했을 때 VO보다 일관되게 좋은 모델이 없었다. 상세 결과는 [1차 배치 보고서](batches/01-single-asset-timing.md)를 따른다.
 
 2차 BLL 규칙도 후보를 만들지 못했다. 최근 10년에는 일부 장기 VMA가 강했지만 실제 전체·합성 전체·롤링 최악 구간에서 수익과 위험의 일관성이 깨졌다. 상세 결과는 [2차 배치 보고서](batches/02-bll-technical-rules.md)를 따른다.

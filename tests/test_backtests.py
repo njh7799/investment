@@ -8,6 +8,7 @@ from backtests.core import MarketData, run_weight_strategy
 from backtests.models import build_target_weights
 from backtests.documented import causal_reference_high, run_three_percent_rule, run_vr_5
 from backtests.portfolio import run_portfolio_strategy
+from backtests.permanent import PERMANENT_ASSETS, permanent_band_trigger, run_permanent_portfolio
 from backtests.allocation_models import (
     DAA_CANARY,
     DAA_G12_RISKY,
@@ -87,6 +88,41 @@ def test_multi_asset_sells_before_buying_and_uses_integer_shares():
     result = run_portfolio_strategy({"A": a, "B": b}, weights, initial_cash=105, fee_rate=0)
     assert list(result.trades.Side) == ["BUY", "SELL", "BUY"]
     assert result.positions.iloc[-1].BShares == 5
+
+
+def test_permanent_band_boundaries_are_strict():
+    assert not permanent_band_trigger(pd.Series({"SPY": 0.15, "TLT": 0.25, "GLD": 0.25, "SHY": 0.35}))
+    assert permanent_band_trigger(pd.Series({"SPY": 0.149, "TLT": 0.251, "GLD": 0.25, "SHY": 0.35}))
+    assert permanent_band_trigger(pd.Series({"SPY": 0.35, "TLT": 0.25, "GLD": 0.25, "SHY": 0.351}))
+
+
+def test_permanent_portfolio_rebalances_only_after_annual_outside_band_signal():
+    index = pd.to_datetime(["2023-01-03", "2023-06-30", "2023-12-29", "2024-01-02"])
+    assets = {}
+    for name in PERMANENT_ASSETS:
+        values = [10.0, 10.0, 10.0, 10.0]
+        if name == "SPY":
+            values = [10.0, 30.0, 30.0, 30.0]
+        assets[name] = pd.DataFrame({column: values for column in ["Open", "High", "Low", "Close"]}, index=index)
+
+    result = run_permanent_portfolio(assets, initial_cash=1_000, fee_rate=0)
+
+    assert result.trades.index.unique().tolist() == [index[0], index[-1]]
+    assert result.trades.loc[index[0]].Side.eq("BUY").all()
+    assert "SELL" in set(result.trades.loc[index[-1]].Side)
+
+
+def test_permanent_last_annual_signal_remains_unfilled():
+    index = pd.to_datetime(["2023-01-03", "2023-12-29"])
+    assets = {}
+    for name in PERMANENT_ASSETS:
+        values = [10.0, 10.0] if name != "SPY" else [10.0, 30.0]
+        assets[name] = pd.DataFrame({column: values for column in ["Open", "High", "Low", "Close"]}, index=index)
+
+    result = run_permanent_portfolio(assets, initial_cash=1_000, fee_rate=0)
+
+    assert result.trades.index.nunique() == 1
+    assert result.trades.index[0] == index[0]
 
 
 def test_summary_counts_one_rebalance_date_for_multiple_orders():

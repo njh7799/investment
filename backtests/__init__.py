@@ -5,6 +5,7 @@ from .metrics import summarize
 from .models import BATCHES, MODEL_SPECS, build_target_weights
 from .documented import causal_reference_high, run_three_percent_rule, run_vr_5
 from .portfolio import common_index, load_assets, run_portfolio_strategy
+from .permanent import PERMANENT_ASSETS, permanent_band_trigger, run_permanent_portfolio
 
 __all__ = [
     "BacktestResult",
@@ -21,4 +22,7 @@ __all__ = [
     "common_index",
     "load_assets",
     "run_portfolio_strategy",
+    "PERMANENT_ASSETS",
+    "permanent_band_trigger",
+    "run_permanent_portfolio",
 ]

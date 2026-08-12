@@ -1,0 +1,21 @@
+{
+  "asset_sha256": {
+    "GLD": "a5ab86932ad37acf60ecf5fc9f4e7510a42d12bf705af699ac91ff577b182b44",
+    "SHY": "a1c1a8722ae49063819179328a173a81fc68b5acc47e8775a677d39b6fe17c25",
+    "SPY": "28963098ef9958aa7c1f360ccb29c8857c429c2e2054bcdf9ff5d1cc59342e87",
+    "TLT": "b77676de0da86e915c0d7af9029871a98aec66fbfb16c78267d43f8323a02246"
+  },
+  "base_fee_rate": 0.001,
+  "common_start": "2004-11-18",
+  "generated_through": "2026-08-11",
+  "initial_cash": 100000,
+  "models": [
+    "permanent_buyhold",
+    "permanent_annual_equal",
+    "permanent_band",
+    "tqqq_hold",
+    "qqq_hold",
+    "vo"
+  ],
+  "preregistration": "docs/research/preregistrations/batch-10-permanent-portfolio.yaml"
+}

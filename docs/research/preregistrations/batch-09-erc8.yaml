@@ -1,0 +1,92 @@
+id: batch-09-erc8
+status: registered
+preregistered_commit: this_file_introducing_commit
+blindness: full
+discovered_at: 2026-08-10
+discovery_agent_context: isolated
+existing_research_seen: false
+information_leaks: []
+
+candidates:
+  - name: erc_8etf_illustrative_convention
+    source:
+      title: "On the Properties of Equally-Weighted Risk Contributions Portfolios"
+      url: "https://www.thierry-roncalli.com/download/erc.pdf"
+      author: "Sébastien Maillard, Thierry Roncalli and Jérôme Teïletche"
+      date: "2008-06"
+    original_objective: "Allocate total portfolio volatility equally across assets without estimating expected returns."
+    independent_benchmark: erc8_equal_monthly
+    naming_constraint: "This is an ERC-method 8-ETF adaptation using the paper's illustrative estimation convention, not the paper's global portfolio or a universal ERC default."
+    asset_universe: [SPY, IWM, VGK, EWJ, EEM, IEF, HYG, GSG]
+    signal:
+      observation_time: month_end_close
+      frequency: monthly
+      formula: "Find long-only fully invested weights whose fractional variance contributions w_i * (Sigma w)_i / (w' Sigma w) are all 1/8."
+      warmup: "252 complete common daily adjusted-close returns through a month-end."
+      boundaries: "Every asset has a lower weight bound of 1e-8 and an upper bound of 1."
+      covariance_window: "The latest 252 simple daily adjusted-close returns on the common asset index, including the month-end return."
+      covariance: "Demeaned sample covariance with divisor n-1. No annualization because a common scalar does not change ERC weights."
+      solver:
+        method: SLSQP
+        objective: "Sum of squared deviations of the eight fractional variance contributions from 1/8."
+        initial_weights: equal
+        equality_constraint: "sum(weights) = 1"
+        lower_bound: 0.00000001
+        upper_bound: 1.0
+        ftol: 0.000000000001
+        maxiter: 2000
+        success_tolerance: "Maximum absolute fractional contribution error <= 1e-6."
+        failure_rule: "Raise an error and produce no result; do not use shrinkage, jitter, inverse volatility or prior weights as fallback."
+      tie_handling: not_applicable
+    parameters:
+      daily_returns: 252
+      risk_budget_each: 0.125
+      rebalance_frequency: monthly
+      long_only: true
+      fully_invested: true
+    execution:
+      fill_time: next_common_trading_day_open
+      rebalance_rule: "Rebalance all eight assets to the new ERC target on the first common trading day after each month-end signal, including repeated targets."
+      fee_rate_each_side: 0.001
+      slippage: 0
+      tax: 0
+      cash_return: 0
+    source_differences:
+      - "The paper's 13-series global illustration is reduced to eight available ETFs."
+      - "VGK combines European markets, EEM combines three regional emerging-equity series, and euro government bonds plus emerging-market bonds are omitted."
+      - "EWJ, IEF, HYG and GSG are tradable proxies rather than the paper's exact total-return indices."
+      - "The paper says one-year daily covariance but does not specify 252 returns, simple returns, ddof, optimizer or numerical tolerance; these are preregistered implementation conventions."
+      - "The paper rebalances on the last trading day and excludes costs; this implementation trades at the next common open with a 0.1% one-way fee."
+
+evaluation:
+  fixed_periods:
+    - {name: common_full, start: first_common_trading_day_after_first_valid_signal, end: data_end}
+    - {name: recent_10y, start: "2016-08-01", end: data_end}
+  rolling_windows_years: [5, 10]
+  stress_periods:
+    - {name: global_financial_crisis_available, start: first_common_trading_day_after_first_valid_signal, end: "2009-03-09"}
+    - {name: covid_crash, start: "2020-02-19", end: "2020-03-23"}
+    - {name: 2022_bear, start: "2021-11-19", end: "2022-12-28"}
+  fee_sensitivity: [0.001, 0.002, 0.005]
+  integration_benchmarks: [tqqq_hold, qqq_hold, vo]
+  promotion_roles: [independent_strategy]
+  promotion_gate:
+    - "In both fixed periods, CAGR is at least erc8_equal_monthly and MDD is no worse."
+    - "For both 5-year and 10-year rolling windows, median CAGR is at least the benchmark while worst MDD and worst longest TUW are no worse."
+    - "MDD improves in at least two of the three registered stress periods."
+    - "The direction of the fixed-period advantage remains at a 0.2% one-way fee."
+    - "Annual rebalance dates do not exceed 20, unless the 0.5% fee result still passes the fixed-period gate."
+
+verification:
+  source_reviewer: isolated_source_verify_08
+  source_review_complete: true
+  source_notes:
+    - "One-year daily covariance and month-end monthly rebalancing are common settings of the paper's illustrative backtests, not universal ERC definition parameters."
+    - "The eight-ETF universe changes both the covariance structure and equal risk budget from the paper's 13-series global illustration."
+    - "No source performance number was used to select or parameterize this candidate."
+  implementation_tests:
+    - covariance_uses_exactly_252_past_returns
+    - equal_covariance_produces_equal_weights
+    - solved_fractional_risk_contributions_are_equal
+    - future_prices_do_not_change_past_weights
+    - close_signal_executes_at_next_common_open

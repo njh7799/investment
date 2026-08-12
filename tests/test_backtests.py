@@ -11,6 +11,7 @@ from backtests.portfolio import run_portfolio_strategy
 from backtests.allocation_models import (
     DAA_CANARY,
     DAA_G12_RISKY,
+    ERC8_ASSETS,
     FAA_ASSETS,
     PAA_DEFENSIVE,
     PAA_RISKY,
@@ -18,6 +19,7 @@ from backtests.allocation_models import (
     VAA_G4_RISKY,
     build_allocation_weights,
     _ordinal_ranks,
+    solve_equal_risk_contribution,
 )
 from backtests.vo_upside import apply_upside_override, directional_features, variant_specs
 from backtests.ma_research import apply_vo_trend, moving_average_score
@@ -191,6 +193,54 @@ def test_faa_signal_does_not_change_when_future_prices_change():
     revised_weights = build_allocation_weights("faa_default", revised)
 
     pd.testing.assert_frame_equal(original_weights.iloc[:-1], revised_weights.iloc[:-1])
+
+
+def test_erc_equal_covariance_produces_equal_weights():
+    solved = solve_equal_risk_contribution(np.eye(4))
+
+    assert np.allclose(solved, 0.25, atol=1e-8)
+
+
+def test_erc_solver_equalizes_fractional_risk_contributions():
+    covariance = np.array(
+        [
+            [0.04, 0.006, 0.004],
+            [0.006, 0.09, 0.012],
+            [0.004, 0.012, 0.16],
+        ]
+    )
+    solved = solve_equal_risk_contribution(covariance)
+    fractional = solved * (covariance @ solved) / (solved @ covariance @ solved)
+
+    assert np.allclose(fractional, 1.0 / 3.0, atol=1e-6)
+
+
+def test_erc_waits_for_exactly_252_returns():
+    index = pd.bdate_range("2023-01-02", periods=253)
+    closes = pd.DataFrame(
+        {name: 100.0 + (offset + 1) * np.arange(len(index)) + 0.01 * np.square(np.arange(len(index)) % (offset + 2)) for offset, name in enumerate(ERC8_ASSETS)},
+        index=index,
+    )
+
+    weights = build_allocation_weights("erc8", closes)
+
+    assert (weights.loc[: index[-2]].sum(axis=1) == 0.0).all()
+    assert weights.loc[index[-1]].sum() == pytest.approx(1.0)
+
+
+def test_erc_future_price_does_not_change_past_weights():
+    index = pd.bdate_range("2022-01-03", periods=520)
+    closes = pd.DataFrame(
+        {name: 100.0 + (offset + 1) * np.arange(len(index)) + np.sin(np.arange(len(index)) / (offset + 2)) for offset, name in enumerate(ERC8_ASSETS)},
+        index=index,
+    )
+    future_date = pd.bdate_range(index[-1] + pd.Timedelta(days=1), periods=1)[0]
+    revised = pd.concat([closes, (closes.iloc[[-1]] * 1.001).set_axis([future_date])])
+
+    original_weights = build_allocation_weights("erc8", closes)
+    revised_weights = build_allocation_weights("erc8", revised)
+
+    pd.testing.assert_frame_equal(original_weights, revised_weights.loc[index], check_freq=False)
 
 
 def test_vo_boundaries_and_warmup():

@@ -7,5 +7,6 @@
 | [VO](volatility-allocation/) | 저장소 기본 전략 |
 | [IXIC 3% 규칙](ixic-three-percent-rule/) | 독립 전략 |
 | [라오어 VR 5.0](value-rebalancing/) | 외부 참고 전략 |
+| [Permanent Portfolio 15/35](permanent-portfolio/) | 외부 참고 전략 |
 
 각 전략의 `README.md`가 기본 규칙 전체를 정의한다. `variants/`는 기본값을 대체하는 상호 배타적 설정, `addons/`는 기본 규칙 위에 선택적으로 조합하는 설정이다.

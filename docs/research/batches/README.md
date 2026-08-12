@@ -13,3 +13,4 @@
 | [7차](07-flexible-asset-allocation.md) | 블라인드 탐색으로 찾은 FAA 기본형의 독립 평가 |
 | [8차](08-vo-bull-participation.md) | 위험조정 추세·변동성 냉각·시장 폭·확인형 회복을 이용한 VO 상승 참여 개선 |
 | [9차](09-erc-8etf.md) | ERC 공식을 8개 ETF에 적용한 사전등록 수치 재현성 검사 |
+| [10차](10-permanent-portfolio.md) | Permanent Portfolio의 연례 15/35 리밸런싱 밴드 독립 평가 |

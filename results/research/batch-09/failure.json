@@ -1,0 +1,19 @@
+{
+  "asset_sha256": {
+    "EEM": "fd41f593db01312e80f300cd5a465a8b0880f1adcf9f3f9b79c7cf3d3da1640c",
+    "EWJ": "4806bd9a433e9281f884f458a5009f999c8762b3996dead2253e9e693fd50bd9",
+    "GSG": "ce8022e45300d11bb0e0c39d466387a632b50b3ab53142251c72e5305be38373",
+    "HYG": "a3f2c3a1b1f39c4e113c943e2202d8aa86bb8ce95606f4c5c207f7e97f5de565",
+    "IEF": "db2ed06bd892abc66daea5e92fd7de9095c800f65955cb656454500fb03cc78b",
+    "IWM": "856c9434bb55955b65fa88157d910b64a33021224a950feff6e5511420cf7f3c",
+    "SPY": "28963098ef9958aa7c1f360ccb29c8857c429c2e2054bcdf9ff5d1cc59342e87",
+    "VGK": "82ad7385a74a9c6462119e4f3dbef5054e5ebdbd9c4f03ac85aa3095c514c125"
+  },
+  "error": "ERC signal failed at 2008-04-30: optimizer reported success but maximum fractional risk-contribution error was 0.12500000324988203, above the preregistered 1e-6 tolerance",
+  "failed_signal_date": "2008-04-30",
+  "generated_at": "2026-08-10",
+  "model": "erc8",
+  "preregistration": "docs/research/preregistrations/batch-09-erc8.yaml",
+  "result_status": "failed_before_backtest",
+  "solver_fallback_used": false
+}

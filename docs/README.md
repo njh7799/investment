@@ -26,5 +26,6 @@
 | [VO(변동성 배분)](strategies/volatility-allocation/) | 기본 전략 | TQQQ 실현 변동성으로 비중을 조절하며 30일 변동성 기준 100%·50%·0% 배분을 기본 설정으로 사용한다. |
 | [IXIC 3% 규칙](strategies/ixic-three-percent-rule/) | 독립 전략 | IXIC 급락으로 공황·대공황을 판정하고 TQQQ 하락 구간에 따라 비중을 조절한다. |
 | [라오어 VR 5.0](strategies/value-rebalancing/) | 외부 참고 | TQQQ 평가금을 목표 V 밴드 안에서 관리하는 거치식 비교 전략이다. |
+| [Permanent Portfolio 15/35](strategies/permanent-portfolio/) | 외부 참고 | 주식·장기 국채·금·현금을 25%씩 보유하고 연례 15/35 밴드 이탈 때만 재조정한다. |
 
 기본 전략은 별도 전략명이 없는 백테스트의 기준 모델이다. 연구 후보는 규칙과 파라미터가 확정되지 않았으므로 결과를 기본 전략으로 해석하지 않는다. 외부 참고 전략은 원저작자의 방법론과 저장소의 재현 가정을 구분해 비교 목적으로만 사용한다.

@@ -1,0 +1,84 @@
+id: batch-10-permanent-portfolio
+status: registered
+preregistered_commit: this_file_introducing_commit
+blindness: full
+discovered_at: 2026-08-12
+discovery_agent_context: isolated
+existing_research_seen: false
+information_leaks: []
+
+candidates:
+  - name: harry_browne_permanent_portfolio_band
+    source:
+      title: "Fail-Safe Investing: Lifelong Financial Security in 30 Minutes"
+      url: "https://us.macmillan.com/books/9780312263218/failsafeinvesting/"
+      author: "Harry Browne"
+      date: "1999-09"
+    original_objective: "Preserve purchasing power across prosperity, inflation, deflation and recession with a simple low-maintenance allocation."
+    independent_benchmark: permanent_annual_equal
+    secondary_benchmark: permanent_buyhold
+    asset_universe: [SPY, TLT, GLD, SHY]
+    source_assets: [broad_us_stocks, longest_maturity_us_treasury_bonds, physical_gold, treasury_bill_cash]
+    signal:
+      observation_time: annual_last_common_trading_day_close
+      frequency: annual
+      formula: "Start at 25% in each asset. At the last common trading-day close of each calendar year, compute each asset's weight from integer shares at adjusted closes plus residual cash. If any asset weight is strictly below 15% or strictly above 35%, target all four assets back to 25%; otherwise do nothing."
+      warmup: none
+      boundaries: "Exactly 15% or 35% does not trigger. Residual cash is excluded from the four asset numerators but included in total portfolio equity."
+      intrayear_checks: excluded
+      initial_allocation: "Buy all four assets to 25% targets at the first selected-period open."
+    parameters:
+      target_weight_each: 0.25
+      lower_trigger_strictly_below: 0.15
+      upper_trigger_strictly_above: 0.35
+      review_frequency: annual
+      review_date: last_common_trading_day_of_calendar_year
+    execution:
+      fill_time: next_common_trading_day_open
+      rebalance_rule: "On a triggered annual close, sell before buying at the next common open and floor desired shares to integers. A final-data signal without a later open remains unfilled."
+      fee_rate_each_side: 0.001
+      slippage: 0
+      tax: 0
+      cash_return: 0
+    source_differences:
+      - "SPY represents US large caps rather than the full US stock market."
+      - "TLT is a rolling 20+ year Treasury ETF rather than individually held longest-maturity roughly 30-year Treasury bonds."
+      - "GLD is a fund claim with fees rather than physically held gold coins with custody diversification."
+      - "SHY has 1-3 year duration and price risk rather than Treasury bills or a Treasury-only money-market holding."
+      - "The author does not name an annual review date; the last common trading-day close is preregistered."
+      - "Optional intrayear checks after noticing large moves are excluded to keep one deterministic default."
+      - "Adjusted ETF OHLC, next-open execution and transaction costs are repository conventions."
+
+evaluation:
+  fixed_periods:
+    - {name: common_full, start: first_common_asset_trading_day, end: data_end}
+    - {name: recent_10y, start: "2016-08-01", end: data_end}
+  rolling_windows_years: [5, 10]
+  stress_periods:
+    - {name: global_financial_crisis, start: "2007-10-31", end: "2009-03-09"}
+    - {name: covid_crash, start: "2020-02-19", end: "2020-03-23"}
+    - {name: 2022_bear, start: "2021-11-19", end: "2022-12-28"}
+  fee_sensitivity: [0.001, 0.002, 0.005]
+  integration_benchmarks: [tqqq_hold, qqq_hold, vo]
+  promotion_roles: [independent_strategy, external_reference_strategy]
+  promotion_gate:
+    - "In both fixed periods, rebalance dates are no more than permanent_annual_equal, CAGR is no more than 0.5 percentage points lower, and MDD is no more than 2 percentage points worse."
+    - "For both 5-year and 10-year rolling windows, median CAGR is no more than 0.5 percentage points lower, worst MDD is no more than 2 percentage points worse, and worst longest TUW is no more than 10% longer than permanent_annual_equal."
+    - "No registered stress-period MDD is more than 2 percentage points worse than permanent_annual_equal."
+    - "The fixed-period preservation conditions remain at a 0.2% one-way fee."
+    - "Annual rebalance dates do not exceed 20."
+
+verification:
+  source_reviewer: isolated_source_verify_10
+  source_review_complete: true
+  source_notes:
+    - "The 25/25/25/25 allocation and strict below-15/above-35 triggers are author defaults."
+    - "Annual review is required; noticing a large intrayear move and checking early is optional rather than mandatory."
+    - "The annual calendar date, exact instruments, transaction costs and execution price are not fixed by the author."
+  implementation_tests:
+    - initial_equal_allocation
+    - exact_15_and_35_do_not_trigger
+    - outside_band_rebalances_all_assets
+    - annual_review_only
+    - close_signal_executes_at_next_common_open
+    - last_day_signal_remains_unfilled

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
+from scipy.optimize import minimize
 
 
 ALLOCATION_MODELS = {
@@ -18,6 +20,7 @@ VAA_CASH = ("SHY", "IEF", "LQD")
 DAA_G12_RISKY = ("SPY", "IWM", "QQQ", "VGK", "EWJ", "EEM", "VNQ", "GSG", "GLD", "TLT", "HYG", "LQD")
 DAA_CANARY = ("EEM", "AGG")
 FAA_ASSETS = ("SPY", "EFA", "EEM", "SHY", "AGG", "GSG", "VNQ")
+ERC8_ASSETS = ("SPY", "IWM", "VGK", "EWJ", "EEM", "IEF", "HYG", "GSG")
 
 
 def _month_end_dates(close: pd.DataFrame) -> pd.DatetimeIndex:
@@ -54,6 +57,48 @@ def _faa_weights(closes: pd.DataFrame, month_dates: pd.DatetimeIndex) -> pd.Data
     return sparse.reindex(closes.index).ffill().fillna(0.0)
 
 
+def solve_equal_risk_contribution(covariance: pd.DataFrame | np.ndarray) -> np.ndarray:
+    matrix = np.asarray(covariance, dtype=float)
+    count = matrix.shape[0]
+    if matrix.shape != (count, count) or not np.isfinite(matrix).all():
+        raise ValueError("covariance must be a finite square matrix")
+
+    def contributions(weights: np.ndarray) -> np.ndarray:
+        variance = float(weights @ matrix @ weights)
+        if variance <= 0.0:
+            return np.full(count, np.inf)
+        return weights * (matrix @ weights) / variance
+
+    target = np.full(count, 1.0 / count)
+    result = minimize(
+        lambda weights: float(np.square(contributions(weights) - target).sum()),
+        target,
+        method="SLSQP",
+        bounds=[(1e-8, 1.0)] * count,
+        constraints={"type": "eq", "fun": lambda weights: float(weights.sum() - 1.0)},
+        options={"ftol": 1e-12, "maxiter": 2000},
+    )
+    error = float(np.max(np.abs(contributions(result.x) - target)))
+    if not result.success or error > 1e-6:
+        raise RuntimeError(f"ERC solver failed: {result.message}; max contribution error={error}")
+    return result.x / result.x.sum()
+
+
+def _erc8_weights(closes: pd.DataFrame, month_dates: pd.DatetimeIndex) -> pd.DataFrame:
+    daily_returns = closes.loc[:, list(ERC8_ASSETS)].pct_change()
+    sparse = pd.DataFrame(0.0, index=month_dates, columns=closes.columns)
+    for date in month_dates:
+        window = daily_returns.loc[:date].dropna().tail(252)
+        if len(window) < 252:
+            continue
+        covariance = window.cov(ddof=1)
+        try:
+            sparse.loc[date, list(ERC8_ASSETS)] = solve_equal_risk_contribution(covariance)
+        except RuntimeError as error:
+            raise RuntimeError(f"ERC signal failed at {date.date()}: {error}") from error
+    return sparse.reindex(closes.index).ffill().fillna(0.0)
+
+
 def build_allocation_weights(model: str, closes: pd.DataFrame) -> pd.DataFrame:
     index = closes.index
     weights = pd.DataFrame(0.0, index=index, columns=closes.columns)
@@ -76,6 +121,11 @@ def build_allocation_weights(model: str, closes: pd.DataFrame) -> pd.DataFrame:
         return weights
     if model == "faa_default":
         return _faa_weights(closes, month_dates)
+    if model == "erc8_equal_monthly":
+        weights.loc[:, list(ERC8_ASSETS)] = 1.0 / len(ERC8_ASSETS)
+        return weights
+    if model == "erc8":
+        return _erc8_weights(closes, month_dates)
     month_close = closes.loc[month_dates].copy()
     month_close.index = month_close.index.to_period("M")
     sparse = pd.DataFrame(0.0, index=month_dates, columns=closes.columns)

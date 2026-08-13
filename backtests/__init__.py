@@ -6,6 +6,7 @@ from .models import BATCHES, MODEL_SPECS, build_target_weights
 from .documented import causal_reference_high, run_three_percent_rule, run_vr_5
 from .portfolio import common_index, load_assets, run_portfolio_strategy
 from .permanent import PERMANENT_ASSETS, permanent_band_trigger, run_permanent_portfolio
+from .jordan import jordan_open_regimes, run_jordan_public_proxy, run_jordan_tqqq
 
 __all__ = [
     "BacktestResult",
@@ -25,4 +26,7 @@ __all__ = [
     "PERMANENT_ASSETS",
     "permanent_band_trigger",
     "run_permanent_portfolio",
+    "jordan_open_regimes",
+    "run_jordan_public_proxy",
+    "run_jordan_tqqq",
 ]

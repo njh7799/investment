@@ -73,7 +73,7 @@ def download_symbol(symbol: str, through: pd.Timestamp | None = None) -> pd.Data
         yf.config.debug.hide_exceptions = False
     end = None
     if through is not None:
-        end = (pd.Timestamp(through) + pd.Timedelta("1D")).strftime("%Y-%m-%d")
+        end = (pd.Timestamp(through) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
     history = yf.Ticker(symbol).history(
         period="max",
         end=end,
@@ -191,7 +191,7 @@ def latest_settled_session(now: pd.Timestamp | None = None) -> pd.Timestamp:
     new_york_day = pd.Timestamp(current.tz_convert(NEW_YORK).date())
     if calendar.is_session(new_york_day):
         close = calendar.session_close(new_york_day)
-        if current >= close + pd.Timedelta("2h"):
+        if current >= close + pd.Timedelta(hours=2):
             return new_york_day
         return pd.Timestamp(calendar.previous_session(new_york_day)).tz_localize(None)
 

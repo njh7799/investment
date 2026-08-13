@@ -1,0 +1,23 @@
+{
+  "actual_tqqq_start": "2010-02-11",
+  "asset_sha256": {
+    "IXIC": "5244f93930073e8635eacc744ffa149d57e952df79ef43b50bb77940833596a1",
+    "QQQ": "2c7fb827859342416b645cd0b1d793fc7e1bc2bd4402f1ee0d6b348e8facc97f",
+    "TLT": "b77676de0da86e915c0d7af9029871a98aec66fbfb16c78267d43f8323a02246",
+    "TQQQ": "9c2c5e55db8abc1b847a8ddf301400d8ba1e1c571a8159b0b3e5b01bb91e79a9"
+  },
+  "base_fee_rate": 0.001,
+  "generated_through": "2026-08-12",
+  "initial_cash": 100000,
+  "models": [
+    "jordan_public_proxy",
+    "qqq_hold",
+    "jordan_tqqq_full_exit",
+    "jordan_tqqq_one_third",
+    "jordan_tqqq_two_thirds",
+    "tqqq_hold",
+    "vo",
+    "three_percent"
+  ],
+  "preregistration": "docs/research/preregistrations/batch-11-jordan-ixic-three-percent.yaml"
+}

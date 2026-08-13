@@ -9,6 +9,7 @@ from backtests.models import build_target_weights
 from backtests.documented import causal_reference_high, run_three_percent_rule, run_vr_5
 from backtests.portfolio import run_portfolio_strategy
 from backtests.permanent import PERMANENT_ASSETS, permanent_band_trigger, run_permanent_portfolio
+from backtests.jordan import jordan_open_regimes, run_jordan_tqqq
 from backtests.allocation_models import (
     DAA_CANARY,
     DAA_G12_RISKY,
@@ -121,6 +122,60 @@ def test_permanent_last_annual_signal_remains_unfilled():
 
     result = run_permanent_portfolio(assets, initial_cash=1_000, fee_rate=0)
 
+    assert result.trades.index.nunique() == 1
+    assert result.trades.index[0] == index[0]
+
+
+def test_jordan_exact_minus_three_executes_at_next_open():
+    index = pd.bdate_range("2024-01-02", periods=4)
+    ixic = prices([100.0, 97.0, 97.0, 97.0], opens=[100.0] * 4)
+    tqqq = prices([10.0] * 4, opens=[10.0, 10.0, 20.0, 10.0])
+    data = MarketData(ixic=ixic, qqq=tqqq, tqqq=tqqq)
+
+    result = run_jordan_tqqq(data, panic_weight=0.0, initial_cash=1_000, fee_rate=0)
+
+    assert result.trades.loc[index[0]].Side == "BUY"
+    assert result.trades.loc[index[2]].Side == "SELL"
+    assert result.trades.loc[index[2]].Price == 20.0
+
+
+def test_jordan_four_crashes_in_rolling_month_start_great_panic():
+    index = pd.to_datetime(["2024-01-02", "2024-01-05", "2024-01-12", "2024-01-19", "2024-02-01", "2024-02-02"])
+    close = pd.Series([100.0, 97.0, 94.0, 91.0, 88.0, 88.0], index=index)
+    regimes = jordan_open_regimes(close)
+    assert regimes.iloc[-1] == "great_panic"
+
+
+def test_jordan_flat_resets_streak_and_eighth_rise_exits_next_open():
+    index = pd.bdate_range("2024-01-02", periods=14)
+    close = pd.Series([100.0, 96.0, 97.0, 98.0, 98.0, 99.0, 100.0, 101.0, 102.0, 103.0, 104.0, 105.0, 106.0, 106.0], index=index)
+    regimes = jordan_open_regimes(close)
+    assert regimes.iloc[-1] == "normal"
+    assert (regimes.iloc[2:12] == "panic").all()
+
+
+def test_jordan_new_crash_has_priority_over_eighth_rise():
+    index = pd.bdate_range("2024-01-02", periods=11)
+    close = pd.Series([100.0, 96.0, 97.0, 98.0, 99.0, 100.0, 101.0, 102.0, 103.0, 99.0, 100.0], index=index)
+    regimes = jordan_open_regimes(close)
+    assert regimes.iloc[-1] == "panic"
+
+
+def test_jordan_new_crash_resets_calendar_expiry():
+    index = pd.to_datetime(["2024-01-02", "2024-01-03", "2024-02-02", "2024-02-05", "2024-03-04", "2024-03-06"])
+    close = pd.Series([100.0, 96.0, 96.0, 92.0, 92.0, 92.0], index=index)
+    regimes = jordan_open_regimes(close)
+    assert regimes.loc["2024-02-05"] == "normal"
+    assert regimes.loc["2024-03-04"] == "panic"
+    assert regimes.loc["2024-03-06"] == "normal"
+
+
+def test_jordan_last_day_crash_remains_unfilled():
+    index = pd.bdate_range("2024-01-02", periods=2)
+    ixic = prices([100.0, 96.0])
+    tqqq = prices([10.0, 10.0])
+    data = MarketData(ixic=ixic, qqq=tqqq, tqqq=tqqq)
+    result = run_jordan_tqqq(data, panic_weight=0.0, initial_cash=1_000, fee_rate=0)
     assert result.trades.index.nunique() == 1
     assert result.trades.index[0] == index[0]
 

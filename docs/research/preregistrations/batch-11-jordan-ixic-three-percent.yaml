@@ -1,0 +1,111 @@
+id: batch-11-jordan-ixic-three-percent
+status: registered
+preregistered_commit: this_file_introducing_commit
+blindness: full
+discovered_at: 2026-08-13
+discovery_agent_context: isolated
+existing_research_seen: false
+information_leaks:
+  - "The 2020 book text was not publicly inspectable; the public-profile rules rely on contemporaneous reader summaries corroborated by later author posts."
+
+candidates:
+  - name: jordan_book_public_proxy
+    source:
+      title: "내일의 부 1: 알파편"
+      url: "https://www.yes24.com/product/goods/86361085"
+      author: "김장섭 (조던)"
+      date: "2020-01-29"
+    original_objective: "Exit equity exposure after a rare Nasdaq daily crash and re-enter after a quiet calendar interval or an eight-session rebound."
+    independent_benchmark: qqq_hold
+    asset_universe: [IXIC, QQQ, TLT]
+    signal: &jordan_signal
+      observation_time: daily_close
+      frequency: daily
+      formula: "A crash is IXIC close_t / close_(t-1) - 1 <= -0.03. A crash starts panic and resets expiry to crash date + 1 calendar month + 1 day. Four crashes in the inclusive rolling interval [date - 1 calendar month, date] start great_panic and set expiry to the latest crash + 2 calendar months + 1 day. During either regime, eight consecutive IXIC closes strictly above the prior close end the regime after that close. A new crash has priority over the eighth rise."
+      warmup: one_prior_common_close
+      boundaries: "Exact -3% is a crash. A flat close resets the positive-close streak. Expiry takes effect at the first common open on or after the calendar target."
+      ambiguity_resolution: "Rolling calendar month, strict positive closes, and next-open fills are deterministic repository choices because public source material does not settle them."
+    parameters:
+      normal_asset: QQQ
+      panic_asset: TLT
+      great_panic_asset: TLT
+      crash_threshold_inclusive: -0.03
+      panic_expiry: 1_calendar_month_plus_1_day
+      great_panic_expiry: 2_calendar_months_plus_1_day
+      great_panic_count: 4
+      count_window: inclusive_rolling_1_calendar_month
+      early_exit_positive_closes: 8
+    execution: &execution
+      fill_time: next_common_trading_day_open
+      rebalance_rule: "Start 100% in the normal asset at the first selected open. Trade to the regime target at the next common open, sell before buy, and floor shares to integers. A final-data signal without a later open remains unfilled."
+      fee_rate_each_side: 0.001
+      slippage: 0
+      tax: 0
+      cash_return: 0
+    source_differences:
+      - "QQQ proxies the historically changing world-largest stock because a survivorship-free market-cap leader series is unavailable."
+      - "TLT is a rolling 20+ year Treasury ETF rather than the book-era cash/long-Treasury implementation across changing rate regimes."
+      - "The rolling-month panic count, exact -3% boundary, holiday handling and next-open fills resolve public-source ambiguities."
+      - "The later stake-buying, rebalancing, V-rebound, gold and inflation-hedge variants are excluded."
+
+  - name: jordan_tqqq_leverage_equivalent
+    source:
+      title: "Repository adaptation of the Jordan IXIC -3% state signal"
+      url: "https://brunch.co.kr/@jordan777/4065"
+      author: "research adaptation"
+      date: "2026-08-13"
+    original_objective: "Retain part of TQQQ exposure in an ordinary panic at approximately one unit of unlevered Nasdaq beta while fully exiting clustered crash regimes."
+    independent_benchmark: jordan_tqqq_full_exit
+    asset_universe: [IXIC, TQQQ]
+    signal: *jordan_signal
+    parameters:
+      normal_tqqq_weight: 1.0
+      panic_tqqq_weight_primary: 0.3333333333333333
+      great_panic_tqqq_weight: 0.0
+      robustness_panic_weights: [0.0, 0.6666666666666666]
+      ratio_rationale: "One-third TQQQ is fixed before results as the nominal 3x-leverage equivalent of 100% unlevered Nasdaq exposure. Zero and two-thirds test adjacent risk choices and cannot replace the primary after results."
+    execution: *execution
+    source_differences:
+      - "TQQQ is not the author's original holding and one-third exposure is a research adaptation, not a Jordan rule."
+      - "Before TQQQ inception only the repository's existing QQQ-based 3x synthetic series is allowed."
+      - "Cash earns zero and no stake-buying, ZigZag, ATR, drawdown-band or V-rebound rule is used."
+
+evaluation:
+  fixed_periods:
+    - {name: synthetic_full, start: data_start, end: data_end}
+    - {name: actual_tqqq_full, start: "2010-02-11", end: data_end}
+    - {name: recent_10y, start: "2016-08-01", end: data_end}
+  rolling_windows_years: [5, 10]
+  stress_periods:
+    - {name: dotcom_bust, start: "2000-03-24", end: "2002-10-09"}
+    - {name: global_financial_crisis, start: "2007-10-31", end: "2009-03-09"}
+    - {name: covid_crash, start: "2020-02-19", end: "2020-03-23"}
+    - {name: 2022_bear, start: "2021-11-19", end: "2022-12-28"}
+  fee_sensitivity: [0.001, 0.002, 0.005]
+  integration_benchmarks: [tqqq_hold, qqq_hold, vo, three_percent]
+  promotion_roles: [external_reference_strategy, vo_replacement, vo_addon]
+  public_proxy_gate:
+    - "In actual full and recent 10-year periods, CAGR is no more than 2 percentage points below QQQ hold and MDD improves by at least 5 percentage points."
+    - "For both rolling lengths, median CAGR is no more than 2 percentage points below QQQ and worst MDD improves by at least 5 percentage points."
+    - "No registered stress MDD is more than 5 percentage points worse than QQQ and annual rebalance dates do not exceed 20."
+  tqqq_primary_gate:
+    - "Apply the repository VO replacement and addon thresholds without choosing a robustness weight after results."
+    - "The primary one-third panic weight must also have actual-full and recent-10-year CAGR at least as high as the full-exit variant, while actual-full MDD is no more than 5 percentage points worse."
+    - "At 0.2% one-way fees the qualifying direction must remain and annual rebalance dates must not exceed 20."
+
+verification:
+  source_reviewer: isolated_verify_jordan_3pct
+  source_review_complete: true
+  source_notes:
+    - "The 2018 public post did not sell the long-term world-largest stock; the widely repeated full-exit form belongs to the 2020 book lineage."
+    - "The book lineage, later stake-buying and V-rebound variants must not be mixed."
+    - "Public material leaves the four-crash window, holiday fills, exact boundary and attainable close fill under-specified."
+  implementation_tests:
+    - exact_minus_three_is_crash
+    - signal_executes_next_open
+    - rolling_month_fourth_crash_starts_great_panic
+    - new_crash_resets_calendar_expiry
+    - flat_close_resets_positive_streak
+    - eighth_positive_close_exits_next_open
+    - new_crash_has_priority_over_eighth_rise
+    - last_day_signal_remains_unfilled

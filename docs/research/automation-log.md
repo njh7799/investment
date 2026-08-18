@@ -10,3 +10,4 @@
 | 2026-08-12 | automation-2 / 4회차 | 무변경 | 아니요 | GTAA-5·PAA2·Dual Momentum 모두 기존 조사와 중복; 원전 재검증 내용도 기존 기록과 일치; 포화 1/3 |
 | 2026-08-13 | automation-2 / 5회차 | 중복 갱신 | 예 | Antonacci Parity와 MOP TSMOM 원전 재검증으로 1차 long/cash 변형의 명칭·중복 범위 정정; 두 원전은 현재 데이터로 재현 불가; 포화 0/3 |
 | 2026-08-14 | automation-2 / 6회차 | 재현 불가 | 예 | LAA의 IWD·실시간 UNRATE 제약과 AAA 최종 알고리즘 비공개를 신규 기록; 결과 실행 없음; 포화 0/3 |
+| 2026-08-17 | automation-2 / 7회차 | 재현 불가 | 예 | 7Twelve와 Worldwide Ultimate Buy & Hold를 신규 기록; 필수 자산·팩터 슬리브 부재로 임의 대체 및 결과 실행 없음; 포화 0/3 |

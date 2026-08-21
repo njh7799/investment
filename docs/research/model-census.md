@@ -112,6 +112,16 @@ AAA 논문의 Top5 동일비중과 역변동성은 중간 예시이고, 2013년 
 
 Merriman의 [공식 Ultimate Buy & Hold 자료](https://www.paulmerriman.com/ultimate-buy-and-hold-2026)는 혼합/가치와 대형/소형을 별도 슬리브로 유지하는 구조다. SPY·IWM·EFA로 가치 및 국제 소형 슬리브까지 대체하면 팩터 분산이라는 전략 정체성이 사라진다. 두 후보 모두 규칙 자체는 단순하지만 현재 허용 자료로는 정확한 자산 노출을 만들 수 없어 사전등록과 백테스트를 수행하지 않았다. 누락 ETF 또는 동등한 총수익 지수가 추가되면 결과를 보기 전에 별도 사전등록한다.
 
+## 자동 탐색 9회차: 개별종목·재무 데이터 전략
+
+| 모델 | 계열 | 공개 규칙 | 처리 |
+| --- | --- | --- | --- |
+| Piotroski F-score | 펀더멘털 가치 | 고 BM 기업에 9개 재무 건전성 신호 적용 | 재현 불가: 재무제표·장부가·공시시점·개별종목 부재 |
+| Gatev–Goetzmann–Rouwenhorst pairs | 통계적 차익거래 | 12개월 형성, 거리 최소 20쌍, 2σ 진입, 6개월 거래 | 재현 불가: CRSP 개별종목 유니버스·상장폐지/거래가능성 자료 부재 |
+| Dogs of the Dow | 배당 가치 | 당시 DJIA 중 고배당 10종목 동일가중·연례 교체 | 재현 불가: 역사적 DJIA 구성과 종목별 배당 자료 부재 |
+
+[Piotroski 원전 안내](https://www.gsb.stanford.edu/faculty-research/publications/value-investing-use-historical-financial-statement-information), [GGR 원전](https://www.nber.org/papers/w7032)과 [S&P DJI의 Dogs 설명](https://www.spglobal.com/spdji/en/education/article/modern-dogs-introducing-the-dow-jones-us-high-dividend-10-index/)을 독립 검증했다. 세 모델 모두 규칙의 핵심은 공개돼 있으나 현재의 ETF OHLC만으로 필요한 원형 유니버스와 시점가용 입력을 만들 수 없다. ETF 소수 종목에 규칙을 적용하는 것은 별도 변형이므로 사전등록과 결과 실행을 하지 않았다.
+
 ## 11차 배치: 조던 나스닥 -3% 규칙
 
 | 모델 | 계열 | 사전등록 규칙 | 처리 |

@@ -122,6 +122,15 @@ Merriman의 [공식 Ultimate Buy & Hold 자료](https://www.paulmerriman.com/ult
 
 [Piotroski 원전 안내](https://www.gsb.stanford.edu/faculty-research/publications/value-investing-use-historical-financial-statement-information), [GGR 원전](https://www.nber.org/papers/w7032)과 [S&P DJI의 Dogs 설명](https://www.spglobal.com/spdji/en/education/article/modern-dogs-introducing-the-dow-jones-us-high-dividend-10-index/)을 독립 검증했다. 세 모델 모두 규칙의 핵심은 공개돼 있으나 현재의 ETF OHLC만으로 필요한 원형 유니버스와 시점가용 입력을 만들 수 없다. ETF 소수 종목에 규칙을 적용하는 것은 별도 변형이므로 사전등록과 결과 실행을 하지 않았다.
 
+## 자동 탐색 10회차: 옵션 인컴 지수
+
+| 모델 | 계열 | 공개 규칙 | 처리 |
+| --- | --- | --- | --- |
+| Cboe BXM BuyWrite | 커버드콜 | S&P 500 보유와 월별 ATM SPX 콜 매도 | 재현 불가: 옵션 호가·VWAP·SOQ 정산 자료 부재 |
+| Cboe PUT PutWrite | 담보부 풋매도 | T-bill 담보와 월별 ATM SPX 풋 매도 | 재현 불가: 옵션 가격·정산 및 T-bill 할인율·담보 자료 부재 |
+
+[Cboe BXM 방법론](https://cdn.cboe.com/api/global/us_indices/governance/BXR_Methodology.pdf)과 [Cboe PUT 방법론](https://cdn.cboe.com/api/global/us_indices/governance/Cboe_SP_500_PutWrite_Indices_Methodology.pdf)을 검증했다. 두 전략은 SPY 가격만으로 옵션 프리미엄을 추정하면 핵심 손익을 임의 생성하게 되므로 ETF OHLC 변형으로 실행하지 않는다. 함께 검토한 managed-futures 추세추종은 기존 MOP 원전 재현 불가 기록과 중복이다.
+
 ## 11차 배치: 조던 나스닥 -3% 규칙
 
 | 모델 | 계열 | 사전등록 규칙 | 처리 |

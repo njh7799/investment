@@ -13,3 +13,4 @@
 | 2026-08-17 | automation-2 / 7회차 | 재현 불가 | 예 | 7Twelve와 Worldwide Ultimate Buy & Hold를 신규 기록; 필수 자산·팩터 슬리브 부재로 임의 대체 및 결과 실행 없음; 포화 0/3 |
 | 2026-08-18 | automation-2 / 8회차 | 무변경 | 아니요 | DAA-G12가 기존 6차 배치와 중복; 원전 재검증의 R12/P2/C3, 13612W 비양수 경계, B=2·T=6, EEM/AGG 대체도 기존 기록과 일치; 포화 1/3 |
 | 2026-08-19 | automation-2 / 9회차 | 재현 불가 | 예 | Piotroski F-score, GGR pairs trading, Dogs of the Dow를 신규 기록; 개별종목·재무·배당/구성 이력 부재로 결과 실행 없음; 포화 0/3 |
+| 2026-08-21 | automation-2 / 10회차 | 재현 불가 | 예 | Cboe BXM·PUT을 신규 기록; 옵션 가격·정산과 T-bill 담보 자료 부재로 결과 실행 없음; managed futures는 기존 MOP 기록과 중복; 포화 0/3 |

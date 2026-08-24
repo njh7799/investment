@@ -131,6 +131,17 @@ Merriman의 [공식 Ultimate Buy & Hold 자료](https://www.paulmerriman.com/ult
 
 [Cboe BXM 방법론](https://cdn.cboe.com/api/global/us_indices/governance/BXR_Methodology.pdf)과 [Cboe PUT 방법론](https://cdn.cboe.com/api/global/us_indices/governance/Cboe_SP_500_PutWrite_Indices_Methodology.pdf)을 검증했다. 두 전략은 SPY 가격만으로 옵션 프리미엄을 추정하면 핵심 손익을 임의 생성하게 되므로 ETF OHLC 변형으로 실행하지 않는다. 함께 검토한 managed-futures 추세추종은 기존 MOP 원전 재현 불가 기록과 중복이다.
 
+## 자동 탐색 11회차: IBS와 Connors RSI 25
+
+| 모델 | 계열 | 공개 규칙 | 처리 |
+| --- | --- | --- | --- |
+| Pagonidis IBS | 일중 평균회귀 | IBS≤0.2 종가 매수, IBS≥0.8 종가 공매도, 다음 종가 청산 | 재현 불가: 원문의 당일 종가 진입을 다음 시가로 바꾸면 1일 효과의 측정 구간이 달라짐 |
+| Connors RSI 25 | 단기 평균회귀 | SPY>200일 SMA, RSI(4)<25 1 unit 매수, <20 추가, >55 청산 | 재현 불가: 공개 규칙에서 1 unit의 자본 대비 비중을 단일 수치로 확정하지 못함 |
+
+[IBS 원문](https://qusma.com/wp-content/uploads/2013/09/The-IBS-Effect-Mean-Reversion-in-Equity-ETFs1.pdf)은 `IBS=(C-L)/(H-L)`와 포함 경계·1거래일 long/short 시험을 명시하지만 신호일 종가 체결이 전략 정의에 결합돼 있다. 저장소의 다음 거래일 시가 체결로 옮기면 원전의 종가-다음 종가 수익이 아니라 다음 시가-다음 종가 수익을 측정한다. `H=L` 처리도 미정이다.
+
+[Connors 공식 공개 규칙](https://connorsresearch.com/connors-research-traders-journal-volume-1-does-mean-reversion-still-work/)은 RSI 기간과 진입·추가·청산 경계를 고정하지만, 공개 페이지에서 `1 unit`의 자본 비율과 최대 총노출을 재현 가능한 수치로 확정하지 못했다. 임의로 50%씩 두 번 매수하지 않고 사전등록과 결과 실행을 생략한다.
+
 ## 11차 배치: 조던 나스닥 -3% 규칙
 
 | 모델 | 계열 | 사전등록 규칙 | 처리 |

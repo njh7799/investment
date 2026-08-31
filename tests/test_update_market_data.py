@@ -91,7 +91,7 @@ def test_latest_settled_session_waits_two_hours_after_close():
 def test_write_csvs_has_stable_schema(tmp_path: Path):
     data = {
         name: frame([[100, 101, 99, 100]])
-        for name in ["IXIC", "QQQ", "TQQQ", "SPY"]
+        for name in ["IXIC", "QQQ", "TQQQ", "SPY", "SGOV"]
     }
     write_csvs(data, tmp_path)
 

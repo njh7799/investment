@@ -1,6 +1,6 @@
 """Reusable backtesting primitives for documented investment strategies."""
 
-from .core import BacktestResult, MarketData, load_market_data, run_weight_strategy
+from .core import BacktestResult, MarketData, load_market_data, run_weight_strategy, toss_us_stock_fee
 from .metrics import summarize
 from .models import BATCHES, MODEL_SPECS, build_target_weights
 from .documented import causal_reference_high, run_three_percent_rule, run_vr_5
@@ -16,6 +16,7 @@ __all__ = [
     "build_target_weights",
     "load_market_data",
     "run_weight_strategy",
+    "toss_us_stock_fee",
     "summarize",
     "causal_reference_high",
     "run_three_percent_rule",

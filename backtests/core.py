@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -53,6 +54,37 @@ def _affordable_shares(cash: float, price: float, desired: int, fee_rate: float)
     return min(desired, int(np.floor(cash / (price * (1.0 + fee_rate)))))
 
 
+def toss_us_stock_fee(gross: float) -> float:
+    """Current Toss Securities US-stock commission, truncated below one cent."""
+    if gross <= 10.0:
+        return 0.0
+    return float(np.floor(gross * 0.001 * 100.0) / 100.0)
+
+
+def _transaction_fee(
+    gross: float, fee_rate: float, fee_calculator: Callable[[float], float] | None
+) -> float:
+    return gross * fee_rate if fee_calculator is None else float(fee_calculator(gross))
+
+
+def _affordable_shares_with_fee(
+    cash: float,
+    price: float,
+    desired: int,
+    fee_rate: float,
+    fee_calculator: Callable[[float], float] | None,
+) -> int:
+    if fee_calculator is None:
+        return _affordable_shares(cash, price, desired, fee_rate)
+    quantity = min(desired, int(np.floor(cash / price)))
+    while quantity > 0:
+        gross = quantity * price
+        if gross + _transaction_fee(gross, fee_rate, fee_calculator) <= cash + 1e-12:
+            break
+        quantity -= 1
+    return quantity
+
+
 def run_weight_strategy(
     prices: pd.DataFrame,
     target_weights: pd.Series,
@@ -61,6 +93,7 @@ def run_weight_strategy(
     end: str | pd.Timestamp | None = None,
     initial_cash: float = 100_000.0,
     fee_rate: float = 0.001,
+    fee_calculator: Callable[[float], float] | None = None,
 ) -> BacktestResult:
     """Execute close-derived target weights at the next session's open."""
     if initial_cash <= 0 or fee_rate < 0:
@@ -95,13 +128,15 @@ def run_weight_strategy(
             if delta < 0:
                 quantity = -delta
                 gross = quantity * open_price
-                fee = gross * fee_rate
+                fee = _transaction_fee(gross, fee_rate, fee_calculator)
                 cash += gross - fee
                 shares -= quantity
             elif delta > 0:
-                quantity = _affordable_shares(cash, open_price, delta, fee_rate)
+                quantity = _affordable_shares_with_fee(
+                    cash, open_price, delta, fee_rate, fee_calculator
+                )
                 gross = quantity * open_price
-                fee = gross * fee_rate
+                fee = _transaction_fee(gross, fee_rate, fee_calculator)
                 cash -= gross + fee
                 shares += quantity
             else:

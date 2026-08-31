@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import pandas as pd
 
-from .core import BacktestResult, OHLC, _affordable_shares, _read_prices
+from .core import (
+    BacktestResult,
+    OHLC,
+    _affordable_shares_with_fee,
+    _read_prices,
+    _transaction_fee,
+)
 
 
 def load_assets(names: list[str] | tuple[str, ...], root: Path | str = ".") -> dict[str, pd.DataFrame]:
@@ -29,6 +36,7 @@ def run_portfolio_strategy(
     end: str | pd.Timestamp | None = None,
     initial_cash: float = 100_000.0,
     fee_rate: float = 0.001,
+    fee_calculator: Callable[[float], float] | None = None,
     rebalance_monthly: bool = False,
 ) -> BacktestResult:
     """Execute close-derived multi-asset target weights at the next common open."""
@@ -70,17 +78,19 @@ def run_portfolio_strategy(
                     continue
                 quantity = -delta
                 gross = quantity * opens[name]
-                fee = gross * fee_rate
+                fee = _transaction_fee(gross, fee_rate, fee_calculator)
                 cash += gross - fee
                 shares[name] -= quantity
                 trades.append({"Date": date, "Asset": name, "Side": "SELL", "Quantity": quantity, "Price": opens[name], "Gross": gross, "Fee": fee, "TargetWeight": pending.get(name, 0.0)})
             for name in names:
                 delta = desired[name] - shares[name]
-                quantity = _affordable_shares(cash, opens[name], delta, fee_rate)
+                quantity = _affordable_shares_with_fee(
+                    cash, opens[name], delta, fee_rate, fee_calculator
+                )
                 if quantity <= 0:
                     continue
                 gross = quantity * opens[name]
-                fee = gross * fee_rate
+                fee = _transaction_fee(gross, fee_rate, fee_calculator)
                 cash -= gross + fee
                 shares[name] += quantity
                 trades.append({"Date": date, "Asset": name, "Side": "BUY", "Quantity": quantity, "Price": opens[name], "Gross": gross, "Fee": fee, "TargetWeight": pending.get(name, 0.0)})

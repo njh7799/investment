@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from backtests.core import MarketData, run_weight_strategy
+from backtests.core import MarketData, run_weight_strategy, toss_us_stock_fee
 from backtests.models import build_target_weights
 from backtests.documented import causal_reference_high, run_three_percent_rule, run_vr_5
 from backtests.portfolio import run_portfolio_strategy
@@ -56,6 +56,12 @@ def test_initial_integer_purchase_and_fee():
     assert result.positions.iloc[0]["Shares"] == 9
     assert result.positions.iloc[0]["Cash"] == pytest.approx(9.1)
     assert result.trades.iloc[0]["Fee"] == pytest.approx(0.9)
+
+
+def test_toss_us_fee_waives_small_orders_and_truncates_cents():
+    assert toss_us_stock_fee(10.0) == 0.0
+    assert toss_us_stock_fee(10.01) == 0.01
+    assert toss_us_stock_fee(12_345.678) == 12.34
 
 
 def test_close_signal_executes_at_next_open():

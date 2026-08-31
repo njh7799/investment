@@ -23,6 +23,7 @@ Nasdaq 계열과 공개 모델 검증에 필요한 미국 상장 ETF의 일별 �
 | `IXIC.csv` | `^IXIC` | Nasdaq Composite 지수 |
 | `QQQ.csv` | `QQQ` | Invesco QQQ ETF |
 | `TQQQ.csv` | `TQQQ` | ProShares UltraPro QQQ 및 상장 전 합성 데이터 |
+| `SGOV.csv` | `SGOV` | iShares 0-3 Month Treasury Bond ETF |
 | `SPY.csv`, `EFA.csv`, `VEU.csv` 등 | 동일 | 미국·미국 외 주식 프록시 |
 | `IEF.csv`, `AGG.csv` | 동일 | 미국 중기 국채·종합채권 프록시 |
 | `VNQ.csv`, `DBC.csv`, `GLD.csv` | 동일 | 리츠·원자재·금 프록시 |

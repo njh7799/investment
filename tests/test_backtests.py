@@ -34,6 +34,7 @@ from backtests.vo_bull import (
     risk_adjusted_trend,
     variant_specs as bull_variant_specs,
 )
+from scripts.analyze_vo_regimes import summarize_regimes, vo_regime_rows
 
 
 def prices(values, opens=None, start="2024-01-02"):
@@ -62,6 +63,29 @@ def test_toss_us_fee_waives_small_orders_and_truncates_cents():
     assert toss_us_stock_fee(10.0) == 0.0
     assert toss_us_stock_fee(10.01) == 0.01
     assert toss_us_stock_fee(12_345.678) == 12.34
+
+
+def test_vo_regimes_preserve_threshold_boundaries_and_price_returns():
+    index = pd.bdate_range("2010-02-11", periods=34)
+    frame = prices([100.0] * 31 + [110.0, 110.0, 110.0], start="2010-02-11")
+
+    regimes = vo_regime_rows(frame)
+
+    assert regimes.iloc[0]["band"] == "warmup"
+    assert regimes.iloc[0]["trading_days"] == 30
+    assert regimes.iloc[1]["band"] == "at_or_below_60"
+    assert regimes.iloc[1]["target_tqqq_weight"] == 1.0
+    assert regimes.iloc[1]["execution_start"] == index[31]
+    assert regimes.iloc[1]["tqqq_return"] == pytest.approx(0.10)
+
+
+def test_vo_regime_summary_excludes_warmup():
+    frame = prices([100.0] * 35, start="2010-02-11")
+
+    summary = summarize_regimes(vo_regime_rows(frame))
+
+    assert set(summary["band"]) == {"at_or_below_60"}
+    assert summary.iloc[0]["regime_count"] == 1
 
 
 def test_close_signal_executes_at_next_open():

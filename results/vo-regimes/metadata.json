@@ -1,0 +1,8 @@
+{
+  "actual_tqqq_start": "2010-02-11",
+  "generated_through": "2026-09-04",
+  "price_field": "TQQQ adjusted close",
+  "return_formula": "end_close / start_close - 1",
+  "signal_rule": "30-session TQQQ adjusted-close return volatility, annualized with sqrt(252)",
+  "tqqq_sha256": "8fae661af4f6e3b3abc09b6c24802640337059f1bd334a9691e1da1e9d094170"
+}

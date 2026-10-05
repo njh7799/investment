@@ -1,0 +1,19 @@
+---
+import {url} from '../lib/content';
+const {study}=Astro.props;
+---
+<section id="yearly" class="paper yearly-performance" data-yearly={url(study.yearly)}>
+  <div class="panel-head">
+    <div><h2>연도별 수익률과 MDD</h2><p>한 해의 결과와 그해 감수한 최대 낙폭을 함께 봅니다.</p></div>
+    <a class="download-chart" href={url(study.yearly)} download>계산 결과 JSON ↓</a>
+  </div>
+  <div class="yearly-controls" hidden>
+    <label>방법 <select class="yearly-model" aria-label="연도별 성과 방법"></select></label>
+    <label>표시 기간 <select class="yearly-start" aria-label="연도별 성과 시작 연도"></select></label>
+  </div>
+  <p class="yearly-note caption"></p>
+  <div class="yearly-bars" role="img" aria-label="연도별 수익률과 최대 낙폭 막대그래프"></div>
+  <div class="table-scroll yearly-table"></div>
+  <p class="yearly-empty empty" hidden></p>
+</section>
+<script>import '../lib/yearly';</script>

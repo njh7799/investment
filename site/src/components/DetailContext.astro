@@ -1,0 +1,9 @@
+---
+import {url} from '../lib/content';
+const {title,parent='투자 방법',parentPath='',ancestors=[],kind='방법 상세'}=Astro.props;
+---
+<section class="detail-context" aria-label="상세 페이지 위치">
+  <a class="detail-back" href={url(parentPath)}>← {parent} 목록</a>
+  <nav class="detail-trail" aria-label="현재 위치"><ol><li><a href={url(parentPath)}>{parent}</a></li>{ancestors.map((a:any)=><li><a href={url(a.path)}>{a.title}</a></li>)}<li aria-current="page">{title}</li></ol></nav>
+  <span class="detail-kind">{kind}</span>
+</section>

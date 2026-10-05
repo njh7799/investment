@@ -1,0 +1,23 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import DetailContext from '../../components/DetailContext.astro';
+import {data,url,markdown} from '../../lib/content';
+const pending=data.studies.filter((s:any)=>['추가 검증 대기','실행 실패'].includes(s.status));
+---
+<Layout title="조사·보류 기록" section="research" detail>
+  <DetailContext title="조사·보류 기록" parent="분석 기록" parentPath="research/" kind="조사 상세"/>
+  <div class="page-heading"><h1>조사·보류 기록</h1><p>후속 검증이 남은 분석, 재현에 실패한 실행, 데이터·규칙 제약으로 실행하지 못한 조사입니다.</p></div>
+  <section class="pending-list"><h2>후속 검증 · 실행 실패</h2>{pending.map((s:any)=><a class="pending-row" href={url(`research/${s.id}/`)}><div><strong>{s.title}</strong><p>{s.finding}</p></div><span class="status-pill">{s.status}</span></a>)}</section>
+  <div class="notebook-links"><a href={url('guide/research/candidates/')}>후보와 후속 검증 조건</a><a href={url('guide/research/rejected-strategies/')}>전체 미채택 사유 · 재검토 조건</a><a href={url('guide/research/model-census/')}>원전 조사 목록</a></div>
+  <section class="audit-list section-block">
+    <h2>원전 · 데이터 · 중복 조사</h2>
+    <input id="audit-search" type="search" aria-label="조사 기록 검색" placeholder="모델명, 데이터, 재현 조건 검색"/>
+    <p class="caption" id="audit-count" role="status">{data.audits.length}개 조사 기록</p>
+    {data.audits.map((a:any)=><details class="audit-entry" data-search={a.title+' '+a.body}><summary>{a.title} <span class="status-pill">{a.status}</span></summary><div class="prose" set:html={markdown(a.body)}/></details>)}
+    <p id="audit-empty" class="empty" hidden>검색 조건에 맞는 조사 기록이 없습니다.</p>
+  </section>
+  <script>
+    const search=document.querySelector<HTMLInputElement>('#audit-search')!;
+    search.addEventListener('input',()=>{let count=0;document.querySelectorAll<HTMLElement>('.audit-entry').forEach(entry=>{entry.hidden=!entry.dataset.search!.toLowerCase().includes(search.value.trim().toLowerCase());if(!entry.hidden)count++});document.querySelector('#audit-count')!.textContent=`${count}개 조사 기록`;document.querySelector<HTMLElement>('#audit-empty')!.hidden=count>0});
+  </script>
+</Layout>

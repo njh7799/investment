@@ -1,0 +1,29 @@
+---
+import {data,url} from '../lib/content';
+import '../styles.css';
+const {title,section='strategies',detail=false,description='투자 방법별 백테스트 결과, 규칙, 한계와 해석을 모아 둔 분석 기록.'}=Astro.props;
+const nav=[['strategies','','투자 방법'],['research','research/','분석 기록'],['guide','guide/','평가 기준']];
+---
+<!doctype html>
+<html lang="ko">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="description" content={description}/><meta name="theme-color" content="#f7f8fa"/><link rel="icon" href={url('favicon.svg')}/><title>{title} · 투자 분석 기록</title></head>
+<body>
+  <a class="skip" href="#main">본문으로 이동</a>
+  <header class="site-header"><div class="header-inner"><a class="brand" href={url()}>투자 분석 기록</a><a class="repo-link" href="https://github.com/njh7799/investment">저장소 ↗</a></div><nav aria-label="주요 메뉴">{nav.map(([id,route,text])=><a href={url(route)} aria-current={section===id?'page':undefined}>{text}</a>)}</nav></header>
+  <main id="main" class:list={{"detail-page":detail}}><slot/></main>
+  <footer><div><a href={url('guide/')}>데이터·계산 기준</a><p>과거 데이터 기반 백테스트 · 실제 계좌 수익률과 별개</p></div><div class="foot-meta">비교 데이터 {data.comparison.market_date}<br/>페이지 생성 {data.generated_at.slice(0,16).replace('T',' ')} UTC</div></footer>
+  <script is:inline define:vars={{due:data.comparison.next_expected_after}}>
+    document.querySelectorAll('[data-freshness]').forEach(el=>{if(Date.now()>Date.parse(due)){el.textContent+=' · 갱신 지연';el.classList.add('delayed')}});
+  </script>
+  <script>
+    function revealLinkedRule(){
+      let id;try{id=decodeURIComponent(location.hash.slice(1))}catch{return}
+      const target=document.getElementById(id);if(!target)return;
+      let parent=target.parentElement,opened=false;
+      while(parent){if(parent instanceof HTMLDetailsElement&&!parent.open){parent.open=true;opened=true}parent=parent.parentElement}
+      if(opened)requestAnimationFrame(()=>target.scrollIntoView());
+    }
+    window.addEventListener('hashchange',revealLinkedRule);revealLinkedRule();
+  </script>
+</body>
+</html>

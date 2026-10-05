@@ -1,0 +1,18 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import DetailContext from '../../components/DetailContext.astro';
+import Chart from '../../components/Chart.astro';
+import {data,url} from '../../lib/content';
+interface Props { method:any }
+export function getStaticPaths(){return [...data.strategies,...data.research_methods].filter((m:any)=>m.preview).map((m:any)=>({params:{id:m.id},props:{method:m}}))}
+const {method:s}=Astro.props;
+const source=s.href||`strategies/${s.id}/`;
+---
+<Layout title={`${s.title} · 차트`} section="strategies" detail>
+  <DetailContext title="성과 차트" ancestors={[{title:s.title,path:source}]} kind="차트 상세"/>
+  <div class="page-heading"><h1>{s.title} · 성과 차트</h1><p>{s.preview.caption}. 카드 이미지와 같은 기간·시계열로 시작합니다.</p></div>
+  <p class="note">{s.preview.comparison_note} 수익률·낙폭은 선택한 평가 기간으로 함께 바뀝니다. 2010-02-11 이전의 TQQQ는 QQQ 기반 합성 데이터입니다.</p>
+  <Chart file={s.preview.periods[0].file} periods={s.preview.periods} comparisonControls={false} title="방법과 TQQQ · 자산 성장과 낙폭"/>
+  <div class="downloads"><a href={url(s.preview.image)} download>카드 미리보기 PNG ↓</a><a href={url(source)}>방법의 규칙과 독립 평가 →</a></div>
+  <details class="provenance"><summary>계산·복원 근거</summary><p>과거 연구는 당시 코드와 입력 해시를 복원하고 저장된 기간별 성과에 대조했습니다. TQQQ도 각 방법과 같은 실제 종료일·비용 조건으로 계산했습니다.</p><pre>{JSON.stringify(s.preview.provenance,null,2)}</pre></details>
+</Layout>

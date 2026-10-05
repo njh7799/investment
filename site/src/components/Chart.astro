@@ -1,0 +1,11 @@
+---
+import {url} from '../lib/content';
+const {file,periods=null,title='자산 성장 비교',comparisonControls=true}=Astro.props;
+---
+<section class="chart-panel" data-chart data-source={file?url(file):''} data-periods={periods?JSON.stringify(periods):undefined}>
+<div class="panel-head"><div><h2>{title}</h2></div><a href="#" class="download-chart">HTML 내려받기 ↓</a></div>
+<div class="chart-controls">{periods&&<label>평가 기간<select class="period-picker">{periods.map((p:any)=><option value={p.id}>{p.label}</option>)}</select></label>}<><label>표시<select class="metric-picker"><option value="equity">자산 성장 · 로그 축</option><option value="drawdown">고점 대비 낙폭</option></select></label>{comparisonControls&&<label>비교 목적<select class="comparison-picker"><option value="integrated">연구 모델과 저장된 비교군</option><option value="independent">연구 모델·독립 비교군</option><option value="all">전체 계열</option></select></label>}</></div>
+<p class="chart-note">선택 기간의 동일 초기자산 기준. 확대는 화면 탐색이며 평가 기간은 바뀌지 않습니다.</p>
+<div class="chart-canvas" aria-label={title}><p class="chart-loading" role="status">차트를 불러오는 중입니다…</p></div><div class="chart-metrics table-scroll"></div><p class="chart-status" role="status"></p>
+</section>
+<script>import '../lib/charts';</script>

@@ -1,0 +1,12 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import DetailContext from '../../components/DetailContext.astro';
+import {data,markdown,url} from '../../lib/content';
+interface Props { doc: any }
+export function getStaticPaths(){return data.documents.map((d:any)=>({params:{slug:d.slug},props:{doc:d}}))}
+const {doc}=Astro.props;
+const method=data.strategies.find((s:any)=>doc.path.startsWith(`docs/strategies/${s.id}/`));
+const isResearch=doc.path.startsWith('docs/research/')&&!['methodology.md','promotion-criteria.md','discovery-protocol.md'].some(name=>doc.path.endsWith('/'+name));
+const section=method?'strategies':isResearch?'research':'guide';
+---
+<Layout title={doc.title} section={section} detail><DetailContext title={doc.title} parent={method?'투자 방법':isResearch?'분석 기록':'평가 기준'} parentPath={method?'':isResearch?'research/':'guide/'} ancestors={method?[{title:method.title,path:`strategies/${method.id}/`}]:[]} kind={method?'세부 규칙':'문서 상세'}/><article class="prose" set:html={markdown(doc.body,doc.path)}/><div class="downloads"><a href={url('downloads/'+doc.path)} download>원본 Markdown ↓</a></div></Layout>

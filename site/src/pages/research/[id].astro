@@ -1,0 +1,28 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import DetailContext from '../../components/DetailContext.astro';
+import Chart from '../../components/Chart.astro';
+import ResultTables from '../../components/ResultTables.astro';
+import {data,url,document,markdown} from '../../lib/content';
+interface Props { study: any }
+export function getStaticPaths(){return data.studies.map((s:any)=>({params:{id:s.id},props:{study:s}}))}
+const {study:s}=Astro.props;
+const doc=document(s.document);
+const date=s.metadata.metadata?.generated_through||s.metadata.metadata?.end||s.metadata.failure?.generated_at||'원본 보고서 참조';
+---
+<Layout title={s.title} section="research" detail>
+  <DetailContext title={s.title} parent="분석 기록" parentPath="research/" kind="분석 상세"/>
+  <div class="page-heading report-heading"><h1>{s.title}</h1><div class="report-meta"><span class="status-pill">{s.status}</span><span>연구 데이터 {date}</span></div><p class="research-question"><strong>검토 질문</strong> {s.question}</p></div>
+  <div class="related-methods"><span>관련 투자 방법</span>{!data.strategies.some((m:any)=>m.studies.includes(s.id))&&<a href={url()}>현재 남겨 둔 방법과 비교 →</a>}{data.strategies.filter((m:any)=>m.studies.includes(s.id)).map((m:any)=><a href={url(m.href||`strategies/${m.id}/#evidence`)}>{m.title} →</a>)}</div>
+  <div class="summary-grid">
+    <section class="paper"><h2>결과</h2><p>{s.finding}</p></section>
+    <section class="paper"><h2>해석 메모</h2><p>{s.lesson}</p></section>
+  </div>
+  <nav class="report-sections" aria-label="보고서 목차">{s.tables.length>0&&<a href="#results">결과 표</a>}{s.chart&&<a href="#chart">차트</a>}<a href="#source-report">규칙·분석 원문</a><a href="#downloads">CSV·재현 정보</a></nav>
+  {s.metadata.failure&&<div id="failure" class="note"><strong>백테스트 전 실행 실패</strong><p>{s.metadata.failure.error}</p><p>성과 미생성. 사전등록한 수치 허용오차에서 실패한 기록입니다.</p></div>}
+  {s.tables.length>0&&<ResultTables study={s}/>}
+  {s.chart&&<section id="chart"><Chart file={s.chart} title={s.id==='vo-regimes'?'변동성 구간별 TQQQ 등락률':'연구 당시 자산 곡선 · 낙폭'}/><p class="caption">{s.id==='vo-regimes'?'저장된 구간별 기초자산 등락률.':s.id==='vo-sgov'?'저장된 일별 자산 곡선.':'당시 코드·데이터와 저장된 성과를 대조한 곡선. 대규모 변형 연구는 문서에서 다룬 사례와 인접 설정을 표시합니다.'} 모델별 실제 평가 구간은 결과 표 참조.</p></section>}
+  {s.restoration_failures.length>0&&<details class="note"><summary>곡선 복원 제한</summary>{s.restoration_failures.map((f:any)=><p>{f.model}: {f.reason}</p>)}</details>}
+  <section id="source-report" class="source-report"><h2>규칙·분석 원문</h2><div class="prose" set:html={markdown(doc.body.replace(/^# .*\n/,''),s.document)}/></section>
+  <section id="downloads" class="section-block"><h2>CSV·재현 정보</h2><div class="downloads">{s.downloads.map((d:any)=><a href={url(d.url)} download>{d.name} ↓</a>)}<a href={url('downloads/'+s.document)} download>원본 보고서 ↓</a></div><details class="provenance"><summary>데이터 기준일 · 코드 버전 · 입력 해시</summary><p>실제 평가 구간은 각 결과의 시작일과 종료일을 기준으로 합니다. generated_through는 연구 메타데이터의 기준일입니다.</p><pre>{JSON.stringify({metadata:s.metadata,restoration:s.provenance,result_commit:s.source_commit},null,2)}</pre><a href={`https://github.com/njh7799/investment/tree/${s.provenance.source_commit||s.source_commit}`}>해당 코드와 데이터 ↗</a></details></section>
+</Layout>

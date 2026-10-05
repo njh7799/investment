@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import MethodCard from '../components/MethodCard.astro';
+import {data,url} from '../lib/content';
+const methods=[...data.strategies,...data.research_methods];
+---
+<Layout title="투자 방법" section="strategies">
+  <div class="page-heading"><h1>투자 방법</h1><p>현재 선택은 VO입니다. 함께 비교한 방법과 미채택한 시도도 같은 목록에 정리했습니다. 카드를 펼치면 규칙·성과·판단 근거를 읽을 수 있습니다.</p></div>
+  <p class="caption">{methods.length}개 방법·방법군 · VO만 기본 펼침</p>
+  <div class="methods-list">{methods.map((s:any)=><section id={s.id}><MethodCard method={s} featured={s.id==='volatility-allocation'}/></section>)}</div>
+  <p class="caption method-footnote">수치는 각 연구 당시 결과입니다. 평가 시작일·종료일과 비용 조건은 연구마다 다르므로 성과와 함께 확인합니다. 여러 설정을 시험한 방법군은 최선의 설정 하나를 대표 성과로 사용하지 않습니다. <a href={url('strategies/volatility-allocation/#performance')}>최신 VO 비교 ({data.comparison.market_date}) →</a></p>
+</Layout>

@@ -1,0 +1,30 @@
+---
+import MethodMetrics from './MethodMetrics.astro';
+import {url,pct,label} from '../lib/content';
+const {method:s,featured=false}=Astro.props;
+const href=s.href||`strategies/${s.id}/`;
+const rows=s.result_rows||[];
+const m=s.metrics;
+---
+<article data-method={s.id}>
+  <details class:list={['method-card','method-details',{'featured-method':featured}]} open={featured}>
+    <summary class="method-toggle">
+      <div class="method-card-heading"><span class="status-pill">{s.status}</span><span class="method-category">{s.category}</span></div>
+      <h2>{s.title}</h2>
+      <p class="method-summary">{s.summary}</p>
+      {m&&<MethodMetrics metrics={m}/>}
+      {!m&&s.is_family&&<p class="family-metric-note">CAGR·MDD는 {rows.length}개 설정별로 비교합니다.</p>}
+      <span class="method-toggle-label"><span class="when-closed">펼치기 ＋</span><span class="when-open">접기 −</span></span>
+    </summary>
+    <div class="method-expanded">
+      {!m&&(s.is_family?<div class="method-evaluation"><p>{rows.length}개 설정을 비교한 방법군입니다. 설정마다 성과가 달라 하나의 수익률로 표시하지 않습니다.</p>{rows.length<=13&&<div class="table-scroll"><table><thead><tr><th>설정</th><th>평가 기간</th><th>연평균 복리수익률</th><th>최대 낙폭</th></tr></thead><tbody>{rows.map((r:any)=><tr><th>{label(r.model)}</th><td>{r.start} — {r.end}</td><td>{pct(r.cagr)}</td><td>{pct(r.mdd)}</td></tr>)}</tbody></table></div>}<a href={url(`research/${s.batch}/#results`)}>모든 설정의 성과·낙폭·회복 비교 →</a></div>:<div class="method-evaluation"><p>실행 실패 · 백테스트 성과를 생성하지 않았습니다.</p></div>)}
+      {s.preview&&<figure class="method-preview"><a href={url(s.preview.href)} aria-label={`${s.title} 최근 성과 대화형 차트 열기`}><img src={url(s.preview.image)} alt={`${s.title}, VO와 TQQQ의 자산 성장 비교`} width="2880" height="1440" loading="lazy" decoding="async"/></a><figcaption><span>{s.preview.comparison_note}</span><a href={url(s.preview.href)}>확대·기간 선택 →</a></figcaption></figure>}
+      {s.preview_unavailable&&<p class="caption">{s.preview_unavailable}</p>}
+      <div class="method-detail-body">
+        <div class="method-rule"><h3>어떻게 움직이나</h3><p>{s.mechanics}</p><p class="method-cadence">{s.cadence}</p></div>
+        <div class="method-judgment"><h3>{featured?'기본 방법으로 남긴 이유':'검토 결과'}</h3><p>{s.decision}</p><h3>함께 볼 한계</h3><p>{s.limitation}</p></div>
+      </div>
+      <div class="method-actions"><a href={url(href)}>{s.action_label||'규칙·성과·선택 근거 보기 →'}</a><a href={url(`research/${s.batch}/${s.status==='실행 실패'?'#failure':'#results'}`)}>{s.status==='실행 실패'?'실패 기록':'수치 원본'}</a></div>
+    </div>
+  </details>
+</article>

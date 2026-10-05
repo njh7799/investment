@@ -1,0 +1,10 @@
+---
+import Chart from './Chart.astro';
+import {data,url} from '../lib/content';
+const comparison=data.comparison;
+---
+<p>VO 30일 · TQQQ 단순 보유 · QQQ 단순 보유를 같은 조건으로 매일 갱신합니다. 위의 연구 당시 수치와 평가 종료일이 다릅니다.</p>
+<span class="freshness" data-freshness>데이터 기준 {comparison.market_date}</span>
+<Chart comparisonControls={false} file={comparison.periods[0].file} periods={comparison.periods} title="VO · 기간별 수익과 낙폭"/>
+<details class="paper calculation-details"><summary>계산 조건</summary><p>초기자산 $100,000, 정수 수량, 매수·매도 각각 0.1%. 현금 수익률·슬리피지·세금은 0입니다. 조정 OHLC에 반영된 배당을 별도로 더하지 않습니다.</p><p>종가 신호 → 다음 거래일 시가 체결 → 매일 종가 평가. 실제 TQQQ 구간을 기본으로 표시하며, 상장 전 합성 구간은 기간 선택에서 구분합니다.</p><a href={url('guide/')}>지표 정의와 데이터 조건</a></details>
+<details class="provenance"><summary>계산 버전과 입력 데이터</summary><p>코드 커밋 {comparison.source_commit}</p><pre>{JSON.stringify(comparison.asset_sha256,null,2)}</pre><a href={url('data/backtest-metadata.json')} download>입력 해시와 계산 조건 ↓</a></details>

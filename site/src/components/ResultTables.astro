@@ -1,0 +1,20 @@
+---
+import {url} from '../lib/content';
+const {study}=Astro.props;
+---
+<section id="results" class="paper result-tables" data-tables={url(`data/${study.id}-tables.json`)}>
+  <h2>결과 표</h2>
+  <div class="data-controls">
+    <label>결과 종류 <select class="table-kind" aria-label="결과 종류"></select></label>
+    <label class="period-filter-label">평가 구간 <select class="table-period" aria-label="결과 평가 구간"><option value="">전체 구간</option></select></label>
+    <input class="table-search" type="search" aria-label="결과 내 검색" placeholder="모델명·조건 검색"/>
+    <label>열 <select class="column-mode" aria-label="표시할 열"><option value="key">핵심 지표</option><option value="all">전체 열</option></select></label>
+    <label>정렬 <select class="table-sort" aria-label="결과 정렬"></select></label>
+    <button class="sort-order" aria-label="정렬 방향">오름차순 ↑</button>
+  </div>
+  <p class="table-description caption"></p>
+  <div class="table-scroll data-table"></div>
+  <div class="table-pagination"><button class="prev">이전</button><span class="table-count" role="status"></span><button class="next">다음</button></div>
+  <p class="table-error" role="status"></p>
+</section>
+<script>import '../lib/tables';</script>

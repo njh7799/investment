@@ -1,0 +1,18 @@
+---
+import {pct} from '../lib/content';
+import StressChart from './StressChart';
+const {stress}=Astro.props;
+const current=stress.current;
+---
+<section id="stress" class="stress-section paper" aria-labelledby="stress-title">
+  <div class="panel-head"><div><h2 id="stress-title">하락 스트레스 분포</h2><p>점 하나는 고점에서 시작한 하락 구간입니다. 오른쪽일수록 더 깊고, 위쪽일수록 고점 회복에 오래 걸렸습니다.</p></div><span class="freshness">{stress.as_of} 기준</span></div>
+  <div class="stress-summary" aria-label="하락 스트레스 요약">
+    <div><span>10% 이상 하락</span><strong>{stress.drawdowns.count}회</strong></div>
+    <div><span>최대 하락</span><strong>{pct(stress.drawdowns.worst)}</strong></div>
+    <div><span>30일 이상 고점 미회복</span><strong>{stress.durations.count}회</strong></div>
+    <div><span>최장 미회복</span><strong>{stress.durations.longest.toLocaleString()}일</strong></div>
+  </div>
+  <div class="stress-current"><strong>현재 상태</strong><span>기준일 낙폭 {pct(current.drawdown)}</span><span>진행 구간 최대 {pct(current.episode_mdd)}{current.depth_rank&&` · ${current.depth_rank}위`}</span><span>미회복 {current.underwater_days.toLocaleString()}일{current.duration_rank&&` · ${current.duration_rank}위`}</span></div>
+  <StressChart stress={stress} client:load />
+  <p class="caption">10% 이상 하락하거나 30일 이상 고점을 회복하지 못한 구간입니다. 점을 선택하면 기간과 저장된 주요 시장 사건을 함께 볼 수 있습니다.</p>
+</section>

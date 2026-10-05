@@ -1,0 +1,40 @@
+---
+import Layout from '../layouts/Layout.astro';
+import {data,url} from '../lib/content';
+---
+<Layout title="홈" section="home">
+  <section class="home-hero" aria-labelledby="home-title">
+    <p class="hero-kicker">TQQQ 전략 백테스트 · {data.comparison.market_date}</p>
+    <h1 id="home-title">수익률보다 과정까지 보는<br/>투자 전략 연구 노트</h1>
+    <p>TQQQ를 언제, 얼마나 보유할지 공개 규칙과 과거 데이터로 검토합니다. 장기 성장뿐 아니라 낙폭, 고점 미회복 기간, 거래 부담을 함께 봅니다.</p>
+    <p>현재 기본 방법은 VO이며, 모든 수치는 과거 데이터 백테스트입니다.</p>
+    <div class="hero-actions"><a class="button-primary" href={url('strategies/')}>투자 방법 살펴보기</a><a class="button-secondary" href={url('strategies/volatility-allocation/')}>VO 상세 보기</a></div>
+  </section>
+
+  <div class="home-overview">
+    <section id="start" class="overview-panel">
+      <span class="section-number">1</span>
+      <h2>이 사이트 읽는 순서</h2>
+      <p>방법의 규칙과 성과를 함께 보고, 같은 평가 기준으로 손실과 회복을 확인한 뒤 관련 연구에서 선택 근거와 한계를 살펴봅니다.</p>
+      <div class="reading-steps"><a href="#criteria"><span>지표의 의미부터 확인</span><b>01</b></a><a href={url('strategies/')}><span>규칙과 성과를 함께 읽기</span><b>02</b></a><a href={url('research/')}><span>연구 근거와 한계 확인</span><b>03</b></a></div>
+    </section>
+    <section class="overview-panel">
+      <span class="section-number">?</span>
+      <h2>이 사이트가 묻는 질문</h2>
+      <p>언제 TQQQ 비중을 줄이고 다시 늘릴지, 그 규칙이 단순 보유보다 어떤 이익과 손실을 만들었는지 조사합니다.</p>
+      <p>‘현재 기본 방법’은 장기 성장에 참여하면서 손실과 회복 기간을 관리하려는 이 연구의 선택입니다. 모든 투자자에게 적합하다는 뜻은 아닙니다.</p>
+      <p class="note"><strong>숫자만 순위로 읽지 마세요.</strong><br/>평가 기간과 비용 조건이 다른 결과는 직접적인 우열 비교가 아닙니다.</p>
+    </section>
+  </div>
+
+  <section id="criteria" class="criteria-section">
+    <div class="section-intro"><div><h2>2. 평가 기준 이해하기</h2><p>수익, 손실의 깊이, 회복까지 걸린 시간을 같은 화면에서 함께 확인합니다.</p></div><a class="button-secondary" href={url('guide/research/methodology/')}>상세 계산 방법</a></div>
+    <div class="criteria-grid">
+      <article class="criteria-card"><span class="criteria-icon">C</span><h3>연평균 복리수익률 · CAGR</h3><p>시작 자산이 최종 자산까지 매년 일정한 속도로 늘었다고 환산한 값입니다. 실제 매년 같은 수익을 냈다는 뜻은 아닙니다.</p></article>
+      <article class="criteria-card"><span class="criteria-icon">M</span><h3>최대 낙폭 · MDD</h3><p>과거 고점에서 가장 깊게 하락한 비율입니다. 높은 수익률을 얻는 동안 감당해야 했던 손실의 깊이를 보여줍니다.</p></article>
+      <article class="criteria-card"><span class="criteria-icon">D</span><h3>고점 미회복 기간</h3><p>이전 고점부터 다시 회복하기까지 걸린 달력일입니다. 아직 회복하지 못한 구간은 완료된 회복으로 처리하지 않습니다.</p></article>
+      <article class="criteria-card"><span class="criteria-icon">10Y</span><h3>전체 기간과 최근 10년</h3><p>카드의 앞 숫자는 전체 기간, 괄호 안은 최근 10년 이내 데이터입니다. 장기 결과와 최근 일관성을 함께 봅니다.</p></article>
+    </div>
+    <div class="calculation-strip"><strong>공통 계산 원칙</strong><p>종가까지 공개된 정보로 신호를 만들고 다음 거래일 시가에 체결합니다. 매일 종가 평가, 기본 매매 수수료는 매수·매도 각각 0.1%, 세금과 슬리피지는 0입니다.</p></div>
+  </section>
+</Layout>

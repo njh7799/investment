@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from backtests import MarketData, build_target_weights, run_weight_strategy
+from backtests import MarketData, build_target_weights, drawdown_episodes, run_weight_strategy
 from scripts.render_briefing_card import render_briefing_card
 
 
@@ -137,78 +137,11 @@ def extremeness_level(score: float) -> str:
     return "normal"
 
 
-def _drawdown_episodes(equity: pd.Series) -> pd.DataFrame:
-    """Return non-overlapping high-water-mark drawdown episodes."""
-    equity = equity.dropna().astype(float)
-    if equity.empty or not equity.index.is_monotonic_increasing or equity.index.has_duplicates:
-        raise ValueError("VO equity dates must be complete, sorted, and unique")
-    if (equity <= 0).any():
-        raise ValueError("VO equity must stay positive")
-
-    rows: list[dict[str, object]] = []
-    peak_date = equity.index[0]
-    peak_value = float(equity.iloc[0])
-    trough_date = peak_date
-    trough_value = peak_value
-    active = False
-
-    for date, raw_value in equity.iloc[1:].items():
-        value = float(raw_value)
-        if not active:
-            if value >= peak_value:
-                peak_date = date
-                peak_value = value
-                trough_date = date
-                trough_value = value
-            else:
-                active = True
-                trough_date = date
-                trough_value = value
-            continue
-
-        if value < trough_value:
-            trough_date = date
-            trough_value = value
-        if value >= peak_value:
-            rows.append(
-                {
-                    "peak_date": peak_date,
-                    "trough_date": trough_date,
-                    "recovery_date": date,
-                    "mdd": trough_value / peak_value - 1.0,
-                    "underwater_days": int((date - peak_date).days),
-                }
-            )
-            active = False
-            peak_date = date
-            peak_value = value
-            trough_date = date
-            trough_value = value
-
-    if active:
-        rows.append(
-            {
-                "peak_date": peak_date,
-                "trough_date": trough_date,
-                "recovery_date": pd.NaT,
-                "mdd": trough_value / peak_value - 1.0,
-                "underwater_days": int((equity.index[-1] - peak_date).days),
-            }
-        )
-    return pd.DataFrame(
-        rows,
-        columns=[
-            "peak_date",
-            "trough_date",
-            "recovery_date",
-            "mdd",
-            "underwater_days",
-        ],
-    )
+_drawdown_episodes = drawdown_episodes
 
 
 def stress_context(frames: dict[str, pd.DataFrame]) -> StressContext:
-    """Measure the current VO drawdown against the full synthetic history."""
+    """Measure the current VO drawdown against the full history."""
     data = MarketData(
         ixic=frames["IXIC"],
         qqq=frames["QQQ"],
@@ -217,7 +150,7 @@ def stress_context(frames: dict[str, pd.DataFrame]) -> StressContext:
     prices, weights = build_target_weights("vo", data)
     result = run_weight_strategy(prices, weights, fee_rate=0.001)
     equity = result.equity
-    episodes = _drawdown_episodes(equity)
+    episodes = drawdown_episodes(equity)
 
     if episodes.empty or pd.notna(episodes.iloc[-1]["recovery_date"]):
         episode_start = equity.index[-1]
@@ -330,7 +263,7 @@ def format_briefing(briefing: Briefing) -> str:
         lines.extend(
             [
                 "",
-                "📉 VO 스트레스 · 합성 포함 전체",
+                "📉 VO 스트레스 · 전체",
                 f"• 현재 낙폭 {stress.vo_current_drawdown:.2%} · "
                 f"구간 MDD {stress.vo_episode_mdd:.2%} ({depth})",
                 f"• 고점 미회복 {stress.underwater_days:,}일 ({duration})",
@@ -341,7 +274,7 @@ def format_briefing(briefing: Briefing) -> str:
             ]
         )
     if briefing.historical_context:
-        lines.extend(["", "🔎 TQQQ 하락 속도 · 합성 포함 전체"])
+        lines.extend(["", "🔎 TQQQ 하락 속도 · 전체"])
         move = briefing.historical_context
         lines.append(
             f"• {move.horizon}거래일 {move.return_value:+.2%} · "

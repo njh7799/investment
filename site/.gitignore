@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+public/data/
+public/downloads/
+public/vendor/
+src/generated/
+playwright-report/
+test-results/
+
+public/previews/

@@ -1,0 +1,6 @@
+---
+import {methodInfo} from '../lib/methods';
+const {method,showRecent=false}=Astro.props;
+const info=methodInfo(method);
+---
+{info.start&&<div class="metric-conditions"><p class="metric-period">연구 당시 전체 · {info.start} — {info.end}</p>{showRecent&&method.recent_metrics&&<p><strong>괄호 안은 최근 10년 이내 데이터 기준</strong> · {method.recent_metrics.start} — {method.recent_metrics.end}</p>}<p>{info.origin} · {info.fee} · 초기 $100,000 · 세금·슬리피지 0 · 달러 기준</p></div>}

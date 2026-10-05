@@ -1,0 +1,24 @@
+---
+import {methodHref,methodInfo} from '../lib/methods';
+import MethodMetrics from './MethodMetrics.astro';
+import {url} from '../lib/content';
+const {method:s,featured=false}=Astro.props;
+const href=methodHref(s);
+const rows=s.result_rows||[];
+const m=s.metrics;
+const info=methodInfo(s);
+---
+<article data-method={s.id}>
+  <a class:list={['method-card','method-card-link',{'featured-method':featured}]} href={url(href)}>
+    <div class="method-card-copy">
+      <div class="method-card-heading"><span class="status-pill">역할 · {info.role}</span><span class="status-pill">검증 · {info.status}</span><span class="method-category">{s.category}</span></div>
+      <h2>{s.title}</h2>
+      <p class="method-summary">{s.summary}</p>
+      <p class="method-verdict">판단 · {info.verdict}</p>
+    </div>
+    <div class="method-card-results">
+      {m?<MethodMetrics metrics={m} recent={s.recent_metrics}/>:<p class="family-metric-note">{s.is_family?`${rows.length}개 설정을 상세 페이지에서 비교합니다.`:'실행 실패 · 생성된 백테스트 성과가 없습니다.'}</p>}
+      <span class="method-card-action">상세 보기 →</span>
+    </div>
+  </a>
+</article>

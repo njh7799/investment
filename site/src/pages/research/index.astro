@@ -1,0 +1,67 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import {data,url} from '../../lib/content';
+const dated = data.studies.map((s:any,index:number) => ({
+  ...s, order:index,
+  date:String(s.metadata.metadata?.generated_through || s.metadata.metadata?.end || s.metadata.failure?.generated_at || '').replaceAll('.','-'),
+})).sort((a:any,b:any)=>b.date.localeCompare(a.date)||a.order-b.order);
+const families=[...new Set(dated.map((s:any)=>s.family))];
+const statuses=[...new Set(dated.map((s:any)=>s.status))];
+---
+<Layout title="분석 기록" section="research">
+  <div class="page-heading notebook-heading">
+    <h1>분석 기록</h1>
+    <p>공개 전략과 VO 추가 분석. 각 연구의 결과와 판단은 당시 데이터 기준으로 보존합니다.</p>
+  </div>
+  <div class="notebook-links">
+    <a href={url('strategies/volatility-allocation/#performance')}>VO · TQQQ · QQQ 백테스트 비교</a>
+    <a href={url('research/audits/')}>원전 조사 · 보류 · 재현 실패 기록</a>
+    <a href={url('guide/research/program-summary/')}>방법별 종합 결과</a>
+  </div>
+  <form class="filters notebook-filters" role="search" onsubmit="return false">
+    <input id="research-search" type="search" name="q" aria-label="분석 검색" placeholder="VO, 이동평균, 수수료, 회복…"/>
+    <select id="family-filter" name="family" aria-label="전략군 필터"><option value="">모든 전략군</option>{families.map(f=><option>{f}</option>)}</select>
+    <select id="status-filter" name="status" aria-label="분석 상태 필터"><option value="">모든 상태</option>{statuses.map(s=><option>{s}</option>)}</select>
+    <select id="research-sort" name="sort" aria-label="분석 정렬"><option value="recent">기준일 최신순</option><option value="batch">등록 순서</option></select>
+  </form>
+  <div class="list-meta"><span id="research-count" role="status">{dated.length}개 분석</span><span>기준일은 연구 데이터 기준 · 실제 평가 구간은 상세 결과 참조</span></div>
+  <div class="research-table-wrap">
+    <table class="research-table">
+      <thead><tr><th>분석 / 기준일</th><th>결과와 한계</th><th>판정</th></tr></thead>
+      <tbody id="research-list">{dated.map((s:any)=><tr class="study-row" data-family={s.family} data-status={s.status} data-date={s.date} data-order={s.order} data-search={[s.title,s.question,s.finding,s.lesson].join(' ')}>
+        <th scope="row"><a class="study-title" href={url(`research/${s.id}/`)}>{s.title}</a><span class="study-meta">{s.family} · {s.date||'보고서 참조'}</span></th>
+        <td><p>{s.finding}</p><details class="inline-insight"><summary>해석 메모</summary><p>{s.lesson}</p></details></td>
+        <td><span class="status-pill">{s.status}</span><a class="result-link" href={url(`research/${s.id}/${s.tables.length?'#results':'#failure'}`)}>{s.tables.length?'결과 표 →':'실패 기록 →'}</a></td>
+      </tr>)}</tbody>
+    </table>
+  </div>
+  <p class="empty" id="research-empty" hidden>검색 조건에 맞는 분석이 없습니다.</p>
+  <div class="notebook-reference">
+    <strong>비교 기준: VO 30일</strong>
+    <p>저장된 연구에서 수익·낙폭·회복을 함께 비교해 유지한 기본 설정입니다. 각 연구의 독립 목적과 비교군은 해당 보고서에 기록되어 있습니다.</p>
+    <a href={url('strategies/volatility-allocation/')}>VO 규칙과 기본값 선정 기록</a>
+  </div>
+  <script>
+    const search=document.querySelector<HTMLInputElement>('#research-search')!;
+    const family=document.querySelector<HTMLSelectElement>('#family-filter')!;
+    const status=document.querySelector<HTMLSelectElement>('#status-filter')!;
+    const sort=document.querySelector<HTMLSelectElement>('#research-sort')!;
+    const list=document.querySelector('#research-list')!;
+    const rows=[...document.querySelectorAll<HTMLElement>('.study-row')];
+    function filter(updateUrl=true){
+      let count=0;
+      rows.sort((a,b)=>sort.value==='batch'?Number(a.dataset.order)-Number(b.dataset.order):b.dataset.date!.localeCompare(a.dataset.date!)||Number(a.dataset.order)-Number(b.dataset.order));
+      rows.forEach(row=>{
+        row.hidden=!!((family.value&&row.dataset.family!==family.value)||(status.value&&row.dataset.status!==status.value)||!row.dataset.search!.toLowerCase().includes(search.value.trim().toLowerCase()));
+        if(!row.hidden)count++;
+        list.append(row);
+      });
+      document.querySelector('#research-count')!.textContent=`${count}개 분석`;
+      document.querySelector<HTMLElement>('#research-empty')!.hidden=count>0;
+      if(updateUrl){const target=new URL(location.href);for(const el of [search,family,status,sort]){if(el.value&&el.value!=='recent')target.searchParams.set(el.name,el.value);else target.searchParams.delete(el.name)}history.replaceState(null,'',target)}
+    }
+    function restore(){const params=new URL(location.href).searchParams;search.value=params.get('q')||'';family.value=params.get('family')||'';status.value=params.get('status')||'';sort.value=params.get('sort')||'recent';filter(false)}
+    [search,family,status,sort].forEach(el=>el.addEventListener('input',()=>filter()));
+    window.addEventListener('pageshow',restore);window.addEventListener('popstate',restore);restore();
+  </script>
+</Layout>

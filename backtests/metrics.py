@@ -8,6 +8,76 @@ import pandas as pd
 from .core import BacktestResult
 
 
+def drawdown_episodes(equity: pd.Series) -> pd.DataFrame:
+    """Return non-overlapping high-water-mark drawdown episodes."""
+    equity = equity.dropna().astype(float)
+    if equity.empty or not equity.index.is_monotonic_increasing or equity.index.has_duplicates:
+        raise ValueError("equity dates must be complete, sorted, and unique")
+    if (equity <= 0).any():
+        raise ValueError("equity must stay positive")
+
+    rows: list[dict[str, object]] = []
+    peak_date = equity.index[0]
+    peak_value = float(equity.iloc[0])
+    trough_date = peak_date
+    trough_value = peak_value
+    active = False
+
+    for date, raw_value in equity.iloc[1:].items():
+        value = float(raw_value)
+        if not active:
+            if value >= peak_value:
+                peak_date = date
+                peak_value = value
+                trough_date = date
+                trough_value = value
+            else:
+                active = True
+                trough_date = date
+                trough_value = value
+            continue
+
+        if value < trough_value:
+            trough_date = date
+            trough_value = value
+        if value >= peak_value:
+            rows.append(
+                {
+                    "peak_date": peak_date,
+                    "trough_date": trough_date,
+                    "recovery_date": date,
+                    "mdd": trough_value / peak_value - 1.0,
+                    "underwater_days": int((date - peak_date).days),
+                }
+            )
+            active = False
+            peak_date = date
+            peak_value = value
+            trough_date = date
+            trough_value = value
+
+    if active:
+        rows.append(
+            {
+                "peak_date": peak_date,
+                "trough_date": trough_date,
+                "recovery_date": pd.NaT,
+                "mdd": trough_value / peak_value - 1.0,
+                "underwater_days": int((equity.index[-1] - peak_date).days),
+            }
+        )
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "peak_date",
+            "trough_date",
+            "recovery_date",
+            "mdd",
+            "underwater_days",
+        ],
+    )
+
+
 def _drawdown_stats(equity: pd.Series) -> dict[str, object]:
     running = equity.cummax()
     drawdown = equity / running - 1.0

@@ -1,0 +1,10 @@
+---
+import {pct} from '../lib/content';
+const {metrics:m}=Astro.props;
+---
+<dl class="method-metrics">
+  <div><dt>연평균 복리수익률 <abbr title="Compound Annual Growth Rate">CAGR</abbr></dt><dd>{pct(m.cagr)}</dd></div>
+  <div><dt>최대 낙폭 <abbr title="Maximum Drawdown">MDD</abbr></dt><dd>{pct(m.mdd)}</dd></div>
+  <div><dt>최장 고점 미회복 기간</dt><dd>{m.longest_time_underwater_days}<small>일</small></dd></div>
+  <div><dt>연평균 거래</dt><dd>{Number(m.annual_trades).toFixed(1)}<small>회</small></dd></div>
+</dl>

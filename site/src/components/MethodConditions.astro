@@ -1,0 +1,6 @@
+---
+import {methodInfo} from '../lib/methods';
+const {method}=Astro.props;
+const info=methodInfo(method);
+---
+{info.start&&<div class="metric-conditions"><p class="metric-period">연구 당시 · {info.start} — {info.end}</p><p>{info.origin} · {info.fee}</p><p>초기 $100,000 · 세금·슬리피지 0 · 달러 기준</p></div>}

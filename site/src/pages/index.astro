@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import MethodCard from '../components/MethodCard.astro';
+import {data,url} from '../lib/content';
+import {methodInfo} from '../lib/methods';
+const methods=[...data.strategies,...data.research_methods];
+const families=[...new Set(methods.map((s:any)=>s.category))];
+---
+<Layout title="투자 방법" section="strategies">
+  <div class="page-heading"><h1>투자 방법</h1><p>TQQQ를 언제, 얼마나 보유할지 공개 규칙과 과거 데이터로 살펴보는 개인 연구 기록입니다. 장기 성장·손실·회복·거래 부담을 함께 비교하며, 이 연구의 현재 기본 방법은 VO입니다.</p><p>다중자산 전략은 위험과 목적이 다른 참고 방법입니다. 이곳의 수치는 백테스트이며 실제 계좌 성과나 미래 수익을 뜻하지 않습니다.</p></div>
+  <nav class="start-path" aria-label="처음 방문한 분의 읽는 순서"><a href={url('guide/start/')}>1. TQQQ와 사이트 읽는 법</a><a href={url('guide/')}>2. 평가 기준 이해하기</a><a href={url('compare/')}>3. 같은 조건으로 비교하기</a><a href={url('research/')}>4. 연구 근거 확인하기</a></nav>
+  <div class="note"><strong>카드의 숫자는 각 연구 당시 결과입니다.</strong><p>기간과 비용이 다른 카드를 수익률 순위로 읽지 마세요. 같은 조건 비교에서는 동일 연구·평가 기간·초기자산의 방법만 함께 표시합니다. VO의 기본값도 과거 데이터를 보고 정했으며 독립적인 미래 검증을 마친 전략은 아닙니다.</p></div>
+  <section class="paper method-filters" aria-label="투자 방법 찾기">
+    <div class="filters"><label>방법 검색<input id="method-search" type="search" placeholder="한글·영문 전략명 또는 특징"/></label><label>투자 대상<select id="asset-filter"><option value="">전체</option><option value="tqqq">TQQQ 운용</option><option value="other">다중자산·기타 참고</option></select></label><label>방법 유형<select id="method-family"><option value="">모든 유형</option>{families.map((f:any)=><option>{f}</option>)}</select></label><label>검증 상태<select id="method-status"><option value="">전체</option>{[...new Set(methods.map((m:any)=>methodInfo(m).status))].map((s:any)=><option>{s}</option>)}</select></label><label>판단<select id="method-verdict"><option value="">전체</option>{[...new Set(methods.map((m:any)=>methodInfo(m).verdict))].map((v:any)=><option>{v}</option>)}</select></label></div>
+    <div class="filter-actions"><button id="method-reset">필터 초기화</button><button id="collapse-methods">모두 접기</button><a href={url('guide/start/#status')}>역할·검증·판단의 뜻</a><a href={url('compare/')}>2~3개 방법 비교 →</a></div>
+    <p id="method-count" role="status">{methods.length}개 방법·방법군 · VO만 기본 펼침</p>
+  </section>
+  <p id="method-empty" class="empty" hidden>조건에 맞는 방법이 없습니다. 검색어를 줄이거나 필터를 초기화해 주세요.</p>
+  <div class="methods-list">{methods.map((s:any)=><section id={s.id} data-method-entry data-search={[s.title,s.id,s.model,s.metrics?.model,s.category,s.summary,s.mechanics].join(' ').toLowerCase()} data-family={s.category} data-status={methodInfo(s).status} data-verdict={methodInfo(s).verdict} data-asset={methodInfo(s).usesTqqq?'tqqq':'other'}><MethodCard method={s} featured={s.id==='volatility-allocation'}/></section>)}</div>
+  <p class="caption method-footnote">여러 설정을 시험한 방법군은 최선의 설정 하나를 대표 성과로 사용하지 않습니다. <a href={url('strategies/volatility-allocation/#performance')}>최신 VO 비교 ({data.comparison.market_date}) →</a></p>
+</Layout>
+<script>
+ const search=document.querySelector<HTMLInputElement>('#method-search')!;
+ const controls=['asset-filter','method-family','method-status','method-verdict'].map(id=>document.getElementById(id) as HTMLSelectElement);
+ const keys=['asset','family','status','verdict'];
+ function restore(){const p=new URLSearchParams(location.search);search.value=p.get('q')||'';controls.forEach((el,i)=>el.value=p.get(keys[i])||'');draw(false)}
+ function draw(save=true){let count=0;document.querySelectorAll<HTMLElement>('[data-method-entry]').forEach(el=>{el.hidden=!(el.dataset.search!.includes(search.value.trim().toLowerCase())&&controls.every((input,i)=>!input.value||el.dataset[keys[i]]===input.value));if(!el.hidden)count++});document.querySelector('#method-count')!.textContent=`${count}개 방법·방법군`;document.querySelector<HTMLElement>('#method-empty')!.hidden=count>0;if(save){const u=new URL(location.href);['q',...keys].forEach((k,i)=>{const v=i===0?search.value:controls[i-1].value;v?u.searchParams.set(k,v):u.searchParams.delete(k)});history.replaceState(null,'',u)}}
+ search.addEventListener('input',()=>draw());controls.forEach(el=>el.addEventListener('change',()=>draw()));
+ document.querySelector('#method-reset')!.addEventListener('click',()=>{search.value='';controls.forEach(el=>el.value='');draw()});
+ document.querySelector('#collapse-methods')!.addEventListener('click',()=>document.querySelectorAll<HTMLDetailsElement>('.method-details').forEach(el=>el.open=false));
+ window.addEventListener('popstate',restore);restore();
+</script>

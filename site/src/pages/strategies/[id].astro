@@ -1,0 +1,30 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import DetailContext from '../../components/DetailContext.astro';
+import Chart from '../../components/Chart.astro';
+import MethodMetrics from '../../components/MethodMetrics.astro';
+import LatestBacktest from '../../components/LatestBacktest.astro';
+import {data,url,document,markdown,docUrl} from '../../lib/content';
+interface Props { strategy: any }
+export function getStaticPaths(){return data.strategies.filter((s:any)=>s.detail_page!==false).map((s:any)=>({params:{id:s.id},props:{strategy:s}}))}
+const {strategy:s}=Astro.props;
+const source=`docs/strategies/${s.id}/README.md`,doc=document(source);
+const related=data.documents.filter((d:any)=>d.path.startsWith(`docs/strategies/${s.id}/`)&&d.path!==source);
+const studies=s.studies.map((id:string)=>data.studies.find((r:any)=>r.id===id));
+const isVO=s.id==='volatility-allocation';
+---
+<Layout title={s.title} section="strategies" detail>
+  <DetailContext title={s.title}/>
+  <div class="page-heading"><div class="report-meta"><span class="status-pill">{s.status}</span><span>{s.category}</span></div><h1>{s.title}</h1><p>{s.summary}</p></div>
+  <nav class="report-sections" aria-label="방법 목차"><a href="#rules">작동 규칙</a><a href="#performance">성과와 차트</a><a href="#evidence">선택 근거·관련 분석</a>{related.length>0&&<a href="#variants">대체·추가 규칙</a>}</nav>
+  <section id="rules" class="method-rules paper"><h2>작동 규칙</h2><p>{s.mechanics}</p><p class="method-cadence">{s.cadence}</p><details class="full-rules"><summary>전체 규칙과 실행 조건 읽기</summary><div class="prose" set:html={markdown(doc.body.replace(/^# .*\n/,''),source)}/><a href={url('downloads/'+source)} download>원본 규칙 내려받기 ↓</a></details></section>
+  <section id="performance" class="section-block"><h2>성과와 차트</h2>
+    <div class="paper historical-spec"><h3>연구 당시 결과</h3><p class="metric-period">{s.metrics.start} — {s.metrics.end} · {s.metrics.period==='actual_tqqq'?'실제 TQQQ 구간':'네 ETF 공통 구간'} · 매수·매도 각각 0.1%</p><MethodMetrics metrics={s.metrics}/><div class="downloads"><a href={url('downloads/'+s.metric_source)} download>성과 원본 CSV ↓</a><a href={url(`research/${s.batch}/#results`)}>다른 평가 기간과 전체 결과</a></div></div>
+    {isVO?<LatestBacktest/>:<><Chart comparisonControls={false} file={s.chart} title={`${s.title} · 연구 당시 비교`}/><p class="caption">당시 코드·데이터로 복원 검증한 전체 거래일 곡선입니다. {s.id==='permanent-portfolio'?'밴드·연례 동일비중·단순 보유를 독립 비교합니다.':'VO·TQQQ·QQQ와의 저장된 통합 비교입니다.'} <a href={url(`research/${s.batch}/#downloads`)}>입력 데이터 해시·복원 정보 →</a></p></>}
+  </section>
+  <section id="evidence" class="section-block"><h2>선택 근거와 관련 분석</h2><div class="summary-grid"><div class="paper"><h3>현재 판단</h3><p>{s.decision}</p></div><div class="paper"><h3>한계와 해석</h3><p>{s.limitation}</p></div></div>
+    <div class="evidence-list">{studies.map((r:any)=><article><div><a href={url(`research/${r.id}/`)}>{r.title} →</a><span class="status-pill">{r.status}</span></div><p>{r.finding}</p>{s.id==='ixic-three-percent-rule'&&r.id==='batch-11'&&<p class="caption">판본 비교 참고: 이 페이지의 10구간 규칙 성과는 단일 자산 타이밍 연구이며, Jordan 공개 규칙 연구와는 다른 판본입니다.</p>}</article>)}</div>
+  </section>
+  {related.length>0&&<section id="variants" class="section-block paper link-list"><h2>대체·추가 규칙</h2><p>대체 설정은 기본값 일부를 바꾸고, 추가 규칙은 기본 방법 위에 조합합니다. 위의 성과는 기본 설정 기준입니다.</p>{related.map((d:any)=><a href={docUrl(d.path)}>{d.title} →</a>)}</section>}
+  <div class="method-bottom-nav"><a href={url()}>← 투자 방법</a><a href={url('research/')}>전체 분석 기록 →</a></div>
+</Layout>

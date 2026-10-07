@@ -1,0 +1,26 @@
+{
+  "generated_through": "2026-10-05",
+  "actual_tqqq_start": "2010-02-11",
+  "initial_cash": 100000,
+  "fee_rate": 0.001,
+  "cash_return": 0,
+  "slippage": 0,
+  "tax": 0,
+  "integer_shares": true,
+  "annual_method": "continuous holdings; prior year final close; initial cash in first year",
+  "price_basis": "split/dividend adjusted OHLC; no separate dividend cash credit",
+  "reduced_episode": "executed weight below 1 until next weight-1 open before trade; last close if unfinished",
+  "counterfactual": "keep pre-cut shares/cash without trading to the same endpoint; local comparison only",
+  "individual_cuts": "each downward transition until prior target restored; includes 50-to-0 cuts; overlapping events cannot be added",
+  "left_censoring": "exclude initial reduced run without a preceding invested position",
+  "uptrend": "trailing 30-session TQQQ close return > 0 on signal date",
+  "downtrend": "trailing 30-session TQQQ close return < 0 on prior session",
+  "large_missed_return_pp": 5,
+  "large_drawdown_pct": 10,
+  "drawdown_marks": "full-target entry post-fee open, daily closes, next cut pre-trade open; reset on recovery/cut",
+  "data_sha256": {
+    "TQQQ.csv": "64cbdb5d470768636335458a48de63da6857d60a9fb4cda1c8664c58fc7aec77",
+    "QQQ.csv": "63cb8745672ac276c0507acd4ba7f69586a0b21f520df1e57d298251e17a5670",
+    "IXIC.csv": "9cbfae6b822578d2dde83a188767eb5e8d5e57e2e89965a8b35f8f98e6dccdb8"
+  }
+}

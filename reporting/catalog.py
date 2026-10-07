@@ -18,6 +18,7 @@ ROWS = [
 ('vo-upside','vo-upside-recovery.md','research/vo-upside-directional','VO 확장','추가 검증 대기','급반등 때 VO 감축을 일찍 해제하면 장기 성과가 개선될까?','회복 확인형은 수익 개선과 함께 낙폭·미회복 기간 악화가 관찰돼 미관측 기간 검증 대상으로 보류했다.','규칙을 만든 계기가 된 사례는 독립 검증 성과로 세지 않는다.'),
 ('vo-sgov','vo-sgov-cash-sleeve.md','vo-sgov','VO 확장','연구 기록','현금 구간을 SGOV로 바꾸면 비용 후에도 이익일까?','연구 기간의 최종 자산은 증가했지만 추가 거래 비용이 이익의 상당 부분을 소모했다.','현금 수익의 보강과 방어 규칙 자체의 개선을 구분한다.'),
 ('vo-regimes','vo-regime-returns.md','vo-regimes','구간 분석','연구 기록','VO 변동성 밴드가 유지되는 동안 TQQQ는 어떻게 움직였을까?','밴드별 구간 수익은 기간 길이가 달라 단순 평균만으로 기대수익을 해석할 수 없다.','기초자산 구간 등락률은 실제 체결을 반영한 포트폴리오 수익률이 아니다.'),
+('vo-tradeoffs','vo-annual-tradeoffs.md','vo-tradeoffs','구간 분석','연구 기록','VO의 연도별 수익과 상승 참여·저변동성 하락 대응의 빈틈은 얼마나 될까?','실제 TQQQ 구간에서 5%p 이상 상승 기회비용이 8개 구간, 100% 목표 비중 중 10% 이상 낙폭이 50회 관측됐다.','상승 중 감축과 하락 뒤 반등 지연, 전체 낙폭과 하락 확인 후 추가 손실을 구별한다.'),
 ]
 GENERAL = {'README.md','program-summary.md','methodology.md','discovery-protocol.md','promotion-criteria.md','candidates.md','model-census.md','rejected-strategies.md','automation-log.md','batches/README.md'}
 STRATEGIES = {

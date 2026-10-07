@@ -99,7 +99,7 @@ def test_research_methods_cover_studies_without_invented_or_selected_best_metric
     studies=catalog(ROOT)
     methods=research_method_data(ROOT,studies)
     assert len(methods)==len({m['id'] for m in methods})==25
-    assert {m['batch'] for m in methods}=={s['id'] for s in studies}-{'batch-10','vo-regimes'}
+    assert {m['batch'] for m in methods}=={s['id'] for s in studies if s['family']!='구간 분석'}-{'batch-10'}
     for method in methods:
         assert '배치' not in method['title']
         if method['status']=='실행 실패':

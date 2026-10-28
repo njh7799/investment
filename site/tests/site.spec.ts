@@ -88,7 +88,7 @@ test('mobile layout, audit search and legacy route',async({page})=>{
 });
 
 
-test('methods connect rules, exact historical specs and research in both directions',async({page})=>{
+test('methods connect rules, stored historical specs and research in both directions',async({page})=>{
   await page.goto('./');
   await expect(page.locator('h1')).toHaveText('투자 방법');
   await expect(page.locator('nav[aria-label="주요 메뉴"] a')).toHaveCount(3);
@@ -103,18 +103,21 @@ test('methods connect rules, exact historical specs and research in both directi
   await expect(failed.locator('.method-metrics')).toHaveCount(0);
   await failed.locator('.method-toggle').click();
   const vo=page.locator('[data-method="volatility-allocation"]');
-  await expect(vo).toContainText('40.70%');
-  await expect(vo).toContainText('6.0회');
-  await expect(vo).toContainText('2010-02-11 — 2026-07-31');
+  const voSource=await (await page.request.get('data/method-volatility-allocation.json')).json();
+  const voMetrics=voSource.curves.find((curve:any)=>curve.model==='vo').metrics;
+  await expect(vo).toContainText(`${(voMetrics.cagr*100).toFixed(2)}%`);
+  await expect(vo).toContainText(`${Number(voMetrics.annual_trades).toFixed(1)}회`);
+  await expect(vo).toContainText(`${voMetrics.start} — ${voMetrics.end}`);
   await expect(vo).toContainText('최장 고점 미회복 기간');
   await expect(vo).toContainText('연평균 거래');
   await expect(vo.locator('.method-details')).toHaveAttribute('open','');
   const buyHold=page.locator('[data-method="tqqq-buy-hold"]');
+  const buyHoldMetrics=voSource.curves.find((curve:any)=>curve.model==='tqqq_hold').metrics;
   await expect(buyHold.locator('.method-details')).not.toHaveAttribute('open','');
-  await expect(buyHold).toContainText('42.32%');
-  await expect(buyHold).toContainText('-81.66%');
-  await expect(buyHold).toContainText('1111일');
-  await expect(buyHold).toContainText('0.1회');
+  await expect(buyHold).toContainText(`${(buyHoldMetrics.cagr*100).toFixed(2)}%`);
+  await expect(buyHold).toContainText(`${(buyHoldMetrics.mdd*100).toFixed(2)}%`);
+  await expect(buyHold).toContainText(`${buyHoldMetrics.longest_time_underwater_days}일`);
+  await expect(buyHold).toContainText(`${Number(buyHoldMetrics.annual_trades).toFixed(1)}회`);
   const ixic=page.locator('[data-method="ixic-three-percent-rule"]');
   await expect(page.locator('.method-details[open]')).toHaveCount(1);
   await expect(ixic.locator('.method-rule')).not.toBeVisible();
@@ -151,8 +154,9 @@ test('methods connect rules, exact historical specs and research in both directi
   await page.goto('strategies/permanent-portfolio/');
   await page.locator('.chart-canvas').scrollIntoViewIfNeeded();
   await expect(page.locator('.chart-canvas .main-svg').first()).toBeVisible();
-  await expect(page.locator('.chart-metrics')).toContainText('2026-07-31');
-  await expect(page.locator('.chart-metrics')).not.toContainText('2026-08-11');
+  const permanentSource=await (await page.request.get('data/method-permanent-portfolio.json')).json();
+  const permanentMetrics=permanentSource.curves.find((curve:any)=>curve.model==='permanent_band').metrics;
+  await expect(page.locator('.chart-metrics')).toContainText(permanentMetrics.end);
   const download=page.waitForEvent('download');
   await page.getByText('성과 원본 CSV ↓',{exact:true}).click();
   expect((await download).suggestedFilename()).toBe('period-summary.csv');
@@ -196,8 +200,8 @@ test('card image opens role-colored comparison periods and clear detail hierarch
     ['benchmark','#2979FF'],['default','#E5484D'],['target','#D99A00']
   ]);
   const smaPreview=await (await page.request.get('data/preview-sma-200-recent-10y.json')).json();
-  expect(smaPreview.curves[0].dates[0]).toBe('2016-08-01');
-  expect(smaPreview.curves[0].dates.at(-1)).toBe('2026-07-31');
+  expect(smaPreview.curves[0].dates[0]).toBe(smaPreview.curves[0].metrics.start);
+  expect(smaPreview.curves[0].dates.at(-1)).toBe(smaPreview.curves[0].metrics.end);
   await page.setViewportSize({width:390,height:844});
   await expect(page.locator('.detail-context')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBeTruthy();
@@ -212,12 +216,14 @@ test('card image opens role-colored comparison periods and clear detail hierarch
 test('card conditions and exact source survive navigation and Korean search',async({page})=>{
  await page.goto('./');
  const vo=page.locator('[data-method="volatility-allocation"]');
- await expect(vo.locator('.metric-conditions')).toContainText('2010-02-11 — 2026-07-31');
+ const source=await (await page.request.get('data/method-volatility-allocation.json')).json();
+ const metrics=source.curves.find((curve:any)=>curve.model==='vo').metrics;
+ await expect(vo.locator('.metric-conditions')).toContainText(`${metrics.start} — ${metrics.end}`);
  await expect(vo.locator('.metric-conditions')).toContainText('각각 0.1%');
  await vo.getByRole('link',{name:'수치 원본',exact:true}).click();
  await expect(page.locator('.table-period')).toHaveValue('actual_tqqq');
  await expect(page.locator('.data-table tbody tr')).toHaveCount(1);
- await expect(page.locator('.data-table')).toContainText('40.70%');
+ await expect(page.locator('.data-table')).toContainText(`${(metrics.cagr*100).toFixed(2)}%`);
  await page.reload();await expect(page.locator('.data-table tbody tr')).toHaveCount(1);
  await page.locator('.table-search').fill('골든');
  await expect(page.locator('.data-table tbody tr')).toHaveCount(1);
@@ -252,10 +258,15 @@ test('home filters persist, reset, and retain conditions on collapsed cards',asy
 test('same-condition comparison uses SGOV baseline, deduplicates, and restores choices',async({page})=>{
  await page.goto('compare/?study=vo-sgov');
  await expect(page.locator('#compare-results article')).toHaveCount(2);
- await expect(page.locator('#compare-conditions')).toContainText('2020-06-01 — 2026-08-28');
- await expect(page.locator('#compare-results')).toContainText('34.32%');
- await expect(page.locator('#compare-results')).toContainText('34.59%');
- await expect(page.locator('#compare-results')).toContainText('+0.27%p');
+ const source=await (await page.request.get('data/vo-sgov-tables.json')).json();
+ const rows=source.find((table:any)=>table.name==='summary').rows;
+ const cash=rows.find((row:any)=>row.scenario==='VO cash');
+ const sgov=rows.find((row:any)=>row.scenario==='VO SGOV');
+ await expect(page.locator('#compare-conditions')).toContainText(`${cash.start} — ${cash.end}`);
+ await expect(page.locator('#compare-results')).toContainText(`${(cash.cagr*100).toFixed(2)}%`);
+ await expect(page.locator('#compare-results')).toContainText(`${(sgov.cagr*100).toFixed(2)}%`);
+ const difference=(sgov.cagr-cash.cagr)*100;
+ await expect(page.locator('#compare-results')).toContainText(`${difference>=0?'+':''}${difference.toFixed(2)}%p`);
  await expect(page.locator('#compare-conditions')).toContainText('$10 이하 주문 무료');
  await page.locator('.compare-model').nth(2).selectOption('VO SGOV');
  await expect(page.locator('#compare-results article')).toHaveCount(2);
@@ -263,7 +274,10 @@ test('same-condition comparison uses SGOV baseline, deduplicates, and restores c
  await page.locator('#compare-study').selectOption('batch-01');
  await expect(page.locator('#compare-conditions')).toContainText('합성 포함 전체');
  await expect(page.locator('#compare-results article')).toHaveCount(3);
- await expect(page.locator('#compare-results')).toContainText('32.04%');
+ const batchSource=await (await page.request.get('data/batch-01-tables.json')).json();
+ const batchRows=batchSource.find((table:any)=>table.name==='period-summary').rows;
+ const syntheticVo=batchRows.find((row:any)=>row.period==='full_synthetic'&&row.model==='vo');
+ await expect(page.locator('#compare-results')).toContainText(`${(syntheticVo.cagr*100).toFixed(2)}%`);
  await page.setViewportSize({width:390,height:844});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });

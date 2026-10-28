@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download adjusted OHLC history and build a synthetic pre-launch TQQQ series."""
+"""Download split-adjusted OHLC history and build pre-launch TQQQ."""
 
 from __future__ import annotations
 
@@ -17,21 +17,72 @@ import exchange_calendars as xcals
 import pandas as pd
 import yfinance as yf
 
+try:
+    from scripts.toss_api import TossApiClient
+except ModuleNotFoundError:  # direct execution: python scripts/update_market_data.py
+    from toss_api import TossApiClient
+
 
 OHLC = ["Open", "High", "Low", "Close"]
-SYMBOLS = {
-    "IXIC": "^IXIC",
-    "QQQ": "QQQ",
-    "TQQQ": "TQQQ",
-    "SPY": "SPY",
-    "SGOV": "SGOV",
-}
+YAHOO_INDEX_SYMBOLS = {"IXIC": "^IXIC"}
+TOSS_SYMBOLS = (
+    "AGG",
+    "DBC",
+    "EEM",
+    "EFA",
+    "EWJ",
+    "GLD",
+    "GSG",
+    "HYG",
+    "IEF",
+    "IWM",
+    "IYR",
+    "LQD",
+    "QQQ",
+    "SGOV",
+    "SHY",
+    "SPY",
+    "TLT",
+    "TQQQ",
+    "VEU",
+    "VGK",
+    "VNQ",
+)
+SYMBOLS = ("IXIC",) + TOSS_SYMBOLS
 NEW_YORK = ZoneInfo("America/New_York")
 ROUNDING_TOLERANCE = 1e-10
+DEFAULT_TOSS_REQUESTS_PER_SECOND = 10.0
 
 
 class DataValidationError(RuntimeError):
     """Raised when downloaded or derived market data is unsafe to publish."""
+
+
+class RequestThrottle:
+    """Keep sequential Toss requests below the server's burst limit."""
+
+    def __init__(
+        self,
+        requests_per_second: float,
+        *,
+        clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        if requests_per_second <= 0:
+            raise ValueError("requests_per_second must be positive")
+        self.interval = 1.0 / requests_per_second
+        self.clock = clock
+        self.sleep = sleep
+        self.last_request: float | None = None
+
+    def wait(self) -> None:
+        now = self.clock()
+        if self.last_request is not None:
+            delay = self.interval - (now - self.last_request)
+            if delay > 0:
+                self.sleep(delay)
+                now = self.clock()
+        self.last_request = now
 
 
 def fix_ohlc_roundoff(frame: pd.DataFrame) -> pd.DataFrame:
@@ -51,7 +102,7 @@ def fix_ohlc_roundoff(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def normalize_history(frame: pd.DataFrame, symbol: str) -> pd.DataFrame:
-    """Return a date-indexed adjusted OHLC frame with a stable schema."""
+    """Return a date-indexed OHLC frame with a stable schema."""
     if frame.empty:
         raise DataValidationError(f"{symbol}: Yahoo returned no history")
     missing = set(OHLC).difference(frame.columns)
@@ -68,8 +119,10 @@ def normalize_history(frame: pd.DataFrame, symbol: str) -> pd.DataFrame:
     return fix_ohlc_roundoff(result.astype(float))
 
 
-def download_symbol(symbol: str, through: pd.Timestamp | None = None) -> pd.DataFrame:
-    """Download all available adjusted daily data for one Yahoo symbol."""
+def download_yahoo_index(
+    symbol: str, through: pd.Timestamp | None = None
+) -> pd.DataFrame:
+    """Download an unadjusted index series from Yahoo Finance."""
     if hasattr(yf, "config"):
         yf.config.debug.hide_exceptions = False
     end = None
@@ -79,11 +132,72 @@ def download_symbol(symbol: str, through: pd.Timestamp | None = None) -> pd.Data
         period="max",
         end=end,
         interval="1d",
-        auto_adjust=True,
+        auto_adjust=False,
         actions=False,
         repair=True,
     )
     return normalize_history(history, symbol)
+
+
+def download_toss_symbol(
+    client: TossApiClient,
+    symbol: str,
+    through: pd.Timestamp | None = None,
+    *,
+    throttle: RequestThrottle | None = None,
+) -> pd.DataFrame:
+    """Download every split-adjusted Toss daily candle for one US symbol."""
+    rows: dict[pd.Timestamp, dict[str, float]] = {}
+    before: str | None = None
+    seen_cursors: set[str] = set()
+
+    while True:
+        if throttle is not None:
+            throttle.wait()
+        page = client.get_candles(
+            symbol,
+            interval="1d",
+            count=200,
+            before=before,
+            adjusted=True,
+        )
+        candles = page["candles"]
+        for candle in candles:
+            if candle["currency"] != "USD":
+                raise DataValidationError(
+                    f"{symbol}: expected USD candles, got {candle['currency']}"
+                )
+            timestamp = pd.Timestamp(candle["timestamp"])
+            date = timestamp.tz_localize(None).normalize()
+            values = {
+                "Open": float(candle["openPrice"]),
+                "High": float(candle["highPrice"]),
+                "Low": float(candle["lowPrice"]),
+                "Close": float(candle["closePrice"]),
+            }
+            if date in rows and rows[date] != values:
+                raise DataValidationError(
+                    f"{symbol}: conflicting duplicate candle on {date.date()}"
+                )
+            rows[date] = values
+
+        next_before = page.get("nextBefore")
+        if next_before is None:
+            break
+        if not candles:
+            raise DataValidationError(f"{symbol}: empty candle page has nextBefore")
+        if next_before in seen_cursors:
+            raise DataValidationError(f"{symbol}: repeated candle cursor")
+        seen_cursors.add(next_before)
+        before = next_before
+
+    if not rows:
+        raise DataValidationError(f"{symbol}: Toss returned no history")
+    result = pd.DataFrame.from_dict(rows, orient="index").sort_index()
+    result.index = pd.DatetimeIndex(result.index, name="Date")
+    if through is not None:
+        result = result.loc[: pd.Timestamp(through).normalize()]
+    return fix_ohlc_roundoff(result.loc[:, OHLC])
 
 
 def ensure_tqqq_actual_coverage(qqq: pd.DataFrame, tqqq: pd.DataFrame) -> None:
@@ -200,10 +314,29 @@ def latest_settled_session(now: pd.Timestamp | None = None) -> pd.Timestamp:
     return pd.Timestamp(previous).tz_localize(None)
 
 
-def fetch_all(through: pd.Timestamp | None = None) -> Dict[str, pd.DataFrame]:
+def fetch_all(
+    through: pd.Timestamp | None = None,
+    *,
+    toss_client: TossApiClient | None = None,
+    toss_requests_per_second: float = DEFAULT_TOSS_REQUESTS_PER_SECOND,
+) -> Dict[str, pd.DataFrame]:
+    client = toss_client or TossApiClient.from_env()
+    throttle = RequestThrottle(toss_requests_per_second)
     downloaded = {
-        name: download_symbol(symbol, through) for name, symbol in SYMBOLS.items()
+        name: download_yahoo_index(symbol, through)
+        for name, symbol in YAHOO_INDEX_SYMBOLS.items()
     }
+    downloaded.update(
+        {
+            symbol: download_toss_symbol(
+                client,
+                symbol,
+                through,
+                throttle=throttle,
+            )
+            for symbol in TOSS_SYMBOLS
+        }
+    )
     downloaded["TQQQ"] = build_synthetic_tqqq(
         downloaded["QQQ"], downloaded["TQQQ"]
     )
@@ -280,13 +413,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=Path("assets"))
     parser.add_argument("--attempts", type=int, default=3)
     parser.add_argument("--retry-delay", type=int, default=60)
+    parser.add_argument(
+        "--toss-requests-per-second",
+        type=float,
+        default=DEFAULT_TOSS_REQUESTS_PER_SECOND,
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    if args.attempts < 1 or args.retry_delay < 0:
-        raise ValueError("attempts must be positive and retry-delay cannot be negative")
+    if (
+        args.attempts < 1
+        or args.retry_delay < 0
+        or args.toss_requests_per_second <= 0
+    ):
+        raise ValueError(
+            "attempts and toss-requests-per-second must be positive; "
+            "retry-delay cannot be negative"
+        )
 
     target: pd.Timestamp | None = None
     settled_session = latest_settled_session()
@@ -304,7 +449,10 @@ def main() -> int:
         target,
         args.attempts,
         args.retry_delay,
-        fetcher=lambda: fetch_all(settled_session),
+        fetcher=lambda: fetch_all(
+            settled_session,
+            toss_requests_per_second=args.toss_requests_per_second,
+        ),
     )
     data = {name: frame.loc[:settled_session].copy() for name, frame in data.items()}
     for name, frame in data.items():

@@ -1,8 +1,8 @@
 {
   "actual_tqqq_start": "2010-02-11",
-  "generated_through": "2026-09-04",
-  "price_field": "TQQQ adjusted close",
+  "generated_through": "2026-10-27",
+  "price_field": "Toss TQQQ split-adjusted close; cash distributions excluded",
   "return_formula": "end_close / start_close - 1",
-  "signal_rule": "30-session TQQQ adjusted-close return volatility, annualized with sqrt(252)",
-  "tqqq_sha256": "8fae661af4f6e3b3abc09b6c24802640337059f1bd334a9691e1da1e9d094170"
+  "signal_rule": "30-session TQQQ split-adjusted-close return volatility, annualized with sqrt(252)",
+  "tqqq_sha256": "bbb150424eacbd1d7218638823cb830b1aece784c9a84a18512a2159871707cf"
 }

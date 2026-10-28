@@ -1,13 +1,13 @@
 {
   "actual_tqqq_start": "2010-02-11",
   "asset_sha256": {
-    "IXIC": "5244f93930073e8635eacc744ffa149d57e952df79ef43b50bb77940833596a1",
-    "QQQ": "2c7fb827859342416b645cd0b1d793fc7e1bc2bd4402f1ee0d6b348e8facc97f",
-    "TLT": "b77676de0da86e915c0d7af9029871a98aec66fbfb16c78267d43f8323a02246",
-    "TQQQ": "9c2c5e55db8abc1b847a8ddf301400d8ba1e1c571a8159b0b3e5b01bb91e79a9"
+    "IXIC": "2b1c834ee19577e0876c9efe385b43758a71cc34ec1665f4791047f8f67c71a6",
+    "QQQ": "680489cd371cc9cc7e6141e4d7ffb322c332a2cd1965584cdea6d49c0c3b1ca6",
+    "TLT": "cc1ec637137cc4650e42d0c828f2d320f7c6ea9f35cfea42b79c2152f2229d91",
+    "TQQQ": "bbb150424eacbd1d7218638823cb830b1aece784c9a84a18512a2159871707cf"
   },
   "base_fee_rate": 0.001,
-  "generated_through": "2026-08-12",
+  "generated_through": "2026-10-27",
   "initial_cash": 100000,
   "models": [
     "jordan_public_proxy",

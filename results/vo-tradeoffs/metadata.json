@@ -1,5 +1,5 @@
 {
-  "generated_through": "2026-10-05",
+  "generated_through": "2026-10-27",
   "actual_tqqq_start": "2010-02-11",
   "initial_cash": 100000,
   "fee_rate": 0.001,
@@ -8,7 +8,7 @@
   "tax": 0,
   "integer_shares": true,
   "annual_method": "continuous holdings; prior year final close; initial cash in first year",
-  "price_basis": "split/dividend adjusted OHLC; no separate dividend cash credit",
+  "price_basis": "Toss split-adjusted OHLC; cash distributions excluded",
   "reduced_episode": "executed weight below 1 until next weight-1 open before trade; last close if unfinished",
   "counterfactual": "keep pre-cut shares/cash without trading to the same endpoint; local comparison only",
   "individual_cuts": "each downward transition until prior target restored; includes 50-to-0 cuts; overlapping events cannot be added",
@@ -19,8 +19,8 @@
   "large_drawdown_pct": 10,
   "drawdown_marks": "full-target entry post-fee open, daily closes, next cut pre-trade open; reset on recovery/cut",
   "data_sha256": {
-    "TQQQ.csv": "64cbdb5d470768636335458a48de63da6857d60a9fb4cda1c8664c58fc7aec77",
-    "QQQ.csv": "63cb8745672ac276c0507acd4ba7f69586a0b21f520df1e57d298251e17a5670",
-    "IXIC.csv": "9cbfae6b822578d2dde83a188767eb5e8d5e57e2e89965a8b35f8f98e6dccdb8"
+    "TQQQ.csv": "bbb150424eacbd1d7218638823cb830b1aece784c9a84a18512a2159871707cf",
+    "QQQ.csv": "680489cd371cc9cc7e6141e4d7ffb322c332a2cd1965584cdea6d49c0c3b1ca6",
+    "IXIC.csv": "2b1c834ee19577e0876c9efe385b43758a71cc34ec1665f4791047f8f67c71a6"
   }
 }

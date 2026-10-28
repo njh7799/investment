@@ -30,16 +30,30 @@ MODELS = {
     "gtaa5": ("GTAA 5", "#D500F9"),
     "paa2": ("PAA2", "#FF1744"),
 }
+
+
+def latest_common_date() -> pd.Timestamp:
+    latest_dates = []
+    for path in sorted((ROOT / "assets").glob("*.csv")):
+        dates = pd.read_csv(path, usecols=["Date"], parse_dates=["Date"])["Date"]
+        latest_dates.append(dates.max())
+    if not latest_dates:
+        raise RuntimeError("No market data files found")
+    return min(latest_dates)
+
+
 def periods() -> dict[str, tuple[str, str]]:
+    latest = latest_common_date()
+    year = latest.year
     return {
-        "2026-ytd": ("2026-01-01", "2026-07-31"),
-        "2025": ("2025-01-01", "2025-12-31"),
-        "2024": ("2024-01-01", "2024-12-31"),
-        "2023": ("2023-01-01", "2023-12-31"),
-        "2022": ("2022-01-01", "2022-12-31"),
-        "2017-2021": ("2017-01-01", "2021-12-31"),
-        "2012-2016": ("2012-01-01", "2016-12-31"),
-        "2007-2011": (PAA_COMMON_START, "2011-12-31"),
+        f"{year}-ytd": (f"{year}-01-01", latest.strftime("%Y-%m-%d")),
+        f"{year - 1}": (f"{year - 1}-01-01", f"{year - 1}-12-31"),
+        f"{year - 2}": (f"{year - 2}-01-01", f"{year - 2}-12-31"),
+        f"{year - 3}": (f"{year - 3}-01-01", f"{year - 3}-12-31"),
+        f"{year - 4}": (f"{year - 4}-01-01", f"{year - 4}-12-31"),
+        f"{year - 9}-{year - 5}": (f"{year - 9}-01-01", f"{year - 5}-12-31"),
+        f"{year - 14}-{year - 10}": (f"{year - 14}-01-01", f"{year - 10}-12-31"),
+        f"{PAA_COMMON_START[:4]}-{year - 15}": (PAA_COMMON_START, f"{year - 15}-12-31"),
     }
 
 

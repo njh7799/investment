@@ -1,11 +1,11 @@
 {
   "asset_sha256": {
-    "SGOV": "3a1423799c4568362efcc36be07358c8c3794233cf70243ea993974ac5cb4bd6",
-    "TQQQ": "d79d1e3bc92cb81b6e5475c603e7d1aa4d788b8cae507a3358d809e29c7e7b42"
+    "SGOV": "0474e07b0a6cc40ae11af0dd66e77c5716fd0f72410d310f30751990fcfbea46",
+    "TQQQ": "bbb150424eacbd1d7218638823cb830b1aece784c9a84a18512a2159871707cf"
   },
-  "dividend_treatment": "Yahoo Finance adjusted OHLC; distributions reinvested on ex-date",
-  "end": "2026-08-28",
+  "dividend_treatment": "Toss split-adjusted OHLC; cash distributions excluded",
+  "end": "2026-10-27",
   "fee_model": "Toss Securities US stocks: 0.1%; orders <= $10 free; fee cents truncated",
   "initial_cash": 100000.0,
-  "start": "2020-06-01"
+  "start": "2020-05-28"
 }

@@ -107,9 +107,9 @@ def main() -> int:
     summary.to_csv(args.output / "summary.csv", index=False, float_format="%.10f")
     metadata = {
         "generated_through": prices.index[-1].date().isoformat(),
-        "price_field": "TQQQ adjusted close",
+        "price_field": "Toss TQQQ split-adjusted close; cash distributions excluded",
         "return_formula": "end_close / start_close - 1",
-        "signal_rule": "30-session TQQQ adjusted-close return volatility, annualized with sqrt(252)",
+        "signal_rule": "30-session TQQQ split-adjusted-close return volatility, annualized with sqrt(252)",
         "actual_tqqq_start": ACTUAL_TQQQ_START.date().isoformat(),
         "tqqq_sha256": hashlib.sha256((ROOT / "assets" / "TQQQ.csv").read_bytes()).hexdigest(),
     }

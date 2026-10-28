@@ -220,7 +220,7 @@ def main() -> int:
         actual_tqqq_start=str(ACTUAL_START.date()), initial_cash=100_000, fee_rate=.001,
         cash_return=0, slippage=0, tax=0, integer_shares=True,
         annual_method="continuous holdings; prior year final close; initial cash in first year",
-        price_basis="split/dividend adjusted OHLC; no separate dividend cash credit",
+        price_basis="Toss split-adjusted OHLC; cash distributions excluded",
         reduced_episode="executed weight below 1 until next weight-1 open before trade; last close if unfinished",
         counterfactual="keep pre-cut shares/cash without trading to the same endpoint; local comparison only",
         individual_cuts="each downward transition until prior target restored; includes 50-to-0 cuts; overlapping events cannot be added",

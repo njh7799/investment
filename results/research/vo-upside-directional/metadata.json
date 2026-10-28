@@ -1,10 +1,10 @@
 {
   "asset_sha256": {
-    "QQQ.csv": "2d7d027137c768d27943f8d4877b4847c9988b81cde414cf6d113a96458ab637",
-    "TQQQ.csv": "a00e9f02742fd7c1ebb86a5e8e14b8b07ea228f2fff5452fe9c1f6e39dd5e539"
+    "QQQ.csv": "680489cd371cc9cc7e6141e4d7ffb322c332a2cd1965584cdea6d49c0c3b1ca6",
+    "TQQQ.csv": "bbb150424eacbd1d7218638823cb830b1aece784c9a84a18512a2159871707cf"
   },
   "base_fee_rate": 0.001,
-  "generated_through": "2026-08-05",
+  "generated_through": "2026-10-27",
   "initial_cash": 100000,
   "lookback_sessions": 30,
   "screen": {
@@ -18,25 +18,25 @@
   "selection_data_end": "2025-12-31",
   "shortlist": [
     "filtered_ret_qqq_40_return60_block_cut",
-    "filtered_ret_qqq_40_return200_block_cut",
+    "magratio_tqqq_150_step_up",
     "filtered_ret_qqq_40_sma150_block_cut",
     "filtered_ret_qqq_40_sma100_block_cut",
+    "magratio_qqq_150_step_up",
+    "filtered_ret_tqqq_100_return200_block_cut",
+    "filtered_ret_qqq_40_return200_block_cut",
     "ret_qqq_40_block_cut",
     "filtered_ret_qqq_40_sma200_block_cut",
-    "combo_qqq_30_65_floor50",
+    "ret_qqq_120_floor50",
+    "ret_qqq_150_step_up",
     "magratio_qqq_200_step_up",
     "magratio_tqqq_200_step_up",
+    "combo_qqq_30_65_floor50",
     "filtered_ret_qqq_60_return60_block_cut",
-    "filtered_ret_qqq_60_return200_block_cut",
-    "ret_qqq_60_block_cut",
     "filtered_ret_qqq_60_sma150_block_cut",
     "filtered_ret_qqq_60_sma100_block_cut",
-    "magratio_tqqq_300_floor100",
-    "combo_qqq_50_65_floor50",
-    "combo_tqqq_100_65_floor50",
-    "filtered_ret_tqqq_100_return60_block_cut",
-    "ret_qqq_150_step_up",
-    "combo_tqqq_300_65_block_cut"
+    "ret_qqq_60_block_cut",
+    "filtered_ret_qqq_60_sma200_block_cut",
+    "ret_qqq_150_floor50"
   ],
   "shortlist_limit": 20,
   "variant_count": 366

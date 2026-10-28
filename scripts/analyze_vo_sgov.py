@@ -103,7 +103,7 @@ def main() -> int:
         "end": end.date().isoformat(),
         "initial_cash": args.initial_cash,
         "fee_model": "zero" if args.zero_fee else "Toss Securities US stocks: 0.1%; orders <= $10 free; fee cents truncated",
-        "dividend_treatment": "Yahoo Finance adjusted OHLC; distributions reinvested on ex-date",
+        "dividend_treatment": "Toss split-adjusted OHLC; cash distributions excluded",
         "asset_sha256": {
             name: hashlib.sha256((ROOT / "assets" / f"{name}.csv").read_bytes()).hexdigest()
             for name in ("TQQQ", "SGOV")

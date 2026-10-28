@@ -29,6 +29,15 @@ python scripts/toss_api.py
 - 보유주식은 `GET /api/v1/holdings`, 원화·달러 현금 매수 가능 금액은 `GET /api/v1/buying-power`로 조회한다.
 - `cashBuyingPower`는 예수금이 아니라 미수거래를 제외한 통화별 현금 매수 가능 금액으로 표현한다.
 
+## 시장 데이터
+
+- 미국 상장 ETF 일봉은 `GET /api/v1/candles`에 `interval=1d`, `adjusted=true`를 지정해 조회한다.
+- 한 응답은 최대 200개 봉이므로 `nextBefore`가 없어질 때까지 페이지를 순회한다.
+- `adjusted=true`는 액면분할을 반영하지만 현금배당을 과거 가격에 소급하지 않는다. 백테스트는 별도 배당 현금도 더하지 않는다.
+- `MARKET_DATA_CHART` 한도는 실제 응답의 `X-RateLimit-*` 헤더를 기준으로 한다. 2026년 10월 28일 확인한 한도는 초당 20회였고, 수집기는 여유를 두어 초당 10회로 제한한다. 429 응답 시 `Retry-After` 또는 `X-RateLimit-Reset` 이후 재시도한다.
+- 응답에 포함될 수 있는 진행 중 당일 봉은 제외하고, Nasdaq 장 마감 후 2시간이 지난 거래일까지 저장한다.
+- 토스증권이 지원하지 않는 IXIC는 Yahoo Finance 원시 OHLC를 사용한다.
+
 ## 보안
 
 - Client ID와 Client Secret은 루트 `.env`에서만 읽는다.

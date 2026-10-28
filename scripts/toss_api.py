@@ -6,8 +6,9 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import requests
 from dotenv import load_dotenv
@@ -30,6 +31,7 @@ class TossApiClient:
         *,
         session: requests.Session | None = None,
         base_url: str = BASE_URL,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         if not client_id or not client_secret:
             raise ValueError("TOSS_CLIENT_ID and TOSS_CLIENT_SECRET are required")
@@ -37,6 +39,7 @@ class TossApiClient:
         self.client_secret = client_secret
         self.session = session or requests.Session()
         self.base_url = base_url.rstrip("/")
+        self._sleep = sleep
         self._access_token: str | None = None
 
     @classmethod
@@ -113,6 +116,83 @@ class TossApiClient:
                     f"account response is missing fields: {', '.join(sorted(missing))}"
                 )
         return accounts
+
+    def get_candles(
+        self,
+        symbol: str,
+        *,
+        interval: str = "1d",
+        count: int = 200,
+        before: str | None = None,
+        adjusted: bool = True,
+        rate_limit_retries: int = 5,
+    ) -> dict[str, Any]:
+        """Return one validated candle page, respecting Toss retry headers."""
+        if interval not in {"1m", "1d"}:
+            raise ValueError("interval must be 1m or 1d")
+        if not 1 <= count <= 200:
+            raise ValueError("count must be between 1 and 200")
+        if rate_limit_retries < 0:
+            raise ValueError("rate_limit_retries cannot be negative")
+
+        token = self._access_token or self.issue_access_token()
+        params: dict[str, str | int] = {
+            "symbol": symbol,
+            "interval": interval,
+            "count": count,
+            "adjusted": str(adjusted).lower(),
+        }
+        if before is not None:
+            params["before"] = before
+
+        response: requests.Response | None = None
+        for attempt in range(rate_limit_retries + 1):
+            response = self.session.get(
+                f"{self.base_url}/api/v1/candles",
+                headers={"Authorization": f"Bearer {token}"},
+                params=params,
+                timeout=REQUEST_TIMEOUT,
+            )
+            if response.status_code != 429 or attempt == rate_limit_retries:
+                break
+            headers = getattr(response, "headers", {})
+            raw_delay = headers.get("Retry-After") or headers.get(
+                "X-RateLimit-Reset", "1"
+            )
+            try:
+                delay = max(float(raw_delay), 0.1)
+            except (TypeError, ValueError):
+                delay = 1.0
+            self._sleep(delay)
+
+        assert response is not None
+        self._raise_for_api_error(response)
+        payload = response.json()
+        result = payload.get("result")
+        if not isinstance(result, dict) or not isinstance(result.get("candles"), list):
+            raise TossApiError("candle response must contain a candles list")
+        next_before = result.get("nextBefore")
+        if next_before is not None and not isinstance(next_before, str):
+            raise TossApiError("candle response has an invalid nextBefore")
+
+        required = {
+            "timestamp",
+            "openPrice",
+            "highPrice",
+            "lowPrice",
+            "closePrice",
+            "currency",
+        }
+        for candle in result["candles"]:
+            if not isinstance(candle, dict):
+                raise TossApiError("candle response contains a non-object item")
+            missing = required.difference(candle)
+            if missing:
+                raise TossApiError(
+                    "candle response is missing fields: "
+                    + ", ".join(sorted(missing))
+                )
+        return result
 
     def _account_get(
         self,

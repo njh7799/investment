@@ -4,9 +4,10 @@ from scripts.toss_api import REQUEST_TIMEOUT, TossApiClient, TossApiError
 
 
 class FakeResponse:
-    def __init__(self, status_code, payload):
+    def __init__(self, status_code, payload, headers=None):
         self.status_code = status_code
         self.payload = payload
+        self.headers = headers or {}
         self.ok = 200 <= status_code < 400
 
     def json(self):
@@ -139,3 +140,44 @@ def test_buying_power_validates_currency_and_cash_amount():
 
     assert result["cashBuyingPower"] == "3500.50"
     assert session.calls[-1][2]["params"] == {"currency": "USD"}
+
+
+def test_candles_retry_rate_limit_and_validate_page():
+    sleeps = []
+    session = FakeSession(
+        [
+            FakeResponse(200, {"access_token": "token"}),
+            FakeResponse(
+                429,
+                {"error": {"code": "rate-limit-exceeded"}},
+                headers={"Retry-After": "0.25"},
+            ),
+            FakeResponse(
+                200,
+                {
+                    "result": {
+                        "candles": [
+                            {
+                                "timestamp": "2026-10-27T13:00:00+09:00",
+                                "openPrice": "100",
+                                "highPrice": "102",
+                                "lowPrice": "99",
+                                "closePrice": "101",
+                                "volume": "1000",
+                                "currency": "USD",
+                            }
+                        ],
+                        "nextBefore": None,
+                    }
+                },
+            ),
+        ]
+    )
+
+    result = TossApiClient(
+        "client", "secret", session=session, sleep=sleeps.append
+    ).get_candles("QQQ")
+
+    assert result["candles"][0]["closePrice"] == "101"
+    assert sleeps == [0.25]
+    assert session.calls[-1][2]["params"]["adjusted"] == "true"

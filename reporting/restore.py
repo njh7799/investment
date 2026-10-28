@@ -64,12 +64,12 @@ Path(output).write_text(json.dumps({'period':period,'curves':curves,'failures':f
 def git(*args): return subprocess.check_output(['git',*args],cwd=ROOT)
 def restore(entry):
     dest=ROOT/'reporting/archive'/f'{entry["id"]}.json.gz'
-    if dest.exists():
+    if dest.exists() and '--force' not in sys.argv:
         print(entry['id'],'cached',flush=True); return
     folder=entry['results']; meta=ROOT/folder/'metadata.json'
     if not (ROOT/folder/'period-summary.csv').exists(): return
     metadata=json.loads(meta.read_text())
-    commit=git('log','-1','--format=%H','--',folder+'/period-summary.csv').decode().strip()
+    commit=(git('rev-parse','HEAD') if '--head' in sys.argv else git('log','-1','--format=%H','--',folder+'/period-summary.csv')).decode().strip()
     hashes=metadata.get('asset_sha256',{})
     payload={'source_commit':commit,'metadata_sha256':hashlib.sha256(meta.read_bytes()).hexdigest(),'asset_sha256':hashes,'curves':[],'failures':[]}
     try:
@@ -84,7 +84,7 @@ def restore(entry):
                 if hashlib.sha256(asset.read_bytes()).hexdigest()!=expected:
                     # Find the exact stored input, never substitute today's price history.
                     found=False
-                    for revision in git('log','--format=%H',commit,'--','assets/'+filename).decode().splitlines():
+                    for revision in git('log','--all','--format=%H','--','assets/'+filename).decode().splitlines():
                         blob=git('show',revision+':assets/'+filename)
                         if hashlib.sha256(blob).hexdigest()==expected:
                             asset.write_bytes(blob); found=True; break

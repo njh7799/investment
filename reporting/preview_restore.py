@@ -21,7 +21,7 @@ def restore(entry, names):
     folder=entry['results']
     meta=ROOT/folder/'metadata.json'
     metadata=json.loads(meta.read_text())
-    revision=git('log','-1','--format=%H','--',folder).decode().strip()
+    revision=(git('rev-parse','HEAD') if '--head' in sys.argv else git('log','-1','--format=%H','--',folder)).decode().strip()
     hashes=metadata['asset_sha256']
     with tempfile.TemporaryDirectory(prefix='investment-preview-') as td:
         target=Path(td)
@@ -31,7 +31,7 @@ def restore(entry, names):
             filename=symbol if symbol.endswith('.csv') else symbol+'.csv'
             asset=target/'assets'/filename
             if hashlib.sha256(asset.read_bytes()).hexdigest()!=expected:
-                for commit in git('log','--format=%H',revision,'--','assets/'+filename).decode().splitlines():
+                for commit in git('log','--all','--format=%H','--','assets/'+filename).decode().splitlines():
                     blob=git('show',commit+':assets/'+filename)
                     if hashlib.sha256(blob).hexdigest()==expected:
                         asset.write_bytes(blob)
@@ -114,5 +114,6 @@ if __name__=='__main__':
     for study,models in research_previews.items():
         wanted.setdefault(study,set()).update(models)
     wanted['vo-sgov']={'VO SGOV'}
+    selected={arg for arg in sys.argv[1:] if not arg.startswith('--')}
     for entry in catalog(ROOT):
-        if entry['id'] in wanted: restore(entry,wanted[entry['id']])
+        if entry['id'] in wanted and (not selected or entry['id'] in selected): restore(entry,wanted[entry['id']])

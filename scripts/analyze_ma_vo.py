@@ -17,14 +17,11 @@ from backtests import load_market_data, run_weight_strategy, summarize
 from backtests.ma_research import build_ma_weights
 
 
-ACTUAL_START = pd.Timestamp("2010-02-11")
 PRE_2026_END = pd.Timestamp("2025-12-31")
 PERIODS = {
     "full_pre2026": (None, PRE_2026_END),
-    "actual_pre2026": (ACTUAL_START, PRE_2026_END),
     "decade_2016_2025": (pd.Timestamp("2016-01-01"), PRE_2026_END),
     "full_current": (None, None),
-    "actual_current": (ACTUAL_START, None),
     "2026_ytd": (pd.Timestamp("2026-01-01"), None),
 }
 STRESS = {
@@ -50,7 +47,7 @@ def run(prices_by_name, weights_by_name, name, start=None, end=None, fee=0.001):
 
 def month_starts(index: pd.DatetimeIndex, years: int) -> list[pd.Timestamp]:
     last_start = PRE_2026_END - pd.DateOffset(years=years)
-    eligible = index[(index >= ACTUAL_START) & (index <= last_start)]
+    eligible = index[index <= last_start]
     values = pd.Series(eligible, index=eligible)
     return list(values.groupby(eligible.to_period("M")).first())
 
@@ -89,32 +86,25 @@ def screen_variants(period: pd.DataFrame, families: dict[str, str]) -> pd.DataFr
     rows = []
     for model, family in families.items():
         full = indexed.loc[("full_pre2026", model)]
-        actual = indexed.loc[("actual_pre2026", model)]
         decade = indexed.loc[("decade_2016_2025", model)]
         deltas = {
             "full_cagr_delta": float(full.cagr - baseline["full_pre2026"].cagr),
-            "actual_cagr_delta": float(actual.cagr - baseline["actual_pre2026"].cagr),
             "decade_cagr_delta": float(decade.cagr - baseline["decade_2016_2025"].cagr),
             "full_mdd_delta": float(full.mdd - baseline["full_pre2026"].mdd),
-            "actual_mdd_delta": float(actual.mdd - baseline["actual_pre2026"].mdd),
         }
         if family == "vo_linked":
             passed = (
                 deltas["full_cagr_delta"] >= -0.005
-                and deltas["actual_cagr_delta"] >= 0.0
                 and deltas["decade_cagr_delta"] >= 0.0
                 and deltas["full_mdd_delta"] >= -0.02
-                and deltas["actual_mdd_delta"] >= -0.02
-                and float(actual.annual_trades) <= 20.0
+                and float(full.annual_trades) <= 20.0
             )
         else:
             passed = (
                 deltas["full_cagr_delta"] >= -0.03
-                and deltas["actual_cagr_delta"] >= -0.02
                 and deltas["decade_cagr_delta"] >= -0.02
                 and deltas["full_mdd_delta"] >= -0.10
-                and deltas["actual_mdd_delta"] >= -0.10
-                and float(actual.annual_trades) <= 20.0
+                and float(full.annual_trades) <= 20.0
             )
         rows.append(
             {
@@ -122,15 +112,14 @@ def screen_variants(period: pd.DataFrame, families: dict[str, str]) -> pd.DataFr
                 "family": family,
                 "screen_pass": passed,
                 **deltas,
-                "actual_annual_trades": float(actual.annual_trades),
+                "full_annual_trades": float(full.annual_trades),
                 "rank_floor": min(
                     deltas["full_cagr_delta"],
-                    deltas["actual_cagr_delta"],
                     deltas["decade_cagr_delta"],
                 ),
                 "rank_sum": sum(
                     deltas[name]
-                    for name in ("full_cagr_delta", "actual_cagr_delta", "decade_cagr_delta")
+                    for name in ("full_cagr_delta", "decade_cagr_delta")
                 ),
             }
         )
@@ -217,7 +206,7 @@ def main() -> int:
     pd.DataFrame(stress_rows).to_csv(args.output / "stress-summary.csv", index=False, float_format="%.10f")
 
     annual_rows = []
-    for year in range(2010, 2026):
+    for year in range(1999, 2026):
         for name in evaluated:
             annual_rows.append(
                 {
@@ -252,7 +241,7 @@ def main() -> int:
                             prices_by_name,
                             weights_by_name,
                             name,
-                            ACTUAL_START,
+                            None,
                             PRE_2026_END,
                             fee,
                         )

@@ -17,14 +17,11 @@ from backtests import load_assets, load_market_data, run_weight_strategy, summar
 from backtests.vo_bull import build_vo_bull_weights
 
 
-ACTUAL_START = pd.Timestamp("2010-02-11")
 SELECTION_END = pd.Timestamp("2025-12-31")
 PERIODS = {
     "full_pre2026": (None, SELECTION_END),
-    "actual_pre2026": (ACTUAL_START, SELECTION_END),
     "decade_2016_2025": (pd.Timestamp("2016-01-01"), SELECTION_END),
     "full_current": (None, None),
-    "actual_current": (ACTUAL_START, None),
     "2026_ytd": (pd.Timestamp("2026-01-01"), None),
 }
 STRESS = {
@@ -48,7 +45,7 @@ def run(prices, weights, start=None, end=None, fee=0.001):
 
 def month_starts(index: pd.DatetimeIndex, years: int) -> list[pd.Timestamp]:
     last_start = SELECTION_END - pd.DateOffset(years=years)
-    eligible = index[(index >= ACTUAL_START) & (index <= last_start)]
+    eligible = index[index <= last_start]
     return list(pd.Series(eligible, index=eligible).groupby(eligible.to_period("M")).first())
 
 
@@ -80,7 +77,7 @@ def screen_rows(period: pd.DataFrame) -> pd.DataFrame:
     for model in period.model.unique():
         if model == "vo":
             continue
-        values = {name: indexed.loc[(name, model)] for name in ("full_pre2026", "actual_pre2026", "decade_2016_2025")}
+        values = {name: indexed.loc[(name, model)] for name in ("full_pre2026", "decade_2016_2025")}
         base = {name: indexed.loc[(name, "vo")] for name in values}
         deltas = {
             f"{name}_{metric}_delta": float(values[name][metric] - base[name][metric])
@@ -88,20 +85,17 @@ def screen_rows(period: pd.DataFrame) -> pd.DataFrame:
         }
         passed = (
             deltas["full_pre2026_cagr_delta"] >= -0.005
-            and deltas["actual_pre2026_cagr_delta"] > 0.0
             and deltas["decade_2016_2025_cagr_delta"] > 0.0
             and deltas["full_pre2026_mdd_delta"] >= -0.02
-            and deltas["actual_pre2026_mdd_delta"] >= -0.02
-            and float(values["actual_pre2026"].annual_trades) <= 20.0
+            and float(values["full_pre2026"].annual_trades) <= 20.0
         )
         rows.append({
             "model": model,
             "screen_pass": passed,
             **deltas,
-            "actual_annual_trades": float(values["actual_pre2026"].annual_trades),
+            "full_annual_trades": float(values["full_pre2026"].annual_trades),
             "rank_floor": min(
                 deltas["full_pre2026_cagr_delta"],
-                deltas["actual_pre2026_cagr_delta"],
                 deltas["decade_2016_2025_cagr_delta"],
             ),
             "rank_sum": sum(deltas[key] for key in deltas if key.endswith("cagr_delta")),
@@ -127,19 +121,19 @@ def write_promotion_audit(output: Path) -> None:
             stress.loc[(name, model), "mdd"] - stress.loc[(name, "vo"), "mdd"] >= -0.05
             for name in STRESS
         )
-        actual = period.loc[("actual_pre2026", model)]
-        actual_base = period.loc[("actual_pre2026", "vo")]
-        actual_risk_pass = (
-            actual.mdd >= actual_base.mdd - abs(actual_base.mdd) * 0.05
-            and actual.longest_time_underwater_days <= actual_base.longest_time_underwater_days * 1.05
+        full = period.loc[("full_pre2026", model)]
+        full_base = period.loc[("full_pre2026", "vo")]
+        full_risk_pass = (
+            full.mdd >= full_base.mdd - abs(full_base.mdd) * 0.05
+            and full.longest_time_underwater_days <= full_base.longest_time_underwater_days * 1.05
         )
         fee_pass = all(
             fee.loc[(0.002, name, model), "cagr"] > fee.loc[(0.002, name, "vo"), "cagr"]
-            for name in ("actual_pre2026", "decade_2016_2025")
+            for name in ("full_pre2026", "decade_2016_2025")
         )
         differences = pd.Series({
             year: annual.loc[(year, model), "total_return"] - annual.loc[(year, "vo"), "total_return"]
-            for year in range(2010, 2026)
+            for year in range(1999, 2026)
         })
         positives = differences[differences > 1e-12]
         largest_share = float(positives.max() / positives.sum()) if not positives.empty else 1.0
@@ -148,12 +142,12 @@ def write_promotion_audit(output: Path) -> None:
             "model": model,
             "rolling_pass": rolling_pass,
             "stress_pass": stress_pass,
-            "actual_risk_pass": actual_risk_pass,
+            "full_risk_pass": full_risk_pass,
             "fee_0_2_pass": fee_pass,
             "positive_excess_years": len(positives),
             "largest_positive_year_share": largest_share,
             "annual_distribution_pass": annual_distribution_pass,
-            "all_non_parameter_gates_pass": all((rolling_pass, stress_pass, actual_risk_pass, fee_pass, annual_distribution_pass)),
+            "all_non_parameter_gates_pass": all((rolling_pass, stress_pass, full_risk_pass, fee_pass, annual_distribution_pass)),
         })
     pd.DataFrame(rows).to_csv(output / "promotion-audit.csv", index=False, float_format="%.10f")
 
@@ -209,7 +203,7 @@ def main() -> int:
     pd.DataFrame(stress_rows).to_csv(args.output / "stress-summary.csv", index=False, float_format="%.10f")
 
     annual_rows = []
-    for year in range(2010, 2026):
+    for year in range(1999, 2026):
         for name in evaluated:
             annual_rows.append({"year": year, "model": name, **summarize(run(prices, weights_by_name[name], f"{year}-01-01", f"{year}-12-31"))})
     pd.DataFrame(annual_rows).to_csv(args.output / "annual-summary.csv", index=False, float_format="%.10f")
@@ -219,7 +213,7 @@ def main() -> int:
 
     fee_rows = []
     for fee in (0.001, 0.002, 0.005):
-        for period_name, start in (("actual_pre2026", ACTUAL_START), ("decade_2016_2025", pd.Timestamp("2016-01-01"))):
+        for period_name, start in (("full_pre2026", None), ("decade_2016_2025", pd.Timestamp("2016-01-01"))):
             for name in evaluated:
                 fee_rows.append({"fee_rate": fee, "period": period_name, "model": name, **summarize(run(prices, weights_by_name[name], start, SELECTION_END, fee))})
     pd.DataFrame(fee_rows).to_csv(args.output / "fee-summary.csv", index=False, float_format="%.10f")

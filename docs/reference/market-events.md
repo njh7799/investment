@@ -1,6 +1,6 @@
 # SPY 기준 주요 시장 하락 사건
 
-차트의 시장 사건은 S&P 500 ETF인 SPY의 조정 종가로 기계적으로 선정한다. SPY는 S&P 500 지수의 프록시이며 배당과 운용비용이 반영되므로 지수 자체와 값이 완전히 같지는 않다.
+차트의 시장 사건은 S&P 500 ETF인 SPY의 Toss 분할조정 종가로 기계적으로 선정한다. SPY는 S&P 500 지수의 프록시이며 배당을 제외하고 운용비용과 추적오차가 반영되므로 지수 자체와 값이 완전히 같지는 않다.
 
 고점 대비 10~20% 하락을 조정으로 부르는 [시장 관행](https://www.nasdaq.com/articles/what-is-a-market-correction)과 20% 이상을 약세장으로 부르는 [Investor.gov 정의](https://www.investor.gov/introduction-investing/investing-basics/glossary/bear-market)를 분류 기준으로 사용한다. 국면의 시작과 종료에는 보편적으로 강제되는 공식 규칙이 없으므로, 겹치지 않는 결과를 만들기 위해 아래의 저장소 규칙을 적용한다.
 

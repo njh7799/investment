@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
 from backtests import load_market_data
 
 
-ACTUAL_TQQQ_START = pd.Timestamp("2010-02-11")
+OBSERVED_TQQQ_START = pd.Timestamp("2010-02-11")
 BAND_ORDER = ("warmup", "at_or_below_60", "above_60_at_or_below_90", "above_90")
 
 
@@ -36,7 +36,7 @@ def vo_regime_rows(prices: pd.DataFrame) -> pd.DataFrame:
     )
     band.loc[volatility.isna()] = "warmup"
     origin = pd.Series(
-        np.where(prices.index < ACTUAL_TQQQ_START, "synthetic", "actual"),
+        np.where(prices.index < OBSERVED_TQQQ_START, "synthetic", "observed"),
         index=prices.index,
     )
     group = ((band != band.shift()) | (origin != origin.shift())).cumsum()
@@ -76,7 +76,7 @@ def vo_regime_rows(prices: pd.DataFrame) -> pd.DataFrame:
 
 def summarize_regimes(regimes: pd.DataFrame) -> pd.DataFrame:
     usable = regimes.loc[regimes["band"] != "warmup"].copy()
-    grouped = usable.groupby(["data_origin", "band"], sort=False)
+    grouped = usable.groupby("band", sort=False)
     summary = grouped.agg(
         regime_count=("regime_id", "size"),
         trading_days=("trading_days", "sum"),
@@ -88,7 +88,7 @@ def summarize_regimes(regimes: pd.DataFrame) -> pd.DataFrame:
     ).reset_index()
     order = {name: position for position, name in enumerate(BAND_ORDER)}
     summary["band_order"] = summary["band"].map(order)
-    return summary.sort_values(["data_origin", "band_order"]).drop(columns="band_order")
+    return summary.sort_values("band_order").drop(columns="band_order")
 
 
 def parse_args() -> argparse.Namespace:
@@ -107,10 +107,10 @@ def main() -> int:
     summary.to_csv(args.output / "summary.csv", index=False, float_format="%.10f")
     metadata = {
         "generated_through": prices.index[-1].date().isoformat(),
-        "price_field": "TQQQ adjusted close",
+        "price_field": "Toss TQQQ split-adjusted close; cash distributions excluded",
         "return_formula": "end_close / start_close - 1",
-        "signal_rule": "30-session TQQQ adjusted-close return volatility, annualized with sqrt(252)",
-        "actual_tqqq_start": ACTUAL_TQQQ_START.date().isoformat(),
+        "signal_rule": "30-session TQQQ split-adjusted-close return volatility, annualized with sqrt(252)",
+        "observed_tqqq_start": OBSERVED_TQQQ_START.date().isoformat(),
         "tqqq_sha256": hashlib.sha256((ROOT / "assets" / "TQQQ.csv").read_bytes()).hexdigest(),
     }
     (args.output / "metadata.json").write_text(

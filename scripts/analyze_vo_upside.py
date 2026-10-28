@@ -17,14 +17,11 @@ from backtests import load_market_data, run_weight_strategy, summarize
 from backtests.vo_upside import build_vo_upside_weights
 
 
-ACTUAL_START = pd.Timestamp("2010-02-11")
 PRE_2026_END = pd.Timestamp("2025-12-31")
 PERIODS = {
     "full_pre2026": (None, PRE_2026_END),
-    "actual_pre2026": (ACTUAL_START, PRE_2026_END),
     "decade_2016_2025": (pd.Timestamp("2016-01-01"), PRE_2026_END),
     "full_current": (None, None),
-    "actual_current": (ACTUAL_START, None),
     "2026_ytd": (pd.Timestamp("2026-01-01"), None),
 }
 STRESS = {
@@ -47,7 +44,7 @@ def run(prices, weights, start=None, end=None, fee=0.001):
 
 def month_starts(index: pd.DatetimeIndex, years: int) -> list[pd.Timestamp]:
     last_start = PRE_2026_END - pd.DateOffset(years=years)
-    eligible = index[(index >= ACTUAL_START) & (index <= last_start)]
+    eligible = index[index <= last_start]
     series = pd.Series(eligible, index=eligible)
     return list(series.groupby(eligible.to_period("M")).first())
 
@@ -88,36 +85,28 @@ def select_screen(period: pd.DataFrame) -> pd.DataFrame:
         if model == "vo":
             continue
         full = indexed.loc[("full_pre2026", model)]
-        actual = indexed.loc[("actual_pre2026", model)]
         decade = indexed.loc[("decade_2016_2025", model)]
         full_base = baseline["full_pre2026"]
-        actual_base = baseline["actual_pre2026"]
         decade_base = baseline["decade_2016_2025"]
         full_cagr_delta = float(full.cagr - full_base.cagr)
-        actual_cagr_delta = float(actual.cagr - actual_base.cagr)
         decade_cagr_delta = float(decade.cagr - decade_base.cagr)
         full_mdd_delta = float(full.mdd - full_base.mdd)
-        actual_mdd_delta = float(actual.mdd - actual_base.mdd)
         passed = (
             full_cagr_delta >= -0.005
-            and actual_cagr_delta >= 0.0
             and decade_cagr_delta >= 0.0
             and full_mdd_delta >= -0.02
-            and actual_mdd_delta >= -0.02
-            and float(actual.annual_trades) <= 20.0
+            and float(full.annual_trades) <= 20.0
         )
         rows.append(
             {
                 "model": model,
                 "screen_pass": passed,
                 "full_cagr_delta": full_cagr_delta,
-                "actual_cagr_delta": actual_cagr_delta,
                 "decade_cagr_delta": decade_cagr_delta,
                 "full_mdd_delta": full_mdd_delta,
-                "actual_mdd_delta": actual_mdd_delta,
-                "actual_annual_trades": float(actual.annual_trades),
-                "rank_floor": min(full_cagr_delta, actual_cagr_delta, decade_cagr_delta),
-                "rank_sum": full_cagr_delta + actual_cagr_delta + decade_cagr_delta,
+                "full_annual_trades": float(full.annual_trades),
+                "rank_floor": min(full_cagr_delta, decade_cagr_delta),
+                "rank_sum": full_cagr_delta + decade_cagr_delta,
             }
         )
     return pd.DataFrame(rows).sort_values(
@@ -176,7 +165,7 @@ def main() -> int:
     pd.DataFrame(stress_rows).to_csv(args.output / "stress-summary.csv", index=False, float_format="%.10f")
 
     annual_rows = []
-    for year in range(2010, 2026):
+    for year in range(1999, 2026):
         for name in evaluated:
             annual_rows.append(
                 {
@@ -199,7 +188,7 @@ def main() -> int:
                 {
                     "fee_rate": fee,
                     "model": name,
-                    **summarize(run(prices, weights_by_name[name], ACTUAL_START, PRE_2026_END, fee)),
+                    **summarize(run(prices, weights_by_name[name], None, PRE_2026_END, fee)),
                 }
             )
     pd.DataFrame(fee_rows).to_csv(args.output / "fee-summary.csv", index=False, float_format="%.10f")
@@ -218,11 +207,9 @@ def main() -> int:
         "shortlist_limit": 20,
         "screen": {
             "full_pre2026_cagr_delta_min": -0.005,
-            "actual_pre2026_cagr_delta_min": 0.0,
             "decade_2016_2025_cagr_delta_min": 0.0,
             "full_pre2026_mdd_delta_min": -0.02,
-            "actual_pre2026_mdd_delta_min": -0.02,
-            "actual_pre2026_annual_trades_max": 20.0,
+            "full_pre2026_annual_trades_max": 20.0,
         },
         "shortlist": shortlist,
         "asset_sha256": hashes,

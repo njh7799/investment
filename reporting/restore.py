@@ -15,7 +15,7 @@ root=Path.cwd(); sys.path.insert(0,str(root)); sys.path.insert(0,str(root/'scrip
 from backtests import load_market_data,run_weight_strategy,build_target_weights,summarize
 study,script,output=sys.argv[1:]
 rows=pd.read_csv(Path(study)/'period-summary.csv')
-period=next((p for p in ['actual_tqqq','actual_tqqq_full','actual_current','common_full'] if p in set(rows.period)),rows.period.iloc[0])
+period=next((p for p in ['full_synthetic','synthetic_full','full_current','full_pre2026','common_full'] if p in set(rows.period)),rows.period.iloc[0])
 rows=rows[rows.period==period]
 id=Path(study).name
 if script=='ma':

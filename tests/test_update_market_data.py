@@ -7,7 +7,9 @@ from scripts.list_market_events import identify_downturns, load_event_labels
 from scripts.update_market_data import (
     DataValidationError,
     OHLC,
+    SYMBOLS,
     build_synthetic_tqqq,
+    download_toss_symbol,
     is_nasdaq_session,
     latest_settled_session,
     validate_ohlc,
@@ -91,7 +93,7 @@ def test_latest_settled_session_waits_two_hours_after_close():
 def test_write_csvs_has_stable_schema(tmp_path: Path):
     data = {
         name: frame([[100, 101, 99, 100]])
-        for name in ["IXIC", "QQQ", "TQQQ", "SPY", "SGOV"]
+        for name in SYMBOLS
     }
     write_csvs(data, tmp_path)
 
@@ -99,6 +101,55 @@ def test_write_csvs_has_stable_schema(tmp_path: Path):
     assert text.splitlines()[0] == "Date,Open,High,Low,Close"
     assert text.splitlines()[1].startswith("2010.01.04,")
     assert not list(tmp_path.glob("*.tmp"))
+
+
+class FakeCandleClient:
+    def __init__(self, pages):
+        self.pages = iter(pages)
+        self.calls = []
+
+    def get_candles(self, symbol, **kwargs):
+        self.calls.append((symbol, kwargs))
+        return next(self.pages)
+
+
+def candle(date, open_price, high, low, close):
+    return {
+        "timestamp": f"{date}T13:00:00+09:00",
+        "openPrice": str(open_price),
+        "highPrice": str(high),
+        "lowPrice": str(low),
+        "closePrice": str(close),
+        "currency": "USD",
+    }
+
+
+def test_toss_history_paginates_sorts_and_excludes_unsettled_days():
+    client = FakeCandleClient(
+        [
+            {
+                "candles": [
+                    candle("2026-10-28", 103, 104, 102, 103),
+                    candle("2026-10-27", 102, 103, 101, 102),
+                ],
+                "nextBefore": "2026-10-26T13:00:00+09:00",
+            },
+            {
+                "candles": [candle("2026-10-26", 101, 102, 100, 101)],
+                "nextBefore": None,
+            },
+        ]
+    )
+
+    result = download_toss_symbol(client, "QQQ", pd.Timestamp("2026-10-27"))
+
+    assert list(result.index) == [
+        pd.Timestamp("2026-10-26"),
+        pd.Timestamp("2026-10-27"),
+    ]
+    assert result.loc[pd.Timestamp("2026-10-27"), "Close"] == 102
+    assert client.calls[0][1]["adjusted"] is True
+    assert client.calls[1][1]["before"] == "2026-10-26T13:00:00+09:00"
 
 
 def test_market_event_correction_boundaries_and_recovery():

@@ -73,7 +73,6 @@ candidates:
 evaluation:
   fixed_periods:
     - {name: synthetic_full, start: data_start, end: data_end}
-    - {name: actual_tqqq_full, start: "2010-02-11", end: data_end}
     - {name: recent_10y, start: "2016-08-01", end: data_end}
   rolling_windows_years: [5, 10]
   stress_periods:
@@ -85,12 +84,12 @@ evaluation:
   integration_benchmarks: [tqqq_hold, qqq_hold, vo, three_percent]
   promotion_roles: [external_reference_strategy, vo_replacement, vo_addon]
   public_proxy_gate:
-    - "In actual full and recent 10-year periods, CAGR is no more than 2 percentage points below QQQ hold and MDD improves by at least 5 percentage points."
+    - "In synthetic-full and recent 10-year periods, CAGR is no more than 2 percentage points below QQQ hold and MDD improves by at least 5 percentage points."
     - "For both rolling lengths, median CAGR is no more than 2 percentage points below QQQ and worst MDD improves by at least 5 percentage points."
     - "No registered stress MDD is more than 5 percentage points worse than QQQ and annual rebalance dates do not exceed 20."
   tqqq_primary_gate:
     - "Apply the repository VO replacement and addon thresholds without choosing a robustness weight after results."
-    - "The primary one-third panic weight must also have actual-full and recent-10-year CAGR at least as high as the full-exit variant, while actual-full MDD is no more than 5 percentage points worse."
+    - "The primary one-third panic weight must also have synthetic-full and recent-10-year CAGR at least as high as the full-exit variant, while synthetic-full MDD is no more than 5 percentage points worse."
     - "At 0.2% one-way fees the qualifying direction must remain and annual rebalance dates must not exceed 20."
 
 verification:

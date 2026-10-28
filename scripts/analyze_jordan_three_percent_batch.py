@@ -26,11 +26,8 @@ MODELS = (
     "vo",
     "three_percent",
 )
-PERIODS = {
-    "synthetic_full": (None, None),
-    "actual_tqqq_full": ("2010-02-11", None),
-    "recent_10y": ("2016-08-01", None),
-}
+TQQQ_MODELS = tuple(model for model in MODELS if model != "jordan_public_proxy")
+PUBLIC_MODELS = ("jordan_public_proxy", "qqq_hold")
 STRESS = {
     "dotcom_bust": ("2000-03-24", "2002-10-09"),
     "global_financial_crisis": ("2007-10-31", "2009-03-09"),
@@ -74,7 +71,8 @@ def run(model: str, start=None, end=None, fee=0.001):
 
 def rolling_rows(years: int) -> list[dict[str, object]]:
     index = inputs()[0].index
-    eligible = index[(index >= pd.Timestamp("2010-02-11")) & (index <= index[-1] - pd.DateOffset(years=years))]
+    common_start = max(index[0], inputs()[1].index[0])
+    eligible = index[(index >= common_start) & (index <= index[-1] - pd.DateOffset(years=years))]
     starts = list(pd.Series(eligible, index=eligible).groupby(eligible.to_period("M")).first())
     rows = []
     for model in MODELS:
@@ -96,17 +94,26 @@ def rolling_rows(years: int) -> list[dict[str, object]]:
 def main() -> int:
     args = parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    period_rows = [{"period": period, "model": model, **summarize(run(model, start, end))} for period, (start, end) in PERIODS.items() for model in MODELS]
+    common_start = max(inputs()[0].index[0], inputs()[1].index[0])
+    period_rows = [
+        *[{"period": "synthetic_full", "model": model, **summarize(run(model))} for model in TQQQ_MODELS],
+        *[{"period": "common_full", "model": model, **summarize(run(model, common_start))} for model in PUBLIC_MODELS],
+        *[{"period": "recent_10y", "model": model, **summarize(run(model, "2016-08-01"))} for model in MODELS],
+    ]
     pd.DataFrame(period_rows).to_csv(args.output / "period-summary.csv", index=False, float_format="%.10f")
     stress_rows = [{"period": period, "model": model, **summarize(run(model, start, end))} for period, (start, end) in STRESS.items() for model in MODELS]
     pd.DataFrame(stress_rows).to_csv(args.output / "stress-summary.csv", index=False, float_format="%.10f")
     pd.DataFrame(rolling_rows(5) + rolling_rows(10)).to_csv(args.output / "rolling-summary.csv", index=False, float_format="%.10f")
-    fee_rows = [{"fee_rate": fee, "model": model, **summarize(run(model, "2010-02-11", fee=fee))} for fee in (0.001, 0.002, 0.005) for model in MODELS]
+    fee_rows = []
+    for fee in (0.001, 0.002, 0.005):
+        fee_rows.extend({"fee_rate": fee, "period": "synthetic_full", "model": model, **summarize(run(model, fee=fee))} for model in TQQQ_MODELS)
+        fee_rows.extend({"fee_rate": fee, "period": "common_full", "model": model, **summarize(run(model, common_start, fee=fee))} for model in PUBLIC_MODELS)
     pd.DataFrame(fee_rows).to_csv(args.output / "fee-summary.csv", index=False, float_format="%.10f")
     data, _ = inputs()
     metadata = {
         "generated_through": data.index[-1].date().isoformat(),
-        "actual_tqqq_start": "2010-02-11",
+        "evaluation_start": data.index[0].date().isoformat(),
+        "public_common_start": common_start.date().isoformat(),
         "initial_cash": 100_000,
         "base_fee_rate": 0.001,
         "models": list(MODELS),

@@ -45,7 +45,7 @@ def restore(entry, names):
             start=worker.index('period=next(');end=worker.index('\nid=Path',start)
             selection=f"""period='recent_and_full'
 available=set(rows.period)
-full=next(p for p in ['full_synthetic','synthetic_full','full_current','full_pre2026','actual_tqqq','actual_tqqq_full','actual_current','actual_pre2026','common_full'] if p in available)
+full=next(p for p in ['full_synthetic','synthetic_full','full_current','full_pre2026','common_full'] if p in available)
 selected_periods=['recent_10y',full]
 rows=rows[rows.period.isin(selected_periods)&rows.model.isin({sorted(names)!r})]"""
             worker=worker[:start]+selection+worker[end:]

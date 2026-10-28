@@ -1,13 +1,13 @@
 {
-  "actual_tqqq_start": "2010-02-11",
   "asset_sha256": {
-    "IXIC.csv": "6375562c9c488cebd7765f276faeeac60eb66ac7a6d50b6ac3bbd6c6b494f53c",
-    "QQQ.csv": "2a09be10fb903d681b3bbfa717d8ed865028c61a30ad0b14fcf5209f6cb21878",
-    "TQQQ.csv": "5b301f9d12d29cffa3b583d2d19fbd6112a7648a989602ef81462b3dd7a6592d"
+    "IXIC.csv": "ab6789f2c452504f328d06ebf3ad943cf319ba50232a0da4e0c54cc89b470ba3",
+    "QQQ.csv": "f23794b762effede01ae0616e1e0bc58bc7c07cdd0e77844580fa142f5d62567",
+    "TQQQ.csv": "6384a0f28f7d3657b69afaef2d4de59aa9ad728727ee7650aec8d60d978a6451"
   },
   "base_fee_rate": 0.001,
   "batch": "batch-01",
-  "generated_through": "2026-07-31",
+  "evaluation_start": "1999-03-10",
+  "generated_through": "2026-10-30",
   "initial_cash": 100000,
   "models": [
     "tqqq_hold",

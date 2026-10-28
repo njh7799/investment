@@ -16,10 +16,8 @@ if str(ROOT) not in sys.path:
 from backtests import BATCHES, MODEL_SPECS, build_target_weights, load_market_data, run_three_percent_rule, run_vr_5, run_weight_strategy, summarize
 
 
-ACTUAL_START = pd.Timestamp("2010-02-11")
 PERIODS = {
     "full_synthetic": (None, None),
-    "actual_tqqq": ("2010-02-11", None),
     "recent_10y": ("2016-07-31", None),
 }
 STRESS = {
@@ -54,7 +52,7 @@ def month_starts(index: pd.DatetimeIndex, start: pd.Timestamp, last: pd.Timestam
 
 def rolling_rows(data, models: tuple[str, ...], years: int) -> list[dict[str, object]]:
     index = data.index
-    starts = month_starts(index, ACTUAL_START, index[-1] - pd.DateOffset(years=years))
+    starts = month_starts(index, index[0], index[-1] - pd.DateOffset(years=years))
     rows = []
     for model in models:
         values = []
@@ -106,7 +104,7 @@ def main() -> int:
     fee_rows = []
     for fee in [0.001, 0.002, 0.005]:
         for model in models:
-            fee_rows.append({"fee_rate": fee, "model": model, **summarize(run(model, data, ACTUAL_START, fee=fee))})
+            fee_rows.append({"fee_rate": fee, "model": model, **summarize(run(model, data, fee=fee))})
     pd.DataFrame(fee_rows).to_csv(args.output / "fee-summary.csv", index=False, float_format="%.10f")
 
     hashes = {}
@@ -114,7 +112,7 @@ def main() -> int:
         hashes[name] = hashlib.sha256((ROOT / "assets" / name).read_bytes()).hexdigest()
     metadata = {
         "generated_through": data.index[-1].date().isoformat(),
-        "actual_tqqq_start": ACTUAL_START.date().isoformat(),
+        "evaluation_start": data.index[0].date().isoformat(),
         "initial_cash": 100_000,
         "base_fee_rate": 0.001,
         "batch": args.batch,

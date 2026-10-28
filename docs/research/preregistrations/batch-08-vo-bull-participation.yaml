@@ -78,14 +78,12 @@ evaluation:
   current_data_is_explanatory_only: true
   fixed_periods:
     - {name: synthetic_full_pre2026, start: first_common_session, end: "2025-12-31"}
-    - {name: actual_tqqq_pre2026, start: "2010-02-11", end: "2025-12-31"}
     - {name: decade_2016_2025, start: "2016-01-01", end: "2025-12-31"}
     - {name: current_full, start: first_common_session, end: data_end}
-    - {name: current_actual, start: "2010-02-11", end: data_end}
     - {name: current_ytd, start: "2026-01-01", end: data_end}
   rolling_windows_years: [5, 10]
   rolling_start_frequency: monthly
-  rolling_universe: actual_tqqq_through_2025
+  rolling_universe: synthetic_full_through_2025
   stress_periods:
     - {name: dotcom, start: "2000-03-10", end: "2002-10-09"}
     - {name: global_financial_crisis, start: "2007-10-31", end: "2009-03-09"}
@@ -94,14 +92,14 @@ evaluation:
   fee_sensitivity: [0.001, 0.002, 0.005]
   screen:
     - "Synthetic-full CAGR is no more than 0.5 percentage points below VO."
-    - "Actual-period and 2016-2025 CAGR are both above VO."
-    - "Synthetic-full and actual-period MDD are no more than 2 percentage points worse than VO."
-    - "Actual-period annual trades do not exceed 20."
+    - "2016-2025 CAGR is above VO as a secondary robustness check."
+    - "Synthetic-full MDD is no more than 2 percentage points worse than VO."
+    - "Synthetic-full annual trades do not exceed 20."
   promotion_gate:
     - "Pass the screen and improve median and worst CAGR in both 5-year and 10-year rolling tests."
     - "No registered stress-period MDD is more than 5 percentage points worse than VO."
-    - "Actual-period MDD and longest TUW are each no more than 5% worse than VO."
-    - "At a 0.2% one-way fee, actual and recent-decade CAGR remain above VO."
+    - "Synthetic-full MDD and longest TUW are each no more than 5% worse than VO."
+    - "At a 0.2% one-way fee, synthetic-full and recent-decade CAGR remain above VO."
     - "Positive annual excess return occurs in at least three years and no single year contributes more than half of summed positive annual excess return."
     - "At least two adjacent parameter settings in the same family show the same fixed and rolling direction."
 

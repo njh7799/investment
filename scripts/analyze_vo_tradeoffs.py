@@ -21,9 +21,6 @@ if str(ROOT) not in sys.path:
 
 from backtests import BacktestResult, build_target_weights, load_market_data, run_weight_strategy
 
-ACTUAL_START = pd.Timestamp("2010-02-11")
-
-
 def annual_returns(result: BacktestResult) -> pd.DataFrame:
     """Carry holdings across years and include the first purchase's commission."""
     rows = []
@@ -166,7 +163,7 @@ def analyze() -> dict[str, pd.DataFrame]:
                                  volatility=prices.Close.pct_change().rolling(30).std(ddof=1)*np.sqrt(252)))
     collected: dict[str, list[pd.DataFrame]] = {
         name: [] for name in ("annual", "reduced", "cuts", "drawdowns", "falling", "summary")}
-    for scope, start in (("full_with_synthetic", None), ("actual", ACTUAL_START)):
+    for scope, start in (("full_with_synthetic", None),):
         vo = run_weight_strategy(prices, weights, start=start)
         annual = annual_returns(vo).rename(columns={"return_rate": "vo_return"})
         for model in ("tqqq_hold", "qqq_hold"):
@@ -217,10 +214,10 @@ def main() -> int:
         frame.to_csv(args.output / f"{name}.csv", index=False, date_format="%Y-%m-%d")
     metadata = dict(
         generated_through=str(tables["annual"].end.max().date()),
-        actual_tqqq_start=str(ACTUAL_START.date()), initial_cash=100_000, fee_rate=.001,
+        evaluation_start=str(tables["annual"].start.min().date()), initial_cash=100_000, fee_rate=.001,
         cash_return=0, slippage=0, tax=0, integer_shares=True,
         annual_method="continuous holdings; prior year final close; initial cash in first year",
-        price_basis="split/dividend adjusted OHLC; no separate dividend cash credit",
+        price_basis="Toss split-adjusted OHLC; cash distributions excluded",
         reduced_episode="executed weight below 1 until next weight-1 open before trade; last close if unfinished",
         counterfactual="keep pre-cut shares/cash without trading to the same endpoint; local comparison only",
         individual_cuts="each downward transition until prior target restored; includes 50-to-0 cuts; overlapping events cannot be added",

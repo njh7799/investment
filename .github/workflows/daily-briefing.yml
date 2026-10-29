@@ -48,3 +48,12 @@ jobs:
           KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
           GH_SECRETS_TOKEN: ${{ secrets.GH_SECRETS_TOKEN }}
         run: python scripts/send_daily_briefing.py
+
+  notify-failure:
+    needs: send
+    if: ${{ always() && needs.send.result == 'failure' }}
+    uses: ./.github/workflows/notify-kakao-failure.yml
+    with:
+      workflow_name: Daily market and VO briefing
+      failure_details: send=${{ needs.send.result }}
+    secrets: inherit

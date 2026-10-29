@@ -1,0 +1,46 @@
+name: Notify KakaoTalk of failure
+
+on:
+  workflow_call:
+    inputs:
+      workflow_name:
+        required: true
+        type: string
+      failure_details:
+        required: true
+        type: string
+    secrets:
+      KAKAO_REST_API_KEY:
+        required: true
+      KAKAO_CLIENT_SECRET:
+        required: false
+      KAKAO_REFRESH_TOKEN:
+        required: true
+      GH_SECRETS_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out notification script
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Send KakaoTalk failure notice
+        env:
+          FAILURE_WORKFLOW: ${{ inputs.workflow_name }}
+          FAILURE_DETAILS: ${{ inputs.failure_details }}
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+          GH_SECRETS_TOKEN: ${{ secrets.GH_SECRETS_TOKEN }}
+        run: python scripts/send_action_failure.py

@@ -77,3 +77,12 @@ jobs:
       - name: Deploy reports
         id: deployment
         uses: actions/deploy-pages@v4
+
+  notify-failure:
+    needs: [build, deploy]
+    if: ${{ always() && (needs.build.result == 'failure' || needs.deploy.result == 'failure') }}
+    uses: ./.github/workflows/notify-kakao-failure.yml
+    with:
+      workflow_name: Publish investment reports
+      failure_details: build=${{ needs.build.result }}, deploy=${{ needs.deploy.result }}
+    secrets: inherit

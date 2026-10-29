@@ -54,3 +54,12 @@ jobs:
           market_date=$(TZ=America/New_York date +%F)
           git commit -m "Update market data ${market_date}"
           git push
+
+  notify-failure:
+    needs: update
+    if: ${{ always() && needs.update.result == 'failure' }}
+    uses: ./.github/workflows/notify-kakao-failure.yml
+    with:
+      workflow_name: Update market data
+      failure_details: update=${{ needs.update.result }}
+    secrets: inherit

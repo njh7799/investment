@@ -1,6 +1,8 @@
 # 카카오톡 일일 브리핑
 
-미국 동부시간 기준 평일 오후 6시에 실행되는 `Update market data` 워크플로가 최신 시장 데이터 갱신을 성공적으로 마치면, 독립된 `Daily market and VO briefing` 워크플로가 카카오톡 `나와의 채팅`으로 시장 및 VO 브리핑을 전송한다. 수동 확인은 브리핑 워크플로의 `workflow_dispatch`로 데이터 갱신과 별개로 실행할 수 있다.
+한국시간 화요일부터 토요일까지 오전 9시에 실행되는 로컬 일일 루틴이 최신 정산 거래일까지 시장 데이터를 갱신한 뒤 카카오톡 `나와의 채팅`으로 시장 및 VO 브리핑을 전송하고 변경된 시장 CSV를 원격 저장소에 푸시한다. 토스증권은 등록된 공인 IP만 허용하므로 동적 IP를 사용하는 GitHub 호스티드 러너에서는 시장 데이터와 브리핑 루틴을 실행하지 않는다.
+
+예약 실행을 놓친 날짜별 작업은 재생하지 않는다. 다음 정상 실행에서 최신 정산 거래일까지 한 번에 갱신하고 최신 거래일 브리핑 하나만 전송한다. 휴장일, 아직 장 마감 후 2시간이 지나지 않은 시점과 이미 완료한 거래일은 전체 루틴을 건너뛴다. 중간 실패 시 `.daily-routine-state.json`에 기록한 로컬 단계 상태를 이용해 같은 거래일의 브리핑이나 푸시를 이어서 처리한다.
 
 ## 브리핑 내용
 
@@ -28,20 +30,19 @@
 
 서로 겹치는 롤링 구간도 매일 같은 기준으로 판단하기 위해 모두 포함한다. 따라서 극단도는 독립 사건의 발생 확률이나 재발 주기가 아니라, 과거의 모든 5거래일 관측치 중 현재 움직임이 놓인 상대적 위치다. 이 값은 가격 움직임의 역사적 희소성만 나타내며 호재·악재의 원인, 향후 방향 또는 매매 신호를 판정하지 않는다. 매매 판단은 아래 VO 신호를 별도로 따른다.
 
-생성된 PNG는 저장소나 공개 이미지 호스팅에 기록하지 않는다. Actions 러너의 임시 디렉터리에서 생성해 카카오 이미지 서버로 바로 업로드하고, 카카오가 반환한 이미지 URL을 피드 메시지에 사용한다. 카카오 서버의 업로드 이미지는 최대 100일 보관된 뒤 삭제된다.
+생성된 PNG는 저장소나 공개 이미지 호스팅에 기록하지 않는다. 로컬 임시 디렉터리에서 생성해 카카오 이미지 서버로 바로 업로드하고, 카카오가 반환한 이미지 URL을 피드 메시지에 사용한다. 카카오 서버의 업로드 이미지는 최대 100일 보관된 뒤 삭제된다.
 
 VO 계산과 경계값은 [`docs/strategies/volatility-allocation/README.md`](../strategies/volatility-allocation/README.md)를 그대로 따른다. 신호는 최신 거래일 종가로 계산하며 주문 안내 시점은 다음 거래일 시가다.
 
-## GitHub Actions Secrets
+## 자격증명
 
-`.env.example`의 아래 이름을 저장소 Actions secrets에 등록한다.
+로컬 `.env`에 아래 값을 저장한다.
 
 - `KAKAO_REST_API_KEY`
 - `KAKAO_CLIENT_SECRET`
 - `KAKAO_REFRESH_TOKEN`
-- `GH_SECRETS_TOKEN`
 
-`GH_SECRETS_TOKEN`은 이 저장소에만 접근할 수 있는 fine-grained personal access token으로 만들고, Repository permissions의 `Secrets`를 `Read and write`로 설정한다. 이 토큰은 카카오가 새 리프레시 토큰을 반환했을 때 `KAKAO_REFRESH_TOKEN` secret을 교체하는 용도로만 사용한다.
+로컬 브리핑 전송 중 카카오가 새 리프레시 토큰을 반환하면 `.env`의 `KAKAO_REFRESH_TOKEN`을 자동으로 교체한다. GitHub Pages 배포 실패 알림은 별도 GitHub Actions secrets의 같은 카카오 값과 `GH_SECRETS_TOKEN`을 계속 사용한다.
 
 ## 로컬 확인
 
@@ -68,4 +69,10 @@ python scripts/send_daily_briefing.py --dry-run
 
 ```bash
 python scripts/send_daily_briefing.py
+```
+
+시장 데이터 갱신, 브리핑과 원격 동기화를 한 번에 실행한다.
+
+```bash
+.venv/bin/python scripts/run_daily_routine.py
 ```

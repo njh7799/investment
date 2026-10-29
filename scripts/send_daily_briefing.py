@@ -258,6 +258,22 @@ def send_to_kakao(
     response.raise_for_status()
 
 
+def send_text_to_kakao(access_token: str, message: str, link_url: str) -> None:
+    template = {
+        "object_type": "text",
+        "text": message,
+        "link": {"web_url": link_url, "mobile_web_url": link_url},
+        "button_title": "저장소 열기",
+    }
+    response = requests.post(
+        KAKAO_MEMO_URL,
+        headers={"Authorization": f"Bearer {access_token}"},
+        data={"template_object": json.dumps(template, ensure_ascii=False)},
+        timeout=20,
+    )
+    response.raise_for_status()
+
+
 def persist_rotated_refresh_token(refresh_token: str) -> None:
     if os.environ.get("GITHUB_ACTIONS") == "true":
         repository = os.environ.get("GITHUB_REPOSITORY")

@@ -25,6 +25,7 @@ from scripts.render_briefing_card import (
 from scripts.send_daily_briefing import (
     Briefing,
     send_to_kakao,
+    send_text_to_kakao,
     upload_card_to_kakao,
 )
 
@@ -201,3 +202,21 @@ def test_kakao_message_uses_feed_template_with_card(monkeypatch):
     assert template["content"]["image_width"] == 800
     assert template["content"]["image_height"] == 1067
     assert "description" not in template["content"]
+
+
+def test_kakao_text_message_links_to_repository(monkeypatch):
+    captured = {}
+
+    def fake_post(url, **kwargs):
+        captured["url"] = url
+        captured.update(kwargs)
+        return FakeResponse({"result_code": 0})
+
+    monkeypatch.setattr("scripts.send_daily_briefing.requests.post", fake_post)
+
+    send_text_to_kakao("access-token", "routine failed", "https://example.com/run")
+
+    template = json.loads(captured["data"]["template_object"])
+    assert template["object_type"] == "text"
+    assert template["text"] == "routine failed"
+    assert template["link"]["web_url"] == "https://example.com/run"

@@ -32,3 +32,6 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Local daily routine progress
+.daily-routine-state.json

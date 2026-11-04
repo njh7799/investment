@@ -1,0 +1,17 @@
+model,reductions,increases,increases_within_1,increases_within_3,increases_within_5,increases_within_10
+vo,76,77,19,23,28,31
+hyst_2.5pp,58,59,4,7,15,17
+hyst_5.0pp,47,48,2,3,4,8
+hyst_10.0pp,38,39,0,0,0,1
+confirm_2d,63,64,0,11,15,21
+confirm_3d,59,60,0,7,11,19
+confirm_5d,52,53,0,0,4,11
+hold_2d,69,70,0,16,21,24
+hold_5d,66,67,0,0,18,21
+hold_10d,59,60,0,0,0,12
+smooth_3d,68,69,16,19,23,26
+smooth_5d,67,68,17,19,22,26
+smooth_10d,63,64,15,18,22,23
+hybrid_h2.5_c2_m0,57,58,0,6,11,16
+hybrid_h5.0_c2_m0,45,46,0,2,4,6
+hybrid_h5.0_c1_m5,47,48,0,0,4,8

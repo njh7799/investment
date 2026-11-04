@@ -15,3 +15,4 @@
 | [9차](09-erc-8etf.md) | ERC 공식을 8개 ETF에 적용한 사전등록 수치 재현성 검사 |
 | [10차](10-permanent-portfolio.md) | Permanent Portfolio의 연례 15/35 리밸런싱 밴드 독립 평가 |
 | [11차](11-jordan-ixic-three-percent.md) | 조던 나스닥 -3% 공개형과 TQQQ 고정비율 적용 비교 |
+| [12차](12-vo-boundary-buffers.md) | VO 회복 히스테리시스·연속 확인·최소 유지기간의 왕복 감소 효과 |

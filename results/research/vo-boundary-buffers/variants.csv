@@ -1,0 +1,16 @@
+name,family,parameters
+hyst_2.5pp,recovery_hysteresis,gap=0.025
+hyst_5.0pp,recovery_hysteresis,gap=0.05
+hyst_10.0pp,recovery_hysteresis,gap=0.1
+confirm_2d,recovery_confirmation,sessions=2
+confirm_3d,recovery_confirmation,sessions=3
+confirm_5d,recovery_confirmation,sessions=5
+hold_2d,minimum_reduced_holding,sessions=2
+hold_5d,minimum_reduced_holding,sessions=5
+hold_10d,minimum_reduced_holding,sessions=10
+smooth_3d,smoothed_recovery,sessions=3
+smooth_5d,smoothed_recovery,sessions=5
+smooth_10d,smoothed_recovery,sessions=10
+hybrid_h2.5_c2_m0,combined_buffer,gap=0.025;confirmation=2;holding=0
+hybrid_h5.0_c2_m0,combined_buffer,gap=0.05;confirmation=2;holding=0
+hybrid_h5.0_c1_m5,combined_buffer,gap=0.05;confirmation=1;holding=5

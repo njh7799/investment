@@ -1,0 +1,17 @@
+{
+  "asset_sha256": {
+    "TQQQ.csv": "acfe2d300ddac25c2a8a3333703efd4fbfd5082f51d07c8efb4701f4b4fee175"
+  },
+  "base_fee_rate": 0.001,
+  "bootstrap": {
+    "block_sessions": 20,
+    "replications": 5000,
+    "seed": 20261104
+  },
+  "generated_through": "2026-11-03",
+  "initial_cash": 100000,
+  "preregistered_commit": "7c85b7d",
+  "preregistration": "docs/research/preregistrations/batch-12-vo-boundary-buffers.yaml",
+  "selection_data_end": "2025-12-31",
+  "variant_count": 15
+}

@@ -1,0 +1,109 @@
+id: batch-12-vo-boundary-buffers
+status: registered
+preregistered_commit: this_file_introducing_commit
+blindness: none
+discovered_at: 2026-11-04
+discovery_agent_context: shared
+existing_research_seen: true
+information_leaks:
+  - "The investigator had already reviewed the default VO results and the historical 60% boundary crossings."
+  - "The 2026-10-30 risk cut and 2026-11-02 recovery motivated the research, and their execution prices were known before registration."
+
+candidate_objective: "Reduce short VO boundary round trips without materially weakening TQQQ long-run growth or drawdown protection."
+independent_benchmark: vo
+design_scope:
+  - "This is an internally designed execution-state study, not a reproduction of a public strategy."
+  - "The 30-session realized-volatility estimator, 60%/90% cut thresholds and 100%/50%/0% allocations remain unchanged."
+  - "Risk reductions remain immediate except in the explicitly registered smoothing diagnostic; all primary buffer families delay only allocation increases."
+
+execution:
+  signal_observation_time: close
+  fill_time: next_trading_day_open
+  rebalance_rule: "Trade only when the derived target state changes; integer TQQQ shares."
+  fee_rate_each_side: 0.001
+  slippage: 0
+  tax: 0
+  cash_return: 0
+  warmup: "Hold 100% TQQQ until 30 daily returns exist, matching default VO."
+
+families:
+  - name: recovery_hysteresis
+    formula: "Cut immediately at raw VO above 60% and 90%. Increase one or more allocation steps only when raw VO is at or below each original threshold minus the registered gap."
+    parameters:
+      recovery_gap_percentage_points: [2.5, 5.0, 10.0]
+    boundaries: "Exact cut thresholds stay in the lower-risk-inclusive default bands; exact recovery thresholds permit recovery."
+  - name: recovery_confirmation
+    formula: "Cut immediately when default VO lowers its target. Increase to the current default target only after that higher target has persisted for the registered number of consecutive closes."
+    parameters:
+      consecutive_closes: [2, 3, 5]
+    reset: "Any renewed cut resets the recovery count; a change in the candidate recovery target restarts the count at one."
+  - name: minimum_reduced_holding
+    formula: "After every allocation reduction, block increases for the registered number of subsequent signal sessions; further cuts remain immediate and restart the clock."
+    parameters:
+      minimum_sessions: [2, 5, 10]
+    boundaries: "On the Nth subsequent signal session, the current default target may be restored."
+  - name: smoothed_recovery
+    formula: "Raw VO controls immediate cuts. Allocation increases require both the raw default target and the simple moving average of raw VO to permit the increase."
+    parameters:
+      smoothing_sessions: [3, 5, 10]
+    warmup: "Before the smoothing window exists, do not override default VO."
+  - name: combined_buffer
+    formula: "Apply recovery hysteresis first and then require confirmation or a minimum reduced holding period; cuts remain immediate."
+    parameters:
+      variants:
+        - {recovery_gap_percentage_points: 2.5, consecutive_closes: 2, minimum_sessions: 0}
+        - {recovery_gap_percentage_points: 5.0, consecutive_closes: 2, minimum_sessions: 0}
+        - {recovery_gap_percentage_points: 5.0, consecutive_closes: 1, minimum_sessions: 5}
+
+evaluation:
+  selection_data_end: "2025-12-31"
+  current_data_is_explanatory_only: true
+  fixed_periods:
+    - {name: synthetic_full_pre2026, start: first_session, end: "2025-12-31"}
+    - {name: decade_2016_2025, start: "2016-01-01", end: "2025-12-31"}
+    - {name: current_full, start: first_session, end: data_end}
+    - {name: current_ytd, start: "2026-01-01", end: data_end}
+  rolling_windows_years: [5, 10]
+  rolling_start_frequency: monthly
+  rolling_universe: synthetic_full_through_2025
+  stress_periods:
+    - {name: dotcom, start: "2000-03-10", end: "2002-10-09"}
+    - {name: global_financial_crisis, start: "2007-10-31", end: "2009-03-09"}
+    - {name: covid_crash, start: "2020-02-19", end: "2020-03-23"}
+    - {name: 2022_bear, start: "2021-11-19", end: "2022-12-28"}
+  fee_sensitivity: [0.001, 0.002, 0.005]
+  whipsaw_diagnostics:
+    signal_round_trip_limits_sessions: [1, 3, 5, 10]
+    execution_price_comparison: "Compare next-open reduction and restoration prices, before and after the registered fee."
+  paired_block_bootstrap:
+    block_sessions: 20
+    replications: 5000
+    seed: 20261104
+    outputs: [cagr_delta, mdd_delta]
+    note: "Resample paired realized daily strategy returns; treat this as robustness evidence rather than an iid market-significance claim."
+  practical_screen:
+    - "Synthetic-full pre-2026 CAGR is no more than 0.5 percentage points below VO."
+    - "Synthetic-full pre-2026 MDD is no more than 2 percentage points worse than VO."
+    - "At least 25% fewer allocation-increase signals occurring within five sessions of a reduction."
+    - "Annual trades do not exceed default VO."
+  meaningful_effect:
+    - "CAGR improves by at least 0.5 percentage points with MDD no more than 1 percentage point worse."
+    - "Or MDD improves by at least 3 percentage points with CAGR no more than 0.5 percentage points lower."
+    - "The direction must not be contradicted by both 5-year and 10-year rolling medians or by the 0.2% one-way fee test."
+  selection_rule:
+    - "Apply the practical screen before ranking."
+    - "Prefer simpler single-family rules over combined rules when economic effects are similar."
+    - "Do not select a lone best parameter unless an adjacent registered setting has the same fixed-period direction."
+
+verification:
+  source_reviewer: primary_agent
+  source_review_complete: true
+  implementation_tests:
+    - exact_cut_and_recovery_boundaries
+    - immediate_risk_reduction
+    - confirmation_counter_reset
+    - minimum_holding_clock_reset
+    - smoothed_recovery_warmup
+    - multi_step_transition
+    - no_future_price_dependency
+    - close_signal_executes_at_next_open

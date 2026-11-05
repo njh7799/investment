@@ -1,0 +1,13 @@
+{
+  "asset_sha256": {
+    "QQQ.csv": "35e65b1db311b9b150a4a7da312cb14ffcc8a43609ffd7b516c1a1f1288e1bfa",
+    "TQQQ.csv": "329abbb81843ba49290d6838713cfa16a058b6e1a5107c7a3e8c0c94e438bd66"
+  },
+  "base_fee_rate": 0.001,
+  "candidate_count": 11,
+  "generated_through": "2026-11-04",
+  "initial_cash": 100000,
+  "interpretation": "retrospective development; no historical period is an unseen holdout",
+  "preregistered_commit": "7b9e82a",
+  "preregistration": "docs/research/preregistrations/batch-13-vo-rebound-entry.yaml"
+}

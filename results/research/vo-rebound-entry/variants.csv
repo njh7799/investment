@@ -1,0 +1,12 @@
+name,family,parameters
+online_low_rebound_10,online_low_rebound_fill_stop,rebound=0.1
+online_low_rebound_15,online_low_rebound_fill_stop,rebound=0.15
+online_low_rebound_20,online_low_rebound_fill_stop,rebound=0.2
+surge_5d_10,five_day_surge_fill_stop,horizon=5;return=0.1
+surge_5d_15,five_day_surge_fill_stop,horizon=5;return=0.15
+surge_5d_20,five_day_surge_fill_stop,horizon=5;return=0.2
+sma_upcross_5_20,sma_upcross_fill_stop,short=5;long=20
+strict_high_5d_15,return_with_strict_recent_high_fill_stop,horizon=5;return=0.15
+strict_high_10d_20,return_with_strict_recent_high_fill_stop,horizon=10;return=0.2
+near_high_5d_15,return_with_near_recent_high_fill_stop,horizon=5;return=0.15;proximity=0.98
+near_high_10d_20,return_with_near_recent_high_fill_stop,horizon=10;return=0.2;proximity=0.98

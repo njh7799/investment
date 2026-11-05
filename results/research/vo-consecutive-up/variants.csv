@@ -1,0 +1,15 @@
+name,family,streak_asset,return_asset,sessions,return_threshold
+streak_q_2,consecutive_up_fill_stop,q,,2,
+streak_q_3,consecutive_up_fill_stop,q,,3,
+streak_q_5,consecutive_up_fill_stop,q,,5,
+streak_t_2,consecutive_up_fill_stop,t,,2,
+streak_t_3,consecutive_up_fill_stop,t,,3,
+streak_t_5,consecutive_up_fill_stop,t,,5,
+combo_qq_3_2,consecutive_up_return_fill_stop,q,q,3,0.02
+combo_qq_5_3,consecutive_up_return_fill_stop,q,q,5,0.03
+combo_qt_3_6,consecutive_up_return_fill_stop,q,t,3,0.06
+combo_qt_5_9,consecutive_up_return_fill_stop,q,t,5,0.09
+combo_tq_3_2,consecutive_up_return_fill_stop,t,q,3,0.02
+combo_tq_5_3,consecutive_up_return_fill_stop,t,q,5,0.03
+combo_tt_3_6,consecutive_up_return_fill_stop,t,t,3,0.06
+combo_tt_5_9,consecutive_up_return_fill_stop,t,t,5,0.09

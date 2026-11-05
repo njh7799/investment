@@ -1,0 +1,12 @@
+model,family,screen_pass,rolling_pass,stress_pass,full_risk_pass,fee_0_2_pass,positive_excess_years,largest_positive_year_share,annual_distribution_pass,adjacent_parameter_pass,all_historical_gates_pass,promotion_status
+online_low_rebound_10,online_low_rebound_fill_stop,False,False,False,False,False,9,0.3573795650,True,False,False,research_record
+online_low_rebound_15,online_low_rebound_fill_stop,False,False,False,False,False,8,0.4816060609,True,False,False,research_record
+online_low_rebound_20,online_low_rebound_fill_stop,False,False,False,False,False,6,0.5285706340,False,False,False,research_record
+surge_5d_10,five_day_surge_fill_stop,False,False,False,False,False,8,0.6046813203,False,False,False,research_record
+surge_5d_15,five_day_surge_fill_stop,False,False,False,False,False,6,0.7075358978,False,False,False,research_record
+surge_5d_20,five_day_surge_fill_stop,False,False,False,False,False,3,0.8163542856,False,False,False,research_record
+sma_upcross_5_20,sma_upcross_fill_stop,False,False,False,False,True,10,0.2693110701,True,False,False,research_record
+strict_high_5d_15,return_with_strict_recent_high_fill_stop,False,False,False,False,False,5,0.7416447522,False,False,False,research_record
+strict_high_10d_20,return_with_strict_recent_high_fill_stop,False,False,False,False,False,4,0.8103009651,False,False,False,research_record
+near_high_5d_15,return_with_near_recent_high_fill_stop,False,False,False,False,False,6,0.7034569252,False,False,False,research_record
+near_high_10d_20,return_with_near_recent_high_fill_stop,False,False,False,False,False,4,0.7877841290,False,False,False,research_record

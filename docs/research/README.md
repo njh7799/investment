@@ -16,5 +16,7 @@
 | [VO 상승 대응 연구](vo-upside-recovery.md) | VO의 급상승장 대응 변형과 결과 |
 | [VO 연도별 수익과 비중 조절의 기회비용](vo-annual-tradeoffs.md) | 연간 수익률, 감축 중 놓친 상승과 100% 비중 중 하락 |
 | [VO 경계 완충 연구](batches/12-vo-boundary-buffers.md) | 히스테리시스·확인일수·최소 유지기간의 왕복 감소와 CAGR·MDD 영향 |
+| [VO 급반등 재진입 연구](batches/13-vo-rebound-entry.md) | 급반등 신호와 실제 매수가 손절의 반복 휩쏘 위험 |
+| [VO 연속 상승 재진입 연구](batches/14-vo-consecutive-up.md) | 연속 상승 확인 속도와 매수가 손절의 수익·위험 절충 |
 
 정확히 재현되고 사전 정의한 역할별 기준을 통과한 규칙만 [`../strategies/`](../strategies/)로 옮긴다. 공개 전략은 VO와 독립적으로 먼저 평가하고, 기본 VO 변경 여부는 그 다음 통합 단계에서 별도로 판정한다.

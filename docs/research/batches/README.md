@@ -16,3 +16,5 @@
 | [10차](10-permanent-portfolio.md) | Permanent Portfolio의 연례 15/35 리밸런싱 밴드 독립 평가 |
 | [11차](11-jordan-ixic-three-percent.md) | 조던 나스닥 -3% 공개형과 TQQQ 고정비율 적용 비교 |
 | [12차](12-vo-boundary-buffers.md) | VO 회복 히스테리시스·연속 확인·최소 유지기간의 왕복 감소 효과 |
+| [13차](13-vo-rebound-entry.md) | 온라인 저점·급등·최근 고점·5/20 돌파와 실제 매수가 손절 VO 재진입 |
+| [14차](14-vo-consecutive-up.md) | QQQ·TQQQ 연속 상승·누적수익과 실제 매수가 손절 VO 재진입 |

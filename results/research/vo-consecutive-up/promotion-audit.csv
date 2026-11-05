@@ -1,0 +1,15 @@
+model,family,screen_pass,rolling_pass,stress_pass,full_risk_pass,fee_0_2_pass,positive_excess_years,largest_positive_year_share,annual_distribution_pass,adjacent_parameter_pass,all_historical_gates_pass,promotion_status
+streak_q_2,consecutive_up_fill_stop_q,False,False,False,False,False,10,0.3711250872,True,False,False,research_record
+streak_q_3,consecutive_up_fill_stop_q,False,False,False,False,False,8,0.5547011018,False,False,False,research_record
+streak_q_5,consecutive_up_fill_stop_q,False,False,False,False,False,1,1.0000000000,False,False,False,research_record
+streak_t_2,consecutive_up_fill_stop_t,False,False,False,False,False,11,0.3705039398,True,False,False,research_record
+streak_t_3,consecutive_up_fill_stop_t,False,False,False,False,False,7,0.5711937346,False,False,False,research_record
+streak_t_5,consecutive_up_fill_stop_t,False,False,False,False,False,1,1.0000000000,False,False,False,research_record
+combo_qq_3_2,consecutive_up_return_fill_stop_qq,False,False,False,False,False,8,0.5471645332,False,False,False,research_record
+combo_qq_5_3,consecutive_up_return_fill_stop_qq,False,False,False,False,False,1,1.0000000000,False,False,False,research_record
+combo_qt_3_6,consecutive_up_return_fill_stop_qt,False,False,False,False,False,8,0.5471645332,False,False,False,research_record
+combo_qt_5_9,consecutive_up_return_fill_stop_qt,False,False,False,False,False,1,1.0000000000,False,False,False,research_record
+combo_tq_3_2,consecutive_up_return_fill_stop_tq,False,False,False,False,False,7,0.5632055689,False,False,False,research_record
+combo_tq_5_3,consecutive_up_return_fill_stop_tq,False,False,False,False,False,1,1.0000000000,False,False,False,research_record
+combo_tt_3_6,consecutive_up_return_fill_stop_tt,False,False,False,False,False,7,0.5632055689,False,False,False,research_record
+combo_tt_5_9,consecutive_up_return_fill_stop_tt,False,False,False,False,False,1,1.0000000000,False,False,False,research_record

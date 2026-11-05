@@ -1,0 +1,102 @@
+id: batch-13-vo-rebound-entry
+status: registered
+preregistered_commit: this_file_introducing_commit
+discovered_at: 2026-11-05
+corrected_at: 2026-11-06
+blindness: none
+existing_research_seen: true
+correction_reason: >-
+  The first implementation did not match the user's exit rule: it stopped below a running low or
+  held until the volatility episode ended. Those results are invalid for this question and are
+  replaced. This registration fixes the intended actual next-open purchase-price stop before rerun.
+information_leaks:
+  - "The rules followed observation of recent VO under-participation; no period is an unseen holdout."
+  - "The existing entry grid is retained so correction does not select entries from prior outcomes."
+candidate_objective: "Rejoin sharp high-volatility rebounds, removing only the addon below its actual fill price."
+independent_benchmark: vo
+signal_asset: TQQQ
+common_definitions:
+  high_volatility: "Default VO 30-session volatility is above 60%; at or below 60% reset addon state."
+  addon_action: "Raise default VO by 50 percentage points, capped at 100%."
+  actual_entry_price: >-
+    A close signal orders the next open. The addon becomes ACTIVE and E is that open only if the
+    combined target causes a positive integer-share BUY after affordability and fees. Zero net buy
+    creates no E and blocks entry until the family rearms.
+  stop: >-
+    ACTIVE close < E schedules addon removal at the next open. Equality holds, intraday lows are
+    ignored, and the sale is at the actual open rather than E. The contemporaneous base VO remains.
+  rearm: >-
+    After a stop, a level/composite signal must be false before a new true; the moving average must
+    return non-bull before a fresh upcross. Online-low starts a new causal low search after stop fill.
+    No same-close exit and re-entry is allowed.
+  reset: "When base VO is 100%, clear active, E, pending, lockout, and low anchors."
+  warmup: "Keep base VO until required trailing observations exist; never forward-fill prices."
+execution:
+  signal_observation_time: close
+  fill_time: next_trading_day_open
+  fee_rate_each_side: 0.001
+  slippage: 0
+  tax: 0
+  cash_return: 0
+  shares: integer
+  valuation: close
+  rebalance_rule: >-
+    Rebalance only on combined target-state changes. Base changes can rebalance ACTIVE without
+    changing E. Final-date entry or stop signals remain unfilled.
+  subperiod_policy: >-
+    Derive addon state and E causally on the full history, then seed each fixed, annual, stress, or
+    rolling window from the prior close's state while restarting capital at the registered initial
+    cash. This preserves the historical stop anchor without importing portfolio P&L.
+families:
+  - name: online_low_rebound_fill_stop
+    formula: "Inactive running low L is causal; signal at close >= L*(1+R); restart L after stopped sale."
+    parameters: {rebound_R: [0.10, 0.15, 0.20]}
+  - name: five_day_surge_fill_stop
+    formula: "G5=close(t)/close(t-5)-1; signal at G5 >= R."
+    parameters: {surge_R: [0.10, 0.15, 0.20]}
+  - name: sma_upcross_fill_stop
+    formula: "Signal only on a fresh TQQQ SMA(5)>SMA(20) upcross from SMA(5)<=SMA(20)."
+    parameters: {pairs: [[5, 20]]}
+  - name: return_with_strict_recent_high_fill_stop
+    formula: "GN>=M and close is strictly above every prior close in the N-session comparison interval."
+    parameters: {horizon_return_pairs: [{N: 5, M: 0.15}, {N: 10, M: 0.20}]}
+  - name: return_with_near_recent_high_fill_stop
+    formula: "GN>=M and close >= 0.98 times the inclusive N-session-window high."
+    parameters: {high_proximity: 0.98, horizon_return_pairs: [{N: 5, M: 0.15}, {N: 10, M: 0.20}]}
+candidate_count: {new_candidates: 11, total_evaluated: 11}
+evaluation:
+  interpretation: "Retrospective correction; results can reject or retain but cannot provide unseen confirmation."
+  fixed_periods:
+    - {name: full_current, start: first_common_session, end: data_end}
+    - {name: full_pre2026, start: first_common_session, end: "2025-12-31"}
+    - {name: decade_2016_2025, start: "2016-01-01", end: "2025-12-31"}
+    - {name: recent_two_year_diagnostic, start: "2024-11-04", end: data_end}
+    - {name: current_ytd_diagnostic, start: "2026-01-01", end: data_end}
+  rolling_windows_years: [5, 10]
+  rolling_start_frequency: monthly
+  stress_periods:
+    - {name: dotcom, start: "2000-03-10", end: "2002-10-09"}
+    - {name: global_financial_crisis, start: "2007-10-31", end: "2009-03-09"}
+    - {name: covid_crash, start: "2020-02-19", end: "2020-03-23"}
+    - {name: 2022_bear, start: "2021-11-19", end: "2022-12-28"}
+    - {name: 2025_rebound, start: "2025-02-19", end: "2025-08-12"}
+    - {name: 2026_rebound, start: "2026-01-02", end: data_end}
+  fee_sensitivity: [0.001, 0.002, 0.005]
+  screen:
+    - "Full-pre-2026 CAGR is no more than 0.5 percentage points below VO."
+    - "2016-2025 CAGR is above VO."
+    - "Full-pre-2026 MDD is no more than 2 percentage points worse than VO."
+    - "Full-pre-2026 annual trades do not exceed 20."
+verification:
+  implementation_tests:
+    - actual_positive_buy_records_next_open_as_E
+    - zero_net_buy_does_not_create_E
+    - close_below_E_exits_next_open_and_equality_holds
+    - entry_day_close_can_schedule_stop
+    - stop_removes_only_addon
+    - base_changes_preserve_E
+    - signal_must_rearm_after_stop
+    - online_low_restarts_causally
+    - episode_reset_clears_all_state
+    - future_prices_do_not_change_past_trades
+    - final_date_signal_or_stop_remains_unfilled

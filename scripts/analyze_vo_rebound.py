@@ -100,6 +100,9 @@ def screen_rows(period: pd.DataFrame, candidates: list[str]) -> pd.DataFrame:
 
 
 def family_for(model: str) -> str:
+    for prefix in ("one_", "cool20_", "cool60_", "hold10_", "hold20_", "trail10_", "trail15_", "staged_"):
+        if model.startswith(prefix):
+            return prefix.rstrip("_")
     if model.startswith("streak_"):
         return "consecutive_up_fill_stop_" + model.split("_")[1]
     if model.startswith("combo_"):

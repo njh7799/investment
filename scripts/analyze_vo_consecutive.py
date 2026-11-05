@@ -24,9 +24,14 @@ from scripts.analyze_vo_rebound import (
     run,
 )
 
+BUILDER = build_vo_consecutive_weights
+DESCRIPTION = "Analyze preregistered VO consecutive-up variants"
+PREREGISTRATION = "docs/research/preregistrations/batch-14-vo-consecutive-up.yaml"
+PREREGISTERED_COMMIT = "2f4edc0"
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Analyze preregistered VO consecutive-up variants")
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -62,7 +67,7 @@ def main() -> int:
     args = parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     data = load_market_data(ROOT)
-    prices, weights_by_name, specs = build_vo_consecutive_weights(data)
+    prices, weights_by_name, specs = BUILDER(data)
     candidates = [spec.name for spec in specs]
     names = ["vo", *candidates]
     pd.DataFrame([spec.__dict__ for spec in specs]).to_csv(args.output / "variants.csv", index=False)
@@ -126,8 +131,8 @@ def main() -> int:
     metadata = {
         "generated_through": data.index[-1].date().isoformat(),
         "interpretation": "retrospective development; no historical period is an unseen holdout",
-        "preregistration": "docs/research/preregistrations/batch-14-vo-consecutive-up.yaml",
-        "preregistered_commit": "2f4edc0",
+        "preregistration": PREREGISTRATION,
+        "preregistered_commit": PREREGISTERED_COMMIT,
         "candidate_count": len(candidates),
         "unique_pre2026_target_paths_including_vo": len(seen),
         "initial_cash": 100_000,

@@ -1,0 +1,14 @@
+{
+  "asset_sha256": {
+    "QQQ.csv": "5929ac945b02eca8f378411bbe51abe5ce10c3904a5d7d4f1f2c7b5f8d1d9c7d",
+    "TQQQ.csv": "4b3f86657650204a52a2f370df098d811516e67886ec18154fecb8508d9ba568"
+  },
+  "base_fee_rate": 0.001,
+  "candidate_count": 24,
+  "generated_through": "2026-11-05",
+  "initial_cash": 100000,
+  "interpretation": "retrospective development; no historical period is an unseen holdout",
+  "preregistered_commit": "3edd163",
+  "preregistration": "docs/research/preregistrations/batch-15-vo-v-recovery-controls.yaml",
+  "unique_pre2026_target_paths_including_vo": 25
+}

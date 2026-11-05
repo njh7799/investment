@@ -1,0 +1,78 @@
+id: batch-15-vo-v-recovery-controls
+status: registered
+preregistered_commit: this_file_introducing_commit
+registered_at: 2026-11-06
+blindness: none
+existing_research_seen: true
+information_leaks:
+  - "Designed after observing corrected batches 13 and 14; no historical period is an unseen holdout."
+  - "Prior results motivate controlling repeated attempts, but no threshold below is selected from a favorable historical result."
+objective: "Improve VO participation in V-shaped rebounds while preventing repeated high-volatility bear-market entries from exhausting capital."
+benchmark: vo
+assets: [QQQ, TQQQ]
+common_execution:
+  high_volatility: "Addon may start only while default VO target is below 100%; base=100% resets every policy."
+  signal_time: close
+  fill_time: next_trading_day_open
+  valuation: close
+  fee_each_side: 0.001
+  slippage: 0
+  tax: 0
+  integer_shares: true
+  actual_entry_E: "The next-open price after an addon target increase; close<E schedules removal next open."
+  gap_policy: "Exit at the actual next open; no fill at E is assumed."
+  addon: "50 percentage points unless staged policy explicitly says 25 then 50; cap total target at 100%."
+  final_day: "Signals without a following open remain unfilled."
+entry_signals:
+  - {name: qqq_streak_2, formula: "last two QQQ close-to-close returns are strictly positive"}
+  - {name: tqqq_surge_5d_15, formula: "TQQQ close(t)/close(t-5)-1 >= 15%"}
+  - {name: tqqq_sma_upcross_5_20, formula: "fresh strict SMA5>SMA20 upcross from SMA5<=SMA20"}
+policies:
+  - name: one_attempt_per_episode
+    rule: "After the first filled attempt, allow no further addon entry until base VO returns to 100%, whether exit was a stop or time/trend rule."
+    signals: [qqq_streak_2, tqqq_surge_5d_15, tqqq_sma_upcross_5_20]
+    candidate_count: 3
+  - name: cooldown_after_stop
+    rule: "After close<E exit, block new entries for C trading sessions and still require a fresh signal after cooldown."
+    cooldown_sessions: [20, 60]
+    signals: [qqq_streak_2, tqqq_surge_5d_15, tqqq_sma_upcross_5_20]
+    candidate_count: 6
+  - name: timeboxed_participation
+    rule: "Exit addon after H completed sessions from entry or earlier at close<E; require a fresh signal before re-entry."
+    maximum_holding_sessions: [10, 20]
+    signals: [qqq_streak_2, tqqq_surge_5d_15, tqqq_sma_upcross_5_20]
+    candidate_count: 6
+  - name: trailing_profit_ratchet
+    rule: "Stop anchor is max(E, highest active close*(1-T)); close below anchor exits next open and requires a fresh signal."
+    trailing_distance: [0.10, 0.15]
+    signals: [qqq_streak_2, tqqq_surge_5d_15, tqqq_sma_upcross_5_20]
+    candidate_count: 6
+  - name: staged_confirmation
+    rule: "Enter +25pp; add the second +25pp after close>=E*1.05; close<E removes the whole addon; require a fresh signal."
+    signals: [qqq_streak_2, tqqq_surge_5d_15, tqqq_sma_upcross_5_20]
+    candidate_count: 3
+candidate_count: 24
+evaluation:
+  periods: [full_current, full_pre2026, decade_2016_2025, recent_two_year_diagnostic, current_ytd_diagnostic]
+  rolling_years: [5, 10]
+  rolling_frequency: monthly
+  stress: [dotcom, global_financial_crisis, covid_crash, 2022_bear, 2025_rebound, 2026_rebound]
+  fee_sensitivity: [0.001, 0.002, 0.005]
+  screen:
+    - "Full-pre-2026 CAGR no more than 0.5 percentage points below VO."
+    - "2016-2025 CAGR above VO."
+    - "Full-pre-2026 MDD no more than 2 percentage points worse than VO."
+    - "Annual trades no more than 20."
+  promotion: "Use the repository VO-addon gates without post-result relaxation."
+verification:
+  tests:
+    - grid_exactly_matches_registration
+    - close_signal_trades_next_open
+    - actual_open_sets_E_and_gap_exit_uses_next_open
+    - one_attempt_blocks_until_episode_reset
+    - cooldown_counts_trading_sessions
+    - timebox_counts_entry_session_and_exits_next_open
+    - trailing_anchor_never_decreases
+    - staged_weight_is_25_then_50_percentage_points
+    - base_full_weight_resets_all_state
+    - future_prices_do_not_change_past_targets

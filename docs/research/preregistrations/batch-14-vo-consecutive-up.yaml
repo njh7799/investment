@@ -1,0 +1,65 @@
+id: batch-14-vo-consecutive-up
+status: registered
+preregistered_commit: this_file_introducing_commit
+discovered_at: 2026-11-05
+corrected_at: 2026-11-06
+blindness: none
+existing_research_seen: true
+correction_reason: >-
+  The original run latched entries until episode end and did not test the user's actual purchase-price
+  stop. Its results are invalid for this question and are replaced using batch 13's corrected state machine.
+candidate_objective: "Test consecutive-up rebound entries with an actual next-open fill-price stop."
+independent_benchmark: vo
+asset_symbols: {q: QQQ, t: TQQQ}
+common_definitions:
+  state_machine: "Use corrected batch-13 actual-entry-price, stop, reset, execution, and subperiod rules verbatim."
+  consecutive_up: "U(asset,N,t) requires the last N close-to-close returns all strictly positive; unchanged fails."
+  cumulative_return: "G(asset,N,t)=close(t)/close(t-N)-1; equality with M passes."
+  rearm: "After stop, the streak asset must have a non-positive day; entry then needs a newly completed U condition and, for combos, G threshold."
+  combinations: "Run separately; do not add parameters after results."
+execution:
+  signal_observation_time: close
+  fill_time: next_trading_day_open
+  fee_rate_each_side: 0.001
+  slippage: 0
+  tax: 0
+  cash_return: 0
+  shares: integer
+families:
+  - name: consecutive_up_fill_stop
+    parameters: {signal_assets: [q, t], consecutive_sessions: [2, 3, 5]}
+    candidate_count: 6
+  - name: consecutive_up_return_fill_stop
+    parameters:
+      candidates:
+        - {name: combo_qq_3_2, streak_asset: q, return_asset: q, N: 3, M: 0.02}
+        - {name: combo_qq_5_3, streak_asset: q, return_asset: q, N: 5, M: 0.03}
+        - {name: combo_qt_3_6, streak_asset: q, return_asset: t, N: 3, M: 0.06}
+        - {name: combo_qt_5_9, streak_asset: q, return_asset: t, N: 5, M: 0.09}
+        - {name: combo_tq_3_2, streak_asset: t, return_asset: q, N: 3, M: 0.02}
+        - {name: combo_tq_5_3, streak_asset: t, return_asset: q, N: 5, M: 0.03}
+        - {name: combo_tt_3_6, streak_asset: t, return_asset: t, N: 3, M: 0.06}
+        - {name: combo_tt_5_9, streak_asset: t, return_asset: t, N: 5, M: 0.09}
+    candidate_count: 8
+candidate_count: {new_candidates: 14, total_evaluated: 14}
+evaluation:
+  interpretation: "Retrospective correction; no historical interval is an unseen holdout."
+  fixed_periods:
+    - {name: full_current, start: first_common_session, end: data_end}
+    - {name: full_pre2026, start: first_common_session, end: "2025-12-31"}
+    - {name: decade_2016_2025, start: "2016-01-01", end: "2025-12-31"}
+    - {name: recent_two_year_diagnostic, start: "2024-11-04", end: data_end}
+    - {name: current_ytd_diagnostic, start: "2026-01-01", end: data_end}
+  rolling_windows_years: [5, 10]
+  rolling_start_frequency: monthly
+  stress_periods: [dotcom, global_financial_crisis, covid_crash, 2022_bear, 2025_rebound, 2026_rebound]
+  fee_sensitivity: [0.001, 0.002, 0.005]
+  screen: "Same fixed, rolling, stress, risk, fee, annual-distribution, and adjacency gates as corrected batch 13."
+verification:
+  implementation_tests:
+    - variant_grid_matches_preregistration
+    - exact_n_positive_returns_required
+    - unchanged_close_breaks_and_rearms_streak
+    - exact_m_threshold_is_inclusive
+    - cross_asset_wiring_is_correct
+    - common_actual_fill_stop_tests_from_batch_13

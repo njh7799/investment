@@ -15,6 +15,7 @@ ROWS = [
 ('batch-09','batches/09-erc-8etf.md','research/batch-09','다중자산','실행 실패','동일 위험기여 포트폴리오를 사전등록 오차 이내로 재현할 수 있을까?','첫 신호에서 위험기여 오차 허용치를 넘겨 성과를 생성하지 않았다.','수치 재현에 실패하면 허용오차를 사후 완화하지 않고 실패 자체를 기록한다.'),
 ('batch-10','batches/10-permanent-portfolio.md','research/batch-10','다중자산','외부 참고','Permanent Portfolio의 15/35 밴드는 거래를 줄이며 목적을 달성할까?','연례 동일비중 대비 독립 기준을 통과해 저위험 목적의 외부 참고 전략으로 남겼다.','VO를 대체하지 않더라도 다른 투자 목적에서 의미 있는 전략일 수 있다.'),
 ('batch-11','batches/11-jordan-ixic-three-percent.md','research/batch-11','급락 대응','미채택','나스닥 -3% 규칙과 TQQQ 비중 변형은 원래 목적을 달성할까?','최근·롤링·낙폭과 VO 비교 기준을 통과하지 못했다.','같은 이름의 전략도 판본과 실제 규칙을 분리해서 비교해야 한다.'),
+('ixic-crash-rebound','ixic-crash-next-day-rebound.md','research/ixic-crash-rebound','구간 분석','연구 기록','IXIC -3% 급락 다음 날의 반등 강도로 이후 방향을 판별할 수 있을까?','낙폭의 50% 회복과 다른 임계값 모두 5~252거래일 후속 방향을 일관되게 구분하지 못했다.','위기 중 겹치는 사건과 시장 체제를 분리하지 않으면 하루 반등의 예측력을 과장할 수 있다.'),
 ('batch-12','batches/12-vo-boundary-buffers.md','research/vo-boundary-buffers','VO 확장','미채택','VO 경계의 짧은 감축·복귀 왕복을 줄이면 CAGR과 MDD도 개선될까?','최소 유지기간은 왕복을 줄였지만 MDD를 개선하지 못했고 CAGR을 낮췄다.','거래 횟수 감소와 투자 성과 개선은 별도로 검증해야 한다.'),
 ('batch-13','batches/13-vo-rebound-entry.md','research/vo-rebound-entry','VO 확장','미채택','실제 매수가 손절을 붙인 급반등 재진입은 안전할까?','최근 수익은 개선됐지만 약세장 반복 손절과 갭이 누적되어 MDD와 롤링 최악값이 악화됐다.','한 번의 손실 제한과 전략 전체 MDD 제한은 다르며 재진입 빈도까지 함께 검증해야 한다.'),
 ('batch-14','batches/14-vo-consecutive-up.md','research/vo-consecutive-up','VO 확장','미채택','연속 상승 뒤 실제 매수가 손절로 VO 재진입을 개선할 수 있을까?','2·3일형은 반복 손절이 컸고 5일형은 MDD를 보존했지만 수익과 롤링 결과가 낮았다.','신호를 늦추면 휩쏘는 줄지만 반등 참여도 늦어지는 절충을 함께 평가해야 한다.'),

@@ -1,0 +1,17 @@
+{
+  "complete_crash_events": 265,
+  "crash_threshold": -0.03,
+  "episode_cooldown_sessions": 20,
+  "episode_first_events": 78,
+  "first_observation": "1971-02-05",
+  "forward_return_origin": "next-day close",
+  "generated_through": "2026-11-05",
+  "horizons_sessions": [
+    5,
+    20,
+    60,
+    120,
+    252
+  ],
+  "ixic_sha256": "2e5edff28c4e0962e7e8a2e4a655efaf38da872c9efa50633b9e9b444541eb06"
+}

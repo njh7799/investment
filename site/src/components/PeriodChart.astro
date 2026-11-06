@@ -1,0 +1,12 @@
+---
+import Chart from './Chart.astro';
+const {file,title,defaultOpen=false,profileStrategy=null}=Astro.props;
+---
+<details class="chart-disclosure" open={defaultOpen}>
+  <summary>
+    <span>{title}</span>
+    <small class="chart-disclosure-closed">차트 열기 ↓</small>
+    <small class="chart-disclosure-open">차트 접기 ↑</small>
+  </summary>
+  <Chart profileStrategy={profileStrategy} comparisonControls={false} file={file} title={title}/>
+</details>

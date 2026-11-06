@@ -540,6 +540,38 @@ def test_three_percent_rule_does_not_recheck_signal_at_next_open():
     assert result.positions.iloc[-1].Shares == 8
 
 
+def test_three_percent_qqq_recovery_addon_exits_panic_at_ten_percent():
+    index = pd.bdate_range("2024-01-02", periods=7)
+    ixic = prices([100, 96, 96, 96, 96, 96, 96])
+    qqq = prices([100, 90, 94, 99, 99, 99, 99])
+    tqqq = prices([100, 80, 80, 80, 80, 80, 80], opens=[100] * 7)
+    data = MarketData(ixic=ixic.set_axis(index), qqq=qqq.set_axis(index), tqqq=tqqq.set_axis(index))
+
+    result = run_three_percent_rule(
+        data, initial_cash=1000, fee_rate=0, qqq_ten_percent_recovery=True
+    )
+
+    assert result.trades.loc[index[4]].TargetWeight == pytest.approx(0.8)
+
+
+def test_three_percent_full_investment_addon_stops_after_one_lower_band():
+    index = pd.bdate_range("2024-01-02", periods=14)
+    ixic = prices([100, 96] + [96] * 12).set_axis(index)
+    qqq = prices([100, 90, 91, 92, 93, 94, 95, 96, 97, 98, 98, 98, 98, 98]).set_axis(index)
+    tqqq = prices(
+        [100, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 70, 70, 70],
+        opens=[100] * 14,
+    ).set_axis(index)
+    data = MarketData(ixic=ixic, qqq=qqq, tqqq=tqqq)
+
+    result = run_three_percent_rule(
+        data, initial_cash=1000, fee_rate=0, full_investment_after_regime=True
+    )
+
+    assert result.trades.loc[index[10]].TargetWeight == pytest.approx(1.0)
+    assert result.trades.loc[index[12]].TargetWeight == pytest.approx(0.7)
+
+
 def test_vo_bull_research_grid_is_preregistered_and_unique():
     variants = bull_variant_specs()
     assert len(variants) == 68

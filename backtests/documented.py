@@ -86,6 +86,8 @@ def run_three_percent_rule(
     end=None,
     initial_cash=100_000.0,
     fee_rate=0.001,
+    full_investment_after_regime=False,
+    qqq_ten_percent_recovery=False,
 ) -> BacktestResult:
     index = data.index
     tqqq = data.tqqq.loc[index]
@@ -108,6 +110,13 @@ def run_three_percent_rule(
     expiry = None
     up_streak = 0
     crash_dates: deque[pd.Timestamp] = deque()
+    qqq_recovery_low = None
+    full_investment = False
+    full_entry_date = None
+    full_entry_band = None
+    full_entry_high = None
+    pending_full_entry = False
+    pending_full_high = None
     pending_target = 1.0
     trades = []
     positions = []
@@ -120,7 +129,13 @@ def run_three_percent_rule(
             close_band = _band(float(tqqq["Close"].iloc[previous]), float(reference.iloc[previous]))
             regime, expiry, up_streak = "normal", None, 0
             applied_band = close_band
-            pending_target = 1.0 - close_band / 10.0
+            qqq_recovery_low = None
+            if full_investment_after_regime:
+                pending_target = 1.0
+                pending_full_entry = True
+                pending_full_high = float(reference.iloc[previous])
+            else:
+                pending_target = 1.0 - close_band / 10.0
 
         target = pending_target
         pending_target = None
@@ -129,6 +144,13 @@ def run_three_percent_rule(
             cash, shares, side, quantity, gross, fee = _trade_to_weight(cash, shares, price, target, fee_rate)
             if quantity:
                 trades.append({"Date": date, "Side": side, "Quantity": quantity, "Price": price, "Gross": gross, "Fee": fee, "TargetWeight": target})
+        if pending_full_entry:
+            full_investment = True
+            full_entry_date = date
+            full_entry_band = None
+            full_entry_high = pending_full_high
+            pending_full_entry = False
+            pending_full_high = None
 
         close_price = float(tqqq.loc[date, "Close"])
         equities.append(cash + shares * close_price)
@@ -139,6 +161,10 @@ def run_three_percent_rule(
         if loc > 0:
             crash = float(ixic["Close"].iloc[loc] / ixic["Close"].iloc[loc - 1] - 1.0) <= -0.03
         if crash:
+            full_investment = False
+            full_entry_date = full_entry_band = full_entry_high = None
+            pending_full_entry = False
+            pending_full_high = None
             crash_dates.append(date)
             cutoff = date - pd.DateOffset(months=1)
             while crash_dates and crash_dates[0] < cutoff:
@@ -149,20 +175,50 @@ def run_three_percent_rule(
             up_streak = 0
             close_band = _band(close_price, float(reference.loc[date]))
             if regime == "great_panic":
+                qqq_recovery_low = None
                 pending_target = 0.0
             else:
+                qqq_recovery_low = float(qqq.loc[date, "Close"])
                 panic_band = close_band
                 pending_target = close_band / 10.0
         elif regime != "normal":
+            qqq_close = float(qqq.loc[date, "Close"])
+            if regime == "panic" and qqq_ten_percent_recovery:
+                qqq_recovery_low = qqq_close if qqq_recovery_low is None else min(qqq_recovery_low, qqq_close)
             if loc > 0 and qqq["Close"].iloc[loc] > qqq["Close"].iloc[loc - 1]:
                 up_streak += 1
             else:
                 up_streak = 0
-            if up_streak >= 8:
+            recovered = (
+                regime == "panic"
+                and qqq_ten_percent_recovery
+                and qqq_recovery_low is not None
+                and qqq_close / qqq_recovery_low - 1.0 >= 0.10 - 1e-12
+            )
+            if up_streak >= 8 or recovered:
                 close_band = _band(close_price, float(reference.loc[date]))
                 regime, expiry, up_streak = "normal", None, 0
                 applied_band = close_band
+                qqq_recovery_low = None
+                if full_investment_after_regime:
+                    pending_target = 1.0
+                    pending_full_entry = True
+                    pending_full_high = float(reference.loc[date])
+                else:
+                    pending_target = 1.0 - close_band / 10.0
+        elif full_investment:
+            close_band = _band(close_price, float(reference.loc[date]))
+            if date == full_entry_date:
+                full_entry_band = close_band
+                full_entry_high = float(reference.loc[date])
+                applied_band = close_band
+            elif full_entry_band is not None and close_band > full_entry_band:
+                full_investment = False
+                applied_band = close_band
                 pending_target = 1.0 - close_band / 10.0
+            elif full_entry_high is not None and close_price > full_entry_high:
+                full_investment = False
+                applied_band = close_band
         else:
             close_band = _band(close_price, float(reference.loc[date]))
             if close_band != applied_band:

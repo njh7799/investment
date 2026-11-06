@@ -1,0 +1,11 @@
+---
+const {strategy,profile,initialProfile,class:className}=Astro.props;
+---
+<div
+  class={className}
+  data-profile-strategy={strategy}
+  data-profile-view={profile}
+  hidden={profile!==initialProfile}
+>
+  <slot/>
+</div>

@@ -4,7 +4,7 @@ import {methodHref} from '../lib/methods';
 import NavIcon from '../components/NavIcon.astro';
 import '../styles.css';
 import '../design-system.css';
-const {title,section='home',detail=false,description='투자 방법별 백테스트 결과, 규칙, 한계와 해석을 모아 둔 분석 기록.'}=Astro.props;
+const {title,section='home',detail=false,wide=false,description='투자 방법별 백테스트 결과, 규칙, 한계와 해석을 모아 둔 분석 기록.'}=Astro.props;
 const pathname=Astro.url.pathname.replace(/^\/investment\/?/,'').replace(/\/$/,'');
 const strategiesOpen=section==='strategies';
 const researchOpen=section==='research'||section==='audits';
@@ -28,7 +28,7 @@ const activeMethod=pathname.startsWith('strategies/')?pathname.split('/')[1]:nul
         <p>둘러보기</p>
         <a class="sidebar-primary" href={url()} aria-current={section==='home'?'page':undefined}><NavIcon name="home"/><span>홈</span></a>
         <div class="sidebar-group">
-          <a class:list={["sidebar-primary sidebar-parent",{active:strategiesOpen}]} data-sidebar-parent="strategies" data-section-active={strategiesOpen||undefined} href={url('strategies/')} aria-current={pathname==='strategies'?'page':undefined} aria-expanded={strategiesOpen} aria-controls="strategy-subnav"><NavIcon name="methods"/><span>투자 방법</span><i aria-hidden="true">›</i></a>
+          <a class:list={["sidebar-primary sidebar-parent",{active:strategiesOpen}]} data-sidebar-parent="strategies" href={url('strategies/')} aria-current={pathname==='strategies'?'page':undefined} aria-expanded={strategiesOpen} aria-controls="strategy-subnav"><NavIcon name="methods"/><span>투자 방법</span><i aria-hidden="true">›</i></a>
           <div id="strategy-subnav" class="sidebar-subnav" data-sidebar-subnav="strategies" data-open={String(strategiesOpen)} aria-hidden={!strategiesOpen} aria-label="투자 방법 목록" inert={!strategiesOpen}>
             <div class="sidebar-subnav-inner">
               {strategyItems.map((item:any)=><a href={url(methodHref(item))} data-method-id={item.id} aria-current={activeMethod===item.id?'page':undefined}>{item.title}</a>)}
@@ -36,7 +36,7 @@ const activeMethod=pathname.startsWith('strategies/')?pathname.split('/')[1]:nul
           </div>
         </div>
         <div class="sidebar-group">
-          <a class:list={["sidebar-primary sidebar-parent",{active:researchOpen}]} data-sidebar-parent="research" data-section-active={researchOpen||undefined} href={url('research/')} aria-current={pathname==='research'?'page':undefined} aria-expanded={researchOpen} aria-controls="research-subnav"><NavIcon name="research"/><span>분석 기록</span><i aria-hidden="true">›</i></a>
+          <a class:list={["sidebar-primary sidebar-parent",{active:researchOpen}]} data-sidebar-parent="research" href={url('research/')} aria-current={pathname==='research'?'page':undefined} aria-expanded={researchOpen} aria-controls="research-subnav"><NavIcon name="research"/><span>분석 기록</span><i aria-hidden="true">›</i></a>
           <div id="research-subnav" class="sidebar-subnav" data-sidebar-subnav="research" data-open={String(researchOpen)} aria-hidden={!researchOpen} aria-label="분석 기록 목록" inert={!researchOpen}>
             <div class="sidebar-subnav-inner">
               {data.studies.map((item:any)=><a href={url(`research/${item.id}/`)} aria-current={pathname===`research/${item.id}`?'page':undefined}>{item.title}</a>)}
@@ -52,7 +52,7 @@ const activeMethod=pathname.startsWith('strategies/')?pathname.split('/')[1]:nul
     </aside>
     <button class="sidebar-overlay" type="button" aria-label="탐색 메뉴 닫기"></button>
     <div class="content-column">
-      <main id="main" class:list={{"detail-page":detail}}><slot/></main>
+      <main id="main" class:list={{"detail-page":detail,"wide-page":wide}}><slot/></main>
       <footer><div><strong>투자 분석 기록</strong><p>과거 데이터 기반 백테스트이며 실제 계좌 수익률이나 미래 성과를 뜻하지 않습니다.</p></div><div class="foot-meta">시장 데이터 {data.comparison.market_date}<br/>생성 {data.generated_at.slice(0,16).replace('T',' ')} UTC</div></footer>
     </div>
     <aside class="page-index" data-page-index hidden aria-label="현재 페이지 목차"><p>이 페이지</p><nav data-page-index-links></nav></aside>
@@ -73,8 +73,8 @@ const activeMethod=pathname.startsWith('strategies/')?pathname.split('/')[1]:nul
       const subnav=sidebar.querySelector<HTMLElement>(`[data-sidebar-subnav="${name}"]`)!;
       parent.addEventListener('click',event=>{
         const open=subnav.dataset.open==='true';
-        const currentSection=parent.dataset.sectionActive==='true';
-        if(!open&&!currentSection){closeSidebar();return}
+        const currentParent=parent.getAttribute('aria-current')==='page';
+        if(!currentParent){closeSidebar();return}
         event.preventDefault();
         const next=!open;
         subnav.dataset.open=String(next);
@@ -100,7 +100,7 @@ const activeMethod=pathname.startsWith('strategies/')?pathname.split('/')[1]:nul
     function revealLinkedRule(){
       let id;try{id=decodeURIComponent(location.hash.slice(1))}catch{return}
       const target=document.getElementById(id);if(!target)return;
-      let parent=target.parentElement,opened=false;
+      let parent:HTMLElement|null=target,opened=false;
       while(parent){if(parent instanceof HTMLDetailsElement&&!parent.open){parent.open=true;opened=true}parent=parent.parentElement}
       if(opened)requestAnimationFrame(()=>target.scrollIntoView());
     }

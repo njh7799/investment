@@ -20,7 +20,8 @@ document.querySelectorAll<HTMLElement>('[data-yearly]').forEach(async root=>{
   const modelName=(name:string)=>availableRows.find(row=>row.model===name)?.display_name||label(name);
   model.innerHTML=models.map(name=>`<option value="${esc(name)}">${esc(modelName(name))}</option>`).join('');
   model.value=models.includes('vo')?'vo':models[0];
-  let expanded=false;
+  const stateRoot=root.closest<HTMLElement>('#yearly')||root;
+  let expanded=stateRoot.dataset.yearlyExpanded==='true';
   const render=()=>{
    const modelRows=availableRows.filter(row=>row.model===model.value).sort((a,b)=>b.year-a.year);
    const selected=expanded?modelRows:modelRows.slice(0,10);
@@ -38,8 +39,16 @@ document.querySelectorAll<HTMLElement>('[data-yearly]').forEach(async root=>{
    const qualifier=selected.some(row=>row.partial)?' *는 1년 전체가 아닌 부분 연도입니다.':'';
    root.querySelector<HTMLElement>('.yearly-bars')!.setAttribute('aria-label',`${modelName(model.value)} ${selected.at(-1)!.year}년부터 ${selected[0].year}년까지 연도별 수익률과 최대 낙폭.${qualifier}`);
   };
-  model.addEventListener('change',()=>{expanded=false;render()});
-  toggle.addEventListener('click',()=>{expanded=!expanded;render()});
+  const setExpanded=(value:boolean)=>{
+   stateRoot.dataset.yearlyExpanded=String(value);
+   stateRoot.dispatchEvent(new CustomEvent('yearly-range-change',{detail:{expanded:value}}));
+  };
+  stateRoot.addEventListener('yearly-range-change',event=>{
+   expanded=(event as CustomEvent<{expanded:boolean}>).detail.expanded;
+   render();
+  });
+  model.addEventListener('change',()=>setExpanded(false));
+  toggle.addEventListener('click',()=>setExpanded(!expanded));
   render();
  }catch(error){empty.hidden=false;empty.textContent=`연도별 결과를 불러오지 못했습니다. (${error})`}
 });

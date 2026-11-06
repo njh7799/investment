@@ -9,6 +9,8 @@ export function docUrl(source:string):string {
  if(research)return url(`research/${research.id}/`);
  const strategy=data.strategies.find((s:any)=>`docs/strategies/${s.id}/README.md`===source);
  if(strategy)return url(`strategies/${strategy.id}/`);
+ const addon=source.match(/^docs\/strategies\/([^/]+)\/addons\/([^/]+)\.md$/);
+ if(addon)return url(`strategies/${addon[1]}/${addon[2]==='README'?'#strategy-addons':'#addon-'+addon[2]}`);
  if(data.documents.some((d:any)=>d.path===source))return url('guide/'+source.replace(/^docs\//,'').replace(/\.md$/,'')+'/');
  return 'https://github.com/njh7799/investment/blob/main/'+source;
 }

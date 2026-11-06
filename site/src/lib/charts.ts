@@ -1,4 +1,5 @@
 import {base,label,money,pct,originNote} from './format';
+import {PROFILE_CHANGE_EVENT,allProfileModels,isProfileStrategy,modelForProfile} from './profiles';
 // Plotly is loaded once and only when a chart reaches the viewport.
 let ready:Promise<any>;
 function plotly(){return ready ||= new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=base+'vendor/plotly.min.js';s.onload=()=>resolve((window as any).Plotly);s.onerror=()=>reject(new Error('차트 라이브러리를 불러오지 못했습니다. 새로고침해 주세요.'));document.head.appendChild(s)})}
@@ -21,7 +22,7 @@ async function mount(root:HTMLElement){
  window.addEventListener('result-period-change',periodWarning);
  const picker=root.querySelector('.period-picker') as HTMLSelectElement;
  if(comparison&&!periods)comparison.value='independent';
- let source=root.dataset.source!,payload:any,P:any,figure:any,serial=0;
+ let source=root.dataset.source!,payload:any,P:any,serial=0;
  async function render(){
   const generation=++serial;
   try{
@@ -36,7 +37,9 @@ async function mount(root:HTMLElement){
     layout={yaxis:{title:{text:'기초자산 구간 등락률'},tickformat:'.0%',showgrid:false}};
    }else{
     const filter=comparison?.value;
-    const visibleCurves=payload.curves.filter((c:any)=>c.model!=='qqq_hold');
+    const strategy=root.dataset.profileStrategy||'';
+    const profileModel=isProfileStrategy(strategy)?modelForProfile(strategy):null;
+    const visibleCurves=payload.curves.filter((c:any)=>c.model!=='qqq_hold'&&(!profileModel||!allProfileModels.includes(c.model)||c.model===profileModel));
     let curves=visibleCurves.filter((c:any)=>filter==='independent'?(payload.independent_models||visibleCurves.map((v:any)=>v.model)).includes(c.model):true);
     if(!curves.length)curves=visibleCurves;
     let n=0;
@@ -46,7 +49,7 @@ async function mount(root:HTMLElement){
      return {x:c.dates,y,customdata,name:chartName(c),type:'scatter',mode:'lines',line:{color,width:.5,simplify:false},hovertemplate:'%{customdata[0]}<br>%{customdata[1]}<extra>%{fullData.name}</extra>'};});
     const allDates=curves.flatMap((c:any)=>[c.dates[0],c.dates.at(-1)]).sort();
     activeDates=allDates;periodWarning();
-    const hasTqqq=curves.some((c:any)=>['vo','tqqq_hold','vr5','three_percent'].includes(c.model));
+    const hasTqqq=curves.some((c:any)=>['vo','vo_addon_5_20','tqqq_hold','vr5','three_percent'].includes(c.model));
     root.querySelector('.chart-range')!.textContent=`차트 평가 기간 ${allDates[0]} — ${allDates.at(-1)} · ${originNote(allDates[0],allDates.at(-1),hasTqqq)}. 각 곡선의 정확한 기간은 아래 요약에 표시합니다.`;
     const events=(payload.events||[]).filter((e:any)=>e.date>=allDates[0]&&e.date<=allDates.at(-1));
     shapes=events.map((e:any)=>({type:'line',x0:e.date,x1:e.date,y0:0,y1:1,yref:'paper',layer:'below',opacity:.8,line:{color:'#78909C',width:.5,dash:'dot'}}));
@@ -56,17 +59,14 @@ async function mount(root:HTMLElement){
    }
    const narrow=window.innerWidth<600;
    layout={...layout,autosize:true,height:narrow?420:500,margin:{l:65,r:25,t:35,b:90},paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{family:'Noto Sans KR, system-ui, sans-serif',size:12,color:'#5f566b'},xaxis:{showgrid:false,dtick:'M12',tickformat:'%Y',hoverformat:'%Y-%m-%d',rangeslider:{visible:false}},legend:{orientation:'h',y:-.15,font:{size:12}},hovermode:'x unified',hoverlabel:{bgcolor:'#241b2f',bordercolor:'#7c3aed',font:{color:'#ffffff'}},shapes,annotations};
-   figure={traces,layout};canvas.innerHTML='';await P.newPlot(canvas,traces,layout,{responsive:true,scrollZoom:false,displaylogo:false,toImageButtonOptions:{format:'png',width:2880,height:1440,scale:1}});
+   canvas.innerHTML='';await P.newPlot(canvas,traces,layout,{responsive:true,scrollZoom:false,displaylogo:false,toImageButtonOptions:{format:'png',width:2880,height:1440,scale:1}});
   }catch(e){status.textContent=String(e);canvas.innerHTML='';}
  }
  picker?.addEventListener('change',()=>{source=base+periods.find((p:any)=>p.id===picker.value).file;render()});
  mode?.addEventListener('change',render);comparison?.addEventListener('change',render);
- root.querySelector('.download-chart')?.addEventListener('click',async event=>{
-  event.preventDefault();if(!figure)return;
-  const script=await (await fetch(base+'vendor/plotly.min.js')).text();
-  const spec=JSON.stringify(figure).replace(/</g,'\\u003c');
-  const blob=new Blob([`<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>투자 연구 차트</title><body><p>데이터 기준: ${esc(payload.curves?.[0]?.dates.at(-1)||payload.dates?.at(-1)||payload.rows?.at(-1)?.signal_end)} · 저장 당시 선택한 계열과 평가 기간</p><div id="chart"></div><script>${script.replace(/<\/script/gi,'<\\/script')}</script><script>const f=${spec};Plotly.newPlot('chart',f.traces,f.layout,{responsive:true,displaylogo:false});</script></body></html>`],{type:'text/html'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='investment-chart.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+ window.addEventListener(PROFILE_CHANGE_EVENT,event=>{
+  const detail=(event as CustomEvent<{strategy:string}>).detail;
+  if(root.dataset.profileStrategy===detail.strategy)render();
  });
  await render();
  let lastWidth=canvas.clientWidth;new ResizeObserver(()=>{if(P&&canvas.clientWidth!==lastWidth){lastWidth=canvas.clientWidth;P.Plots.resize(canvas)}}).observe(canvas);

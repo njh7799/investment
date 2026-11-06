@@ -22,7 +22,7 @@ test('analysis index restores search and filters without operational panels',asy
   await expect(page.locator('[data-chart]')).toHaveCount(0);
 });
 
-test('backtest periods, drawdown and standalone HTML download',async({page},testInfo)=>{
+test('backtest periods keep only the recent chart open by default',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('backtests/');
   await expect(page).toHaveURL(/strategies\/volatility-allocation\/#performance$/);
@@ -30,16 +30,22 @@ test('backtest periods, drawdown and standalone HTML download',async({page},test
   await expect(page.locator('body')).not.toContainText('다음 거래일 대응');
   await expect(page.locator('[data-chart]')).toHaveCount(3);
   await expect(page.locator('.chart-canvas')).toHaveCount(3);
-  for(let i=0;i<3;i++){
-    await page.locator('[data-chart]').nth(i).scrollIntoViewIfNeeded();
-    await expect(page.locator('.chart-canvas').nth(i).locator('.main-svg').first()).toBeVisible({timeout:15000});
-  }
+  const disclosures=page.locator('.split-chart-grid>.chart-disclosure');
+  await expect(disclosures).toHaveCount(3);
+  await expect(disclosures.nth(0)).toHaveAttribute('open','');
+  await expect(disclosures.nth(1)).not.toHaveAttribute('open','');
+  await expect(disclosures.nth(2)).not.toHaveAttribute('open','');
+  await expect(page.getByText('HTML 내려받기',{exact:false})).toHaveCount(0);
+  await disclosures.nth(0).scrollIntoViewIfNeeded();
+  await expect(page.locator('.chart-canvas').nth(0).locator('.main-svg').first()).toBeVisible({timeout:15000});
   const chartSpec=await page.locator('.chart-canvas').first().evaluate((element:any)=>({
     names:element.data.map((trace:any)=>trace.name),
     compactValues:element.data[0].customdata.slice(0,20).map((point:any[])=>point[1]),
     hoverDate:element.layout.xaxis.hoverformat,
   }));
   expect(chartSpec.names).not.toContain('QQQ 단순 보유');
+  expect(chartSpec.names).toContain('VO + 5/20 addon');
+  expect(chartSpec.names).not.toContain('기본 VO');
   expect(chartSpec.compactValues.some((value:string)=>/\$[\d.]+[KM]/.test(value))).toBeTruthy();
   expect(chartSpec.hoverDate).toBe('%Y-%m-%d');
   await page.locator('.chart-canvas').first().evaluate((element:any)=>(window as any).Plotly.Fx.hover(element,[{curveNumber:0,pointNumber:0}]));
@@ -50,6 +56,12 @@ test('backtest periods, drawdown and standalone HTML download',async({page},test
   const recentPeriod=await (await page.request.get('data/backtest-recent-10y.json')).json();
   await expect(page.locator('.chart-panel h2').nth(0)).toContainText(recentPeriod.curves[0].metrics.start);
   await expect(page.locator('.chart-metrics').nth(0)).toContainText(metadata.market_date);
+  await disclosures.nth(1).locator('summary').click();
+  await expect(disclosures.nth(1)).toHaveAttribute('open','');
+  await expect(page.locator('.chart-canvas').nth(1).locator('.main-svg').first()).toBeVisible({timeout:15000});
+  await disclosures.nth(2).locator('summary').click();
+  await expect(disclosures.nth(2)).toHaveAttribute('open','');
+  await expect(page.locator('.chart-canvas').nth(2).locator('.main-svg').first()).toBeVisible({timeout:15000});
   await expect(page.locator('.chart-metrics').nth(2)).toContainText('1999-03-10');
   for(const id of ['recent-10y','prior-10y','early-10y']){
     const period=await (await page.request.get(`data/backtest-${id}.json`)).json();
@@ -57,12 +69,76 @@ test('backtest periods, drawdown and standalone HTML download',async({page},test
   }
   await page.locator('.metric-picker').nth(2).selectOption('drawdown');
   await expect(page.locator('.chart-canvas').nth(2)).toContainText('고점 대비 낙폭');
-  const download=page.waitForEvent('download');await page.locator('.download-chart').nth(2).click();
-  const saved=await download;expect(saved.suggestedFilename()).toBe('investment-chart.html');
-  const target=testInfo.outputPath('standalone.html');await saved.saveAs(target);
-  const standalone=await page.context().newPage();await standalone.goto('file://'+target);
-  await expect(standalone.locator('.main-svg').first()).toBeVisible();await standalone.close();
   expect(errors).toEqual([]);
+});
+
+test('VO addon control switches every current profile view and chart',async({page})=>{
+  await page.goto('strategies/volatility-allocation/#performance');
+  const control=page.locator('[data-addon-control]');
+  await control.locator('.addon-trigger').click();
+  await expect(control.locator('input')).toBeChecked();
+  await expect(control).toContainText('활성화');
+  const chart=page.locator('[data-chart]').first();
+  await chart.scrollIntoViewIfNeeded();
+  await expect(chart.locator('.main-svg').first()).toBeVisible({timeout:15000});
+  await expect(chart.locator('.chart-metrics')).toContainText('VO + 5/20 addon');
+  const yearly=page.locator('#yearly .yearly-performance:visible');
+  await yearly.locator('.yearly-range-toggle').click();
+  await expect(yearly.locator('.yearly-range-toggle')).toHaveAttribute('aria-expanded','true');
+  await expect(yearly.locator('.yearly-row')).toHaveCount(28);
+  await control.locator('.addon-trigger').click();
+  await control.locator('.addon-switch span').click();
+  await expect(page.locator('html')).toHaveAttribute('data-strategy-profile','core');
+  await expect(control).toContainText('비활성화');
+  await expect(page.locator('.profile-result-label:visible')).toHaveText('기본 VO · addon 비활성화');
+  await expect(chart.locator('.chart-metrics')).toContainText('기본 VO');
+  await expect(chart.locator('.chart-metrics')).not.toContainText('VO + 5/20 addon');
+  await expect(yearly.locator('.yearly-range-toggle')).toHaveAttribute('aria-expanded','true');
+  await expect(yearly.locator('.yearly-row')).toHaveCount(28);
+  await page.reload();
+  await control.locator('.addon-trigger').click();
+  await expect(control.locator('input')).not.toBeChecked();
+  await expect(page.locator('#strategy-addons>h2')).toHaveText('Addon');
+  await expect(page.locator('#strategy-addons>details')).toHaveCount(1);
+});
+
+test('IXIC addons combine, persist, update results, and stay in a compact bottom-right dock',async({page})=>{
+  await page.goto('strategies/ixic-three-percent-rule/#performance');
+  const control=page.locator('[data-addon-control]');
+  const trigger=control.locator('.addon-trigger');
+  const box=await trigger.boundingBox();
+  const viewport=page.viewportSize()!;
+  expect(box!.width).toBeLessThan(120);expect(box!.height).toBeLessThan(60);
+  expect(viewport.width-(box!.x+box!.width)).toBeLessThanOrEqual(24);
+  expect(viewport.height-(box!.y+box!.height)).toBeLessThanOrEqual(24);
+  await expect(page.locator('html')).toHaveAttribute('data-strategy-profile','core');
+  await trigger.click();
+  await expect(control.locator('input')).toHaveCount(2);
+  await expect(control.locator('[data-addon-id="full"] input')).not.toBeChecked();
+  await expect(control.locator('[data-addon-id="recovery"] input')).not.toBeChecked();
+  const chart=page.locator('[data-chart]').first();
+  await chart.scrollIntoViewIfNeeded();
+  await expect(chart.locator('.main-svg').first()).toBeVisible({timeout:15000});
+  await expect(chart.locator('.chart-metrics')).toContainText('기본 IXIC');
+  await control.locator('[data-addon-id="recovery"] .addon-switch span').click();
+  await expect(page.locator('html')).toHaveAttribute('data-strategy-profile','recovery');
+  await expect(page.locator('.profile-result-label:visible')).toHaveText('IXIC + QQQ 10% 회복');
+  await expect(chart.locator('.chart-metrics')).toContainText('IXIC + QQQ 10% 회복');
+  await control.locator('[data-addon-id="full"] .addon-switch span').click();
+  await expect(page.locator('html')).toHaveAttribute('data-strategy-profile','all');
+  await expect(page.locator('.profile-result-label:visible')).toHaveText('IXIC + 두 addon');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-strategy-profile','all');
+  const addonDetails=page.locator('#strategy-addons>details');
+  await expect(addonDetails).toHaveCount(2);
+  await expect(page.locator('#strategy-addons')).not.toContainText('6단계 자산 배분');
+  await expect(page.locator('#strategy-addons')).not.toContainText('variants');
+  await expect(addonDetails.filter({hasText:'QQQ 저점 대비 10% 회복'})).not.toHaveAttribute('open','');
+  await trigger.click();
+  await control.locator('[data-addon-id="recovery"] a').click();
+  await expect(page).toHaveURL(/#addon-qqq-ten-percent-recovery$/);
+  await expect(page.locator('#addon-qqq-ten-percent-recovery')).toHaveAttribute('open','');
+  expect((await page.request.get('guide/strategies/ixic-three-percent-rule/addons/qqq-ten-percent-recovery/')).status()).toBe(404);
 });
 
 test('result period filter, key columns, sorting and pagination',async({page})=>{
@@ -127,9 +203,11 @@ test('methods connect rules, stored historical specs and research in both direct
   await expect(page.locator('[data-method="vo-v-recovery-controls"]')).toHaveCount(0);
   const vo=page.locator('[data-method="volatility-allocation"]');
   const voSource=await (await page.request.get('data/method-volatility-allocation.json')).json();
-  const voMetrics=voSource.curves.find((curve:any)=>curve.model==='vo').metrics;
+  const current=await (await page.request.get('data/backtest-full.json')).json();
+  const voMetrics=current.curves.find((curve:any)=>curve.model==='vo_addon_5_20').metrics;
   await expect(vo).toContainText(`${(voMetrics.cagr*100).toFixed(2)}%`);
   await expect(vo).toContainText(`${Number(voMetrics.annual_trades).toFixed(1)}회`);
+  await expect(vo).toContainText('addon을 활성화');
   await expect(vo).not.toContainText(`${voMetrics.start} — ${voMetrics.end}`);
   await expect(page.locator('.method-list-conditions')).toContainText('전략별 실제 평가 기간');
   await expect(vo).toContainText('최장 고점 미회복 기간');
@@ -147,19 +225,19 @@ test('methods connect rules, stored historical specs and research in both direct
   await expect(vo.locator('.method-metrics')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBeTruthy();
   await vo.locator('.method-card-link').click();
-  await expect(page.locator('.sidebar-parent[data-section-active]')).toContainText('투자 방법');
+  await expect(page.locator('.sidebar-parent.active')).toContainText('투자 방법');
   await expect(page.locator('.sidebar-subnav a[aria-current]')).toContainText('VO · 변동성 배분');
   await page.goto('strategies/');
   await page.locator('[data-method="tqqq-buy-hold"] .method-card-link').click();
   await expect(page.locator('h1')).toHaveText('TQQQ Buy & Hold');
   await expect(page).toHaveURL(/strategies\/tqqq-buy-hold\/$/);
-  await expect(page.locator('.sidebar-parent[data-section-active]')).toContainText('투자 방법');
+  await expect(page.locator('.sidebar-parent.active')).toContainText('투자 방법');
   await expect(page.locator('.sidebar-subnav a[aria-current]')).toContainText('TQQQ Buy & Hold');
   await page.goto('strategies/volatility-allocation/#기본값-선택-근거');
-  await expect(page.locator('.full-rules')).toHaveAttribute('open','');
-  await expect(page.locator('.full-rules')).toContainText('기본값 선택 근거');
+  await expect(page.locator('#rules .full-rules')).toHaveAttribute('open','');
+  await expect(page.locator('#rules .full-rules')).toContainText('기본값 선택 근거');
   await page.locator('.evidence-list a').filter({hasText:'이동평균'}).click();
-  await expect(page.locator('.sidebar-parent[data-section-active]')).toContainText('분석 기록');
+  await expect(page.locator('.sidebar-parent.active')).toContainText('분석 기록');
   await expect(page.locator('.sidebar-subnav a[aria-current]')).toContainText('이동평균과 VO 결합');
   await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBe(0);
   await page.getByRole('link',{name:'VO · 변동성 배분 →',exact:true}).click();
@@ -205,43 +283,45 @@ test('method cards, sidebar items and detail pages are a strict one-to-one mappi
   }
 });
 
-test('open sidebar groups collapse and reopen without changing the content page',async({page})=>{
+test('sidebar parent links return from a child page and toggle on their own index',async({page})=>{
   await page.goto('strategies/permanent-portfolio/');
   const methodParent=page.locator('[data-sidebar-parent="strategies"]');
   const methodNav=page.locator('[data-sidebar-subnav="strategies"]');
-  const methodUrl=page.url();
   await expect(methodParent).toHaveAttribute('aria-expanded','true');
   await expect(methodNav).toHaveAttribute('data-open','true');
   const transition=await methodNav.evaluate(element=>getComputedStyle(element).transitionProperty);
   expect(transition).toContain('grid-template-rows');
   expect(transition).toContain('opacity');
   await methodParent.click();
-  await expect(page).toHaveURL(methodUrl);
+  await expect(page).toHaveURL(/\/strategies\/$/);
+  await expect(page.locator('h1')).toHaveText('투자 방법');
+  await expect(methodParent).toHaveAttribute('aria-current','page');
+  await methodParent.click();
   await expect(methodParent).toHaveAttribute('aria-expanded','false');
   await expect(methodNav).toHaveAttribute('data-open','false');
   await expect(methodNav).toHaveAttribute('aria-hidden','true');
   await expect(methodNav).toHaveAttribute('inert','');
   await methodParent.click();
-  await expect(page).toHaveURL(methodUrl);
+  await expect(page).toHaveURL(/\/strategies\/$/);
   await expect(methodParent).toHaveAttribute('aria-expanded','true');
   await expect(methodNav).toHaveAttribute('data-open','true');
   await expect(methodNav).not.toHaveAttribute('inert','');
 
   await page.goto('research/batch-01/');
   const researchParent=page.locator('[data-sidebar-parent="research"]');
-  const researchNav=page.locator('[data-sidebar-subnav="research"]');
-  const researchPath=await page.evaluate(()=>location.pathname);
-  const researchHeading=await page.locator('h1').first().textContent();
   await researchParent.click();
-  expect(await page.evaluate(()=>location.pathname)).toBe(researchPath);
-  await expect(page.locator('h1').first()).toHaveText(researchHeading!);
-  await expect(researchParent).toHaveAttribute('aria-expanded','false');
-  await expect(researchNav).toHaveAttribute('data-open','false');
+  await expect(page).toHaveURL(/\/research\/$/);
+  await expect(page.locator('h1')).toHaveText('분석 기록');
 });
 
 
 test('compact cards show recent metrics and open the matching detail page',async({page})=>{
+  await page.setViewportSize({width:1600,height:900});
   await page.goto('strategies/');
+  const mainBox=await page.locator('#main').boundingBox();
+  const contentBox=await page.locator('.content-column').boundingBox();
+  expect(mainBox!.x-contentBox!.x).toBeLessThan(40);
+  expect(mainBox!.width).toBeGreaterThan(1250);
   const card=page.locator('[data-method="volatility-allocation"]');
   await expect(card.locator('.method-preview')).toHaveCount(0);
   await expect(card.locator('.metric-conditions')).toHaveCount(0);
@@ -252,19 +332,19 @@ test('compact cards show recent metrics and open the matching detail page',async
   ]);
   const metadata=await (await page.request.get('data/backtest-metadata.json')).json();
   expect(voPreview.curves[0].dates.at(-1)).toBe(metadata.market_date);
-  const batch=await (await page.request.get('data/batch-01-tables.json')).json();
-  const recent=batch.find((table:any)=>table.name==='period-summary').rows.find((row:any)=>row.period==='recent_10y'&&row.model==='vo');
+  const recentPayload=await (await page.request.get('data/backtest-recent-10y.json')).json();
+  const recent=recentPayload.curves.find((curve:any)=>curve.model==='vo_addon_5_20').metrics;
   await expect(card).toContainText(`(${(recent.cagr*100).toFixed(2)}%)`);
   await expect(page.locator('.method-list-conditions')).toContainText('전체 평가 기간 (최근 10년 이내)');
   await expect(page.locator('.method-list-conditions')).toContainText('매수·매도 각각 0.1%');
   await card.locator('.method-card-link').click();
   await expect(page.locator('.detail-context')).toContainText('투자 방법');
   await expect(page.locator('.detail-kind')).toHaveText('방법 상세');
-  await expect(page.locator('[data-stress-chart]')).toHaveCount(1);
-  await expect(page.locator('.stress-summary')).toContainText('10% 이상 하락');
-  await expect(page.locator('.stress-summary')).toContainText('30일 이상 고점 미회복');
-  await expect.poll(()=>page.locator('.stress-chart-dot').count()).toBeGreaterThan(10);
-  await expect(page.locator('[data-stress-chart]')).toContainText('긴 기간은 간격만 압축');
+  await expect(page.locator('[data-stress-chart]:visible')).toHaveCount(1);
+  await expect(page.locator('.stress-summary:visible')).toContainText('10% 이상 하락');
+  await expect(page.locator('.stress-summary:visible')).toContainText('30일 이상 고점 미회복');
+  await expect.poll(()=>page.locator('.stress-chart-dot:visible').count()).toBeGreaterThan(10);
+  await expect(page.locator('[data-stress-chart]:visible')).toContainText('긴 기간은 간격만 압축');
   await expect(page.locator('[data-chart]')).toHaveCount(3);
   await page.locator('.chart-metrics').nth(0).scrollIntoViewIfNeeded();
   await expect(page.locator('.chart-metrics').nth(0)).toContainText(metadata.market_date);
@@ -300,14 +380,15 @@ test('card conditions and exact source survive navigation',async({page})=>{
  await expect(vo.locator('.metric-conditions')).toHaveCount(0);
  await expect(page.locator('.method-list-conditions')).toContainText('예외 비용 조건은 상세 페이지');
  await vo.locator('.method-card-link').click();
- await expect(page.locator('.historical-spec .metric-conditions')).toContainText(`${metrics.start} — ${metrics.end}`);
- await expect(page.locator('.historical-spec .metric-conditions')).toContainText('괄호 안은 최근 10년 이내 데이터 기준');
- await expect(page.locator('.historical-spec .method-metrics')).toContainText(`(${(recent.cagr*100).toFixed(2)}%)`);
- await expect(page.locator('.historical-spec .method-metrics')).toContainText(`(${(recent.mdd*100).toFixed(2)}%)`);
- await expect(page.locator('.historical-spec .method-metrics')).toContainText(`(${recent.longest_time_underwater_days}일)`);
- await expect(page.locator('.historical-spec .method-metrics')).toContainText(`(${Number(recent.annual_trades).toFixed(1)}회)`);
- await expect(page.locator('.historical-spec .metric-conditions')).toContainText('각각 0.1%');
- await page.getByRole('link',{name:'성과 원본 CSV ↓',exact:true}).waitFor();
+ const historical=page.locator('.historical-spec details');
+ await historical.locator('summary').click();
+ await expect(historical.locator('.metric-conditions')).toContainText(`${metrics.start} — ${metrics.end}`);
+ await expect(historical.locator('.metric-conditions')).toContainText('괄호 안은 최근 10년 이내 데이터 기준');
+ await expect(historical.locator('.method-metrics')).toContainText(`(${(recent.cagr*100).toFixed(2)}%)`);
+ await expect(historical.locator('.method-metrics')).toContainText(`(${(recent.mdd*100).toFixed(2)}%)`);
+ await expect(historical.locator('.method-metrics')).toContainText(`(${recent.longest_time_underwater_days}일)`);
+ await expect(historical.locator('.method-metrics')).toContainText(`(${Number(recent.annual_trades).toFixed(1)}회)`);
+ await expect(historical.locator('.metric-conditions')).toContainText('각각 0.1%');
  await page.goto('research/batch-01/?table=period-summary&period=full_synthetic&model=vo#results');
  await expect(page.locator('.table-period')).toHaveValue('full_synthetic');
  await expect(page.locator('.data-table tbody tr')).toHaveCount(1);
@@ -368,7 +449,7 @@ test('stress distribution, mobile summaries and freshness explain their scope',a
  await page.goto('strategies/volatility-allocation/#performance');
  await expect(page.locator('[data-freshness]')).toContainText('다음 기대 거래일:');
  await expect(page.locator('[data-freshness]')).toContainText('KST');
- const stress=page.locator('.stress-section');
+ const stress=page.locator('.stress-section:visible');
  await expect(stress).toContainText(/10% 이상 하락/);
  await expect(stress).toContainText(/30일 이상 고점 미회복/);
  await expect(stress.locator('[data-stress-chart]')).toHaveCount(1);
@@ -426,15 +507,15 @@ test('every analysis shows annual returns and MDD or an explicit source limitati
 
 test('every strategy detail shows recent annual returns and can expand the full history',async({page})=>{
  const strategies=[
-  ['volatility-allocation','vo',28],
+  ['volatility-allocation','vo_addon_5_20',28],
   ['ixic-three-percent-rule','three_percent',28],
   ['value-rebalancing','vr5',28],
   ['permanent-portfolio','permanent_band',23],
  ] as const;
  for(const [id,model,years] of strategies){
   await page.goto(`strategies/${id}/#yearly`);
-  const yearly=page.locator('#yearly');
-  await expect(yearly.locator('h2')).toHaveText('연도별 수익률과 MDD');
+  const yearly=['volatility-allocation','ixic-three-percent-rule'].includes(id)?page.locator('#yearly .yearly-performance:visible'):page.locator('#yearly');
+  await expect(yearly.locator('h2')).toContainText('연도별 수익률과 MDD');
   await expect(yearly.locator('.yearly-row')).toHaveCount(10);
   await expect(yearly.locator('.yearly-row>strong').first()).toContainText('2026');
   await expect(yearly.locator('.yearly-row>strong').nth(1)).toHaveText('2025');
@@ -445,9 +526,9 @@ test('every strategy detail shows recent annual returns and can expand the full 
   await yearly.locator('.yearly-range-toggle').click();
   await expect(yearly.locator('.yearly-row')).toHaveCount(years);
   await expect(yearly.locator('.yearly-range-toggle')).toHaveAttribute('aria-expanded','true');
-  const source=await (await page.request.get(`data/method-${id}.json`)).json();
+  const source=await (await page.request.get(id==='volatility-allocation'?'data/backtest-full.json':`data/method-${id}.json`)).json();
   const metrics=source.curves.find((curve:any)=>curve.model===model).metrics;
-  const stress=page.locator('.stress-section');
+  const stress=page.locator('.stress-section:visible');
   await expect(stress.locator('h2')).toHaveText('하락 스트레스 분포');
   await expect(stress.locator('.stress-summary')).toContainText(`${(metrics.mdd*100).toFixed(2)}%`);
   await expect(stress.locator('[data-stress-chart]')).toHaveCount(1);

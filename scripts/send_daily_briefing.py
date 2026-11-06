@@ -21,7 +21,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from backtests import MarketData, build_target_weights, drawdown_episodes, run_weight_strategy
+from backtests import MarketData, drawdown_episodes, run_weight_strategy
+from backtests.vo_v_recovery import build_active_vo_weights
 from scripts.render_briefing_card import render_briefing_card
 
 
@@ -76,6 +77,7 @@ class Briefing:
     volatility_change: float = 0.0
     historical_context: HistoricalMove | None = None
     stress_context: StressContext | None = None
+    core_stock_weight: float | None = None
 
     @property
     def needs_trade(self) -> bool:
@@ -141,13 +143,13 @@ _drawdown_episodes = drawdown_episodes
 
 
 def stress_context(frames: dict[str, pd.DataFrame]) -> StressContext:
-    """Measure the current VO drawdown against the full history."""
+    """Measure the active VO+5/20 profile drawdown against the full history."""
     data = MarketData(
         ixic=frames["IXIC"],
         qqq=frames["QQQ"],
         tqqq=frames["TQQQ"],
     )
-    prices, weights = build_target_weights("vo", data)
+    prices, weights, _ = build_active_vo_weights(data)
     result = run_weight_strategy(prices, weights, fee_rate=0.001)
     equity = result.equity
     episodes = drawdown_episodes(equity)
@@ -210,16 +212,19 @@ def build_briefing(frames: dict[str, pd.DataFrame]) -> Briefing:
     previous_volatility = float(volatility.iloc[-2])
     if not np.isfinite(current_volatility) or not np.isfinite(previous_volatility):
         raise ValueError("TQQQ: 30 daily returns are required for VO volatility")
+    data = MarketData(ixic=frames["IXIC"], qqq=frames["QQQ"], tqqq=frames["TQQQ"])
+    _, active_weights, core_weights = build_active_vo_weights(data)
     return Briefing(
         market_date=frames["TQQQ"].index[-1],
         closes=closes,
         changes=changes,
         volatility=current_volatility,
-        stock_weight=vo_weight(current_volatility),
-        previous_stock_weight=vo_weight(previous_volatility),
+        stock_weight=float(active_weights.iloc[-1]),
+        previous_stock_weight=float(active_weights.iloc[-2]),
         volatility_change=current_volatility - previous_volatility,
         historical_context=historical_move(frames["TQQQ"]["Close"], 5),
         stress_context=stress_context(frames),
+        core_stock_weight=float(core_weights.iloc[-1]),
     )
 
 
@@ -263,7 +268,7 @@ def format_briefing(briefing: Briefing) -> str:
         lines.extend(
             [
                 "",
-                "📉 VO 스트레스 · 전체",
+                "📉 VO + 5/20 addon 스트레스 · 전체",
                 f"• 현재 낙폭 {stress.vo_current_drawdown:.2%} · "
                 f"구간 MDD {stress.vo_episode_mdd:.2%} ({depth})",
                 f"• 고점 미회복 {stress.underwater_days:,}일 ({duration})",
@@ -284,9 +289,12 @@ def format_briefing(briefing: Briefing) -> str:
         [
             "",
             f"⚡ VO 변동성: {briefing.volatility:.1%} ({_volatility_change(briefing.volatility_change)})",
-            f"🎯 권장 비중: {_ratio(briefing.stock_weight)}",
+            "🧩 활성 addon: 5/20 상향돌파 · 구간당 1회",
+            f"🎯 최종 권장 비중: {_ratio(briefing.stock_weight)}",
         ]
     )
+    if briefing.core_stock_weight is not None:
+        lines.append(f"• 기본 VO {_ratio(briefing.core_stock_weight)} · addon 반영 {_ratio(briefing.stock_weight)}")
     if briefing.needs_trade:
         direction = "TQQQ 매수" if briefing.stock_weight > briefing.previous_stock_weight else "TQQQ 매도"
         lines.extend(

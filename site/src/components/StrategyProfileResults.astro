@@ -1,0 +1,52 @@
+---
+import MethodConditions from './MethodConditions.astro';
+import MethodMetrics from './MethodMetrics.astro';
+import ProfileView from './ProfileView.astro';
+import StressDots from './StressDots.astro';
+import YearlyPerformance from './YearlyPerformance.astro';
+
+const {
+  strategy,
+  initialProfile,
+  marketDate,
+  heading,
+  profiles,
+  yearlyStudy,
+  stressProfiles,
+  downloads=[],
+  historicalLabel,
+  method,
+}=Astro.props;
+---
+<div class="paper historical-spec">
+  <h3>{heading} · {marketDate}</h3>
+  {profiles.map((profile:any)=><ProfileView strategy={strategy} profile={profile.id} initialProfile={initialProfile}>
+    <p class="profile-result-label">{profile.label}</p>
+    <MethodMetrics metrics={profile.full} recent={profile.recent}/>
+  </ProfileView>)}
+  <div class="downloads">
+    {downloads.map((download:any)=><a href={download.href}>{download.label}</a>)}
+  </div>
+  <details class="full-rules">
+    <summary>{historicalLabel}</summary>
+    <MethodConditions method={method} showRecent/>
+    <MethodMetrics metrics={method.metrics} recent={method.recent_metrics}/>
+  </details>
+</div>
+
+<div id="yearly">
+  {profiles.map((profile:any)=><ProfileView strategy={strategy} profile={profile.id} initialProfile={initialProfile}>
+    <YearlyPerformance
+      sectionId={`yearly-${profile.id}`}
+      study={yearlyStudy}
+      model={profile.model}
+      title={`연도별 수익률과 MDD · ${profile.yearlyLabel||profile.label}`}
+    />
+  </ProfileView>)}
+</div>
+
+<div id="stress">
+  {profiles.map((profile:any)=><ProfileView strategy={strategy} profile={profile.id} initialProfile={initialProfile}>
+    <StressDots sectionId={`stress-${profile.id}`} stress={stressProfiles[profile.id]}/>
+  </ProfileView>)}
+</div>

@@ -1,11 +1,11 @@
 ---
 import {pct} from '../lib/content';
 import StressChart from './StressChart';
-const {stress}=Astro.props;
+const {stress,sectionId='stress'}=Astro.props;
 const current=stress.current;
 ---
-<section id="stress" class="stress-section paper" aria-labelledby="stress-title">
-  <div class="panel-head"><div><h2 id="stress-title">하락 스트레스 분포</h2><p>점 하나는 고점에서 시작한 하락 구간입니다. 오른쪽일수록 더 깊고, 위쪽일수록 고점 회복에 오래 걸렸습니다.</p></div><span class="freshness">{stress.as_of} 기준</span></div>
+<section id={sectionId} class="stress-section paper" aria-labelledby={`${sectionId}-title`}>
+  <div class="panel-head"><div><h2 id={`${sectionId}-title`}>하락 스트레스 분포</h2><p>점 하나는 고점에서 시작한 하락 구간입니다. 오른쪽일수록 더 깊고, 위쪽일수록 고점 회복에 오래 걸렸습니다.</p></div><span class="freshness">{stress.as_of} 기준</span></div>
   <div class="stress-summary" aria-label="하락 스트레스 요약">
     <div><span>10% 이상 하락</span><strong>{stress.drawdowns.count}회</strong></div>
     <div><span>최대 하락</span><strong>{pct(stress.drawdowns.worst)}</strong></div>

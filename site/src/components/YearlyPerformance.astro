@@ -1,8 +1,8 @@
 ---
 import {url} from '../lib/content';
-const {study,model,title='연도별 수익률과 MDD'}=Astro.props;
+const {study,model,title='연도별 수익률과 MDD',sectionId='yearly'}=Astro.props;
 ---
-<section id="yearly" class="paper yearly-performance" data-yearly={url(study.yearly)} data-yearly-model={model}>
+<section id={sectionId} class="paper yearly-performance" data-yearly={url(study.yearly)} data-yearly-model={model}>
   <div class="panel-head">
     <div><h2>{title}</h2><p>한 해의 결과와 그해 감수한 최대 낙폭을 함께 봅니다.</p></div>
     <a class="download-chart" href={url(study.yearly)} download>계산 결과 JSON ↓</a>

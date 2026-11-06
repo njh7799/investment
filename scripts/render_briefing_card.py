@@ -267,7 +267,7 @@ def _draw_stress_panel(draw: ImageDraw.ImageDraw, briefing: BriefingLike) -> Non
     )
     _rounded_panel(draw, STRESS_PANEL, fill=background, outline=accent)
     draw.rounded_rectangle((72, 463, 80, 532), radius=4, fill=accent)
-    draw.text((96, 472), "VO 스트레스", font=_font(23, bold=True), fill=TEXT, anchor="lm")
+    draw.text((96, 472), "VO + 5/20 스트레스", font=_font(23, bold=True), fill=TEXT, anchor="lm")
     draw.text((714, 472), "전체", font=_font(15), fill=MUTED, anchor="rm")
     if not stress:
         draw.text((400, 515), "비교 자료 없음", font=_font(20), fill=MUTED, anchor="mm")
@@ -339,7 +339,7 @@ def _draw_allocation_panel(draw: ImageDraw.ImageDraw, briefing: BriefingLike) ->
     _allocation_icon(draw)
     draw.text(
         ALLOCATION_TITLE_POSITION,
-        "권장 비중",
+        "최종 권장 비중",
         font=_font(29, bold=True),
         fill=TEXT,
         anchor="la",

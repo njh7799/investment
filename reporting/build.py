@@ -5,7 +5,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from backtests import drawdown_episodes, load_market_data, build_target_weights, run_weight_strategy, summarize
+from backtests import drawdown_episodes, load_market_data, build_target_weights, run_three_percent_rule, run_weight_strategy, summarize
+from backtests.vo_v_recovery import build_active_vo_weights
 from reporting.catalog import catalog, validate_coverage, STRATEGIES
 from reporting.methods import buy_hold_card, method_data
 from reporting.previews import attach_previews
@@ -132,28 +133,85 @@ def comparison():
     frames=(data.ixic,data.qqq,data.tqqq)
     if len({frame.index[-1] for frame in frames})!=1 or any(frame.isna().any().any() for frame in frames):
         raise ValueError('Comparison data dates must match and OHLC must be complete')
-    index=data.index; latest=index[-1]; choices=[]; stress=None
+    index=data.index; latest=index[-1]; choices=[]; stress_profiles={}
+    addon_prices,addon_weights,core_weights=build_active_vo_weights(data)
+    full_curves=[]
     ranges=periods(latest,index[0])
     ranges[1:1]=rolling_decades(latest,index[0])
     for key,label,start,end in ranges:
         curves=[]
-        for name in ('vo','tqqq_hold','qqq_hold'):
-            prices,weights=build_target_weights(name,data)
+        for name in ('vo_addon_5_20','vo','tqqq_hold','qqq_hold'):
+            if name=='vo_addon_5_20': prices,weights=addon_prices,addon_weights
+            elif name=='vo': prices,weights=addon_prices,core_weights
+            else: prices,weights=build_target_weights(name,data)
             result=run_weight_strategy(prices,weights,start=start,end=end)
             curves.append(dict(model=name,dates=result.equity.index.strftime('%Y-%m-%d').tolist(),equity=result.equity.tolist(),metrics=summarize(result)))
-            if key=='full' and name=='vo':
-                stress=stress_history(result.equity)
-                stress['events']=events()
+            if key=='full' and name in ('vo_addon_5_20','vo'):
+                profile='addon' if name=='vo_addon_5_20' else 'core'
+                stress_profiles[profile]=stress_history(result.equity)
+                stress_profiles[profile]['events']=events()
         if key in ('recent-10y','prior-10y','early-10y'):
             label=f'{curves[0]["metrics"]["start"]} — {curves[0]["metrics"]["end"]}'
         filename=f'backtest-{key}.json'; write(PUBLIC/'data'/filename,dict(curves=curves,events=events()))
+        if key=='full': full_curves=curves
         choices.append(dict(id=key,label=label,file='data/'+filename,metrics=[dict(model=c['model'],**c['metrics']) for c in curves]))
+    yearly_file='data/backtest-vo-profiles-yearly.json'
+    write(PUBLIC/yearly_file,dict(
+        rows=yearly_performance([c for c in full_curves if c['model'] in ('vo_addon_5_20','vo')]),
+        note='최신 시장 데이터로 다시 계산한 VO 운용 프로필입니다. 연 수익률은 전년도 마지막 평가액 대비 해당 연도 마지막 평가액의 변화율입니다.',
+    ))
     # Calendar-aware lateness is evaluated again in the browser from this public schedule.
     import exchange_calendars as xcals
     cal=xcals.get_calendar('XNAS',start=latest-pd.Timedelta(days=10),end=latest+pd.Timedelta(days=90))
     next_session=cal.schedule.loc[cal.schedule.index>latest].iloc[0]
     due=next_session['close']+pd.Timedelta(hours=2)
-    return dict(market_date=str(latest.date()),periods=choices,stress=stress,next_expected_date=str(next_session.name.date()),next_expected_after=due.isoformat(),source_commit=commit(),asset_sha256={s:sha(ROOT/'assets'/f'{s}.csv') for s in ('IXIC','QQQ','TQQQ','SPY')},fee_rate=.001,initial_cash=100000)
+    return dict(
+        market_date=str(latest.date()),periods=choices,stress=stress_profiles['addon'],yearly=yearly_file,
+        stress_profiles=stress_profiles,active_profile='addon',
+        profiles=[
+            dict(id='addon',model='vo_addon_5_20',label='VO + 5/20 addon',default=True),
+            dict(id='core',model='vo',label='기본 VO',default=False),
+        ],
+        next_expected_date=str(next_session.name.date()),next_expected_after=due.isoformat(),source_commit=commit(),asset_sha256={s:sha(ROOT/'assets'/f'{s}.csv') for s in ('IXIC','QQQ','TQQQ','SPY')},fee_rate=.001,initial_cash=100000)
+
+def ixic_addon_comparison():
+    """Build current, directly comparable IXIC addon profiles for the strategy page."""
+    data=load_market_data(ROOT); latest=data.index[-1]; first=data.index[0]
+    profiles=[
+        dict(id='core',model='ixic_core',label='기본 IXIC',full=False,recovery=False),
+        dict(id='full',model='ixic_full_after_regime',label='IXIC + 전액 복귀',full=True,recovery=False),
+        dict(id='recovery',model='ixic_qqq_recovery',label='IXIC + QQQ 10% 회복',full=False,recovery=True),
+        dict(id='all',model='ixic_all_addons',label='IXIC + 두 addon',full=True,recovery=True),
+    ]
+    ranges=[('full','전체',str(first.date()),str(latest.date())),*rolling_decades(latest,first)]
+    choices=[]; full_curves=[]; stress_profiles={}
+    for key,label_text,start,end in ranges:
+        curves=[]
+        for profile in profiles:
+            result=run_three_percent_rule(
+                data,start=start,end=end,fee_rate=.001,
+                full_investment_after_regime=profile['full'],
+                qqq_ten_percent_recovery=profile['recovery'],
+            )
+            curve=dict(model=profile['model'],display_name=profile['label'],dates=result.equity.index.strftime('%Y-%m-%d').tolist(),equity=result.equity.tolist(),metrics=summarize(result))
+            curves.append(curve)
+            if key=='full':
+                stress_profiles[profile['id']]=stress_history(result.equity)
+                stress_profiles[profile['id']]['events']=events()
+        if key!='full': label_text=f'{curves[0]["metrics"]["start"]} — {curves[0]["metrics"]["end"]}'
+        filename=f'ixic-addons-{key}.json'; write(PUBLIC/'data'/filename,dict(curves=curves,events=events()))
+        if key=='full': full_curves=curves
+        choices.append(dict(id=key,label=label_text,file='data/'+filename,metrics=[dict(model=c['model'],**c['metrics']) for c in curves]))
+    yearly_file='data/ixic-addons-yearly.json'
+    write(PUBLIC/yearly_file,dict(rows=yearly_performance(full_curves),note='최신 시장 데이터로 같은 조건에서 다시 계산한 IXIC addon 조합입니다.'))
+    return dict(
+        market_date=str(latest.date()),periods=choices,yearly=yearly_file,stress_profiles=stress_profiles,
+        profiles=[{k:v for k,v in p.items() if k not in ('full','recovery')} for p in profiles],
+        addons=[
+            dict(id='full',anchor='full-investment-after-regime',label='상태 종료 후 전액 투자',short_label='전액 복귀',default=False,source='docs/strategies/ixic-three-percent-rule/addons/full-investment-after-regime.md'),
+            dict(id='recovery',anchor='qqq-ten-percent-recovery',label='QQQ 저점 대비 10% 회복',short_label='QQQ 10% 회복',default=False,source='docs/strategies/ixic-three-percent-rule/addons/qqq-ten-percent-recovery.md'),
+        ],
+    )
 
 def copy_public(path):
     relative=path.relative_to(ROOT); dest=PUBLIC/'downloads'/relative
@@ -252,6 +310,7 @@ def main():
         dest.mkdir(parents=True)
     entries=[study_data(e) for e in catalog(ROOT)]
     op=comparison()
+    ixic_addons=ixic_addon_comparison()
     write(PUBLIC/'data/backtest-metadata.json',{k:v for k,v in op.items() if k != 'periods'})
     strategies=method_data(ROOT,STRATEGIES,lambda file,curves:write(PUBLIC/file,dict(curves=curves,events=events())))
     strategies.insert(1,buy_hold_card(ROOT))
@@ -261,7 +320,7 @@ def main():
     methods=strategies
     attach_previews(ROOT,PUBLIC,methods,op,events(),write)
     attach_method_stress(methods,op,entries)
-    write(GENERATED/'content.json',dict(studies=entries,documents=documents(),audits=audits(),methods=methods,strategies=strategies,comparison=op,generated_at=datetime.now(timezone.utc).isoformat()))
+    write(GENERATED/'content.json',dict(studies=entries,documents=documents(),audits=audits(),methods=methods,strategies=strategies,comparison=op,ixic_addons=ixic_addons,generated_at=datetime.now(timezone.utc).isoformat()))
     PUBLIC.joinpath('vendor').mkdir(exist_ok=True)
     shutil.copyfile(ROOT/'site/node_modules/plotly.js-dist-min/plotly.min.js',PUBLIC/'vendor/plotly.min.js')
     print(f'Built {len(entries)} research reports; market date {op["market_date"]}')

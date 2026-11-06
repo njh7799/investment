@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import DetailContext from '../../components/DetailContext.astro';
 import {data,markdown,url} from '../../lib/content';
 interface Props { doc: any }
-export function getStaticPaths(){return data.documents.map((d:any)=>({params:{slug:d.slug},props:{doc:d}}))}
+export function getStaticPaths(){return data.documents.filter((d:any)=>!d.path.includes('/addons/')).map((d:any)=>({params:{slug:d.slug},props:{doc:d}}))}
 const {doc}=Astro.props;
 const method=data.strategies.find((s:any)=>doc.path.startsWith(`docs/strategies/${s.id}/`));
 const isResearch=doc.path.startsWith('docs/research/')&&!['methodology.md','promotion-criteria.md','discovery-protocol.md'].some(name=>doc.path.endsWith('/'+name));

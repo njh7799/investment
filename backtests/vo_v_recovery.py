@@ -18,6 +18,7 @@ class VRecoveryVariant:
 
 
 SIGNALS = ("qqq_streak_2", "tqqq_surge_5d_15", "tqqq_sma_upcross_5_20")
+ACTIVE_VO_ADDON_MODEL = "one_tqqq_sma_upcross_5_20"
 
 
 def variant_specs() -> tuple[VRecoveryVariant, ...]:
@@ -135,3 +136,9 @@ def build_vo_v_recovery_weights(data: MarketData) -> tuple[pd.DataFrame, dict[st
             policy=spec.policy, parameter=spec.parameter,
         )
     return prices, weights, specs
+
+
+def build_active_vo_weights(data: MarketData) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
+    """Return prices, active VO+addon targets, and the core VO targets."""
+    prices, weights, _ = build_vo_v_recovery_weights(data)
+    return prices, weights[ACTIVE_VO_ADDON_MODEL], weights["vo"]

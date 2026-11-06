@@ -1,0 +1,66 @@
+---
+const {strategyId,title='addon',addons=[]}=Astro.props;
+const controlId=`addon-panel-${strategyId}`;
+---
+<aside class="addon-control" data-addon-control data-strategy={strategyId} data-addons={JSON.stringify(addons)} aria-label={`${title} addon 설정`}>
+  <button class="addon-trigger" type="button" aria-expanded="false" aria-controls={controlId}><span>ADDON</span><strong data-active-count>0</strong></button>
+  <div class="addon-popover" id={controlId} hidden>
+    <div class="addon-popover-head"><div><span>선택 규칙</span><strong>{title}</strong></div><button type="button" class="addon-close" aria-label="addon 설정 닫기">×</button></div>
+    <div class="addon-list">{addons.map((addon:any)=><div class="addon-item" data-addon-id={addon.id}>
+      <div class="addon-control-copy"><strong>{addon.label}</strong><small data-addon-state>{addon.default?'활성화':'비활성화'}</small><a href={`#addon-${addon.anchor}`}>Addon 상세보기 ↓</a></div>
+      <label class="addon-switch"><input type="checkbox" checked={addon.default} aria-label={`${addon.label} 활성화`}/><span aria-hidden="true"></span></label>
+    </div>)}</div>
+  </div>
+</aside>
+<script>
+  document.querySelectorAll<HTMLElement>('[data-addon-control]').forEach(control=>{
+    if(control.dataset.ready)return; control.dataset.ready='true';
+    const strategy=control.dataset.strategy!;
+    const addons=JSON.parse(control.dataset.addons||'[]') as Array<{id:string;default:boolean}>;
+    const trigger=control.querySelector<HTMLButtonElement>('.addon-trigger')!;
+    const panel=control.querySelector<HTMLElement>('.addon-popover')!;
+    const count=control.querySelector<HTMLElement>('[data-active-count]')!;
+    const storageKey=`strategy-addons:${strategy}`;
+    let active=new Set(addons.filter(a=>a.default).map(a=>a.id));
+    try{
+      const saved=localStorage.getItem(storageKey);
+      if(saved)active=new Set(JSON.parse(saved));
+      else if(strategy==='volatility-allocation'&&localStorage.getItem('vo-profile')==='core')active.clear();
+    }catch{}
+    const profile=()=>{
+      if(strategy==='volatility-allocation')return active.has('sma_5_20')?'addon':'core';
+      if(strategy==='ixic-three-percent-rule')return active.has('full')?(active.has('recovery')?'all':'full'):(active.has('recovery')?'recovery':'core');
+      return 'core';
+    };
+    const apply=(persist=false)=>{
+      control.querySelectorAll<HTMLElement>('[data-addon-id]').forEach(row=>{
+        const on=active.has(row.dataset.addonId!);
+        row.classList.toggle('is-active',on);
+        row.querySelector<HTMLInputElement>('input')!.checked=on;
+        row.querySelector<HTMLElement>('[data-addon-state]')!.textContent=on?'활성화':'비활성화';
+      });
+      count.textContent=String(active.size); control.classList.toggle('has-active',active.size>0);
+      const selected=profile();
+      if(strategy==='volatility-allocation'){
+        document.documentElement.dataset.voProfile=selected;
+        window.dispatchEvent(new CustomEvent('vo-profile-change',{detail:{profile:selected}}));
+        if(persist)try{localStorage.setItem('vo-profile',selected)}catch{}
+      }
+      if(strategy==='ixic-three-percent-rule'){
+        document.documentElement.dataset.ixicProfile=selected;
+        window.dispatchEvent(new CustomEvent('ixic-profile-change',{detail:{profile:selected}}));
+      }
+      if(persist)try{localStorage.setItem(storageKey,JSON.stringify([...active]))}catch{}
+    };
+    const open=(value:boolean)=>{panel.hidden=!value;trigger.setAttribute('aria-expanded',String(value));control.classList.toggle('is-open',value)};
+    trigger.addEventListener('click',()=>open(panel.hidden));
+    control.querySelector('.addon-close')?.addEventListener('click',()=>open(false));
+    control.querySelectorAll<HTMLInputElement>('input').forEach(input=>input.addEventListener('change',()=>{
+      const id=input.closest<HTMLElement>('[data-addon-id]')!.dataset.addonId!;
+      input.checked?active.add(id):active.delete(id); apply(true);
+    }));
+    document.addEventListener('click',event=>{if(!panel.hidden&&!control.contains(event.target as Node))open(false)});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape')open(false)});
+    apply();
+  });
+</script>

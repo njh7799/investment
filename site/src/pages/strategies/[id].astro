@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import DetailContext from '../../components/DetailContext.astro';
-import Chart from '../../components/Chart.astro';
+import PeriodChart from '../../components/PeriodChart.astro';
 import RuleExample from '../../components/RuleExample.astro';
 import MethodConditions from '../../components/MethodConditions.astro';
 import {methodInfo,resultLink} from '../../lib/methods';
@@ -9,36 +9,61 @@ import MethodMetrics from '../../components/MethodMetrics.astro';
 import LatestBacktest from '../../components/LatestBacktest.astro';
 import StressDots from '../../components/StressDots.astro';
 import YearlyPerformance from '../../components/YearlyPerformance.astro';
-import {data,url,document,markdown,docUrl} from '../../lib/content';
+import AddonControl from '../../components/AddonControl.astro';
+import IxicAddonBacktest from '../../components/IxicAddonBacktest.astro';
+import {data,url,document,markdown} from '../../lib/content';
 interface Props { strategy: any }
 export function getStaticPaths(){return data.methods.map((s:any)=>({params:{id:s.id},props:{strategy:s}}))}
 const {strategy:s}=Astro.props;
 const source=`docs/strategies/${s.id}/README.md`,doc=document(source);
-const related=doc?data.documents.filter((d:any)=>d.path.startsWith(`docs/strategies/${s.id}/`)&&d.path!==source):[];
 const studies=(s.studies||[]).map((id:string)=>data.studies.find((r:any)=>r.id===id)).filter(Boolean);
 const performanceStudy=data.studies.find((r:any)=>r.id===s.batch);
 const info=methodInfo(s);
 const isVO=s.id==='volatility-allocation';
+const isIXIC=s.id==='ixic-three-percent-rule';
+const comparison=data.comparison;
+const fullComparison=comparison.periods.find((p:any)=>p.id==='full');
+const recentComparison=comparison.periods.find((p:any)=>p.id==='recent-10y');
+const profileMetrics=(model:string)=>({
+  full:fullComparison?.metrics.find((m:any)=>m.model===model),
+  recent:recentComparison?.metrics.find((m:any)=>m.model===model),
+});
+const addonMetrics=profileMetrics('vo_addon_5_20');
+const coreMetrics=profileMetrics('vo');
+const currentYearly={yearly:comparison.yearly};
+const ixic=data.ixic_addons;
+const ixicFull=ixic?.periods.find((p:any)=>p.id==='full');
+const ixicRecent=ixic?.periods.find((p:any)=>p.id==='recent-10y');
+const ixicYearly={yearly:ixic?.yearly};
+const voAddons=[{id:'sma_5_20',anchor:'one-shot-sma-reentry',label:'5/20 돌파 · 구간당 1회',default:true,source:'docs/strategies/volatility-allocation/addons/one-shot-sma-reentry.md'}];
+const availableAddons=isVO?voAddons:isIXIC?ixic.addons:[];
+const addonDocs=availableAddons.map((addon:any)=>({...addon,document:document(addon.source)})).filter((addon:any)=>addon.document);
 const rows=s.result_rows||[];
 const hasResult=Boolean(s.metrics&&s.model);
 const periodOrder:Record<string,number>={'recent-10y':0,'prior-10y':1,'early-10y':2};
 const previewPeriods=s.preview?[...s.preview.periods].sort((a:any,b:any)=>(periodOrder[a.id]??99)-(periodOrder[b.id]??99)):[];
 ---
 <Layout title={s.title} section="strategies" detail>
+  {isVO&&<AddonControl strategyId={s.id} title="VO" addons={voAddons}/>}
+  {isIXIC&&<AddonControl strategyId={s.id} title="IXIC 3% 규칙" addons={ixic.addons}/>}
   <DetailContext title={s.title}/>
-  <div class="page-heading"><div class="report-meta"><span class="status-pill">역할 · {info.role}</span><span class="status-pill">검증 · {info.status}</span><span>{s.category}</span></div><h1>{s.title}</h1><p>{s.summary}</p></div>
-  <nav class="report-sections" aria-label="방법 목차"><a href="#rules">작동 규칙</a><a href="#performance">성과와 차트</a><a href="#yearly">연도별 수익률</a><a href="#stress">하락 스트레스</a><a href="#evidence">선택 근거·관련 분석</a>{related.length>0&&<a href="#variants">대체·추가 규칙</a>}</nav>
-  <section id="rules" class="method-rules paper"><h2>작동 규칙</h2><p>{s.mechanics}</p><p class="method-cadence">{s.cadence}</p><RuleExample id={s.id}/>{doc?<details class="full-rules"><summary>전체 규칙과 실행 조건 읽기</summary><div class="prose" set:html={markdown(doc.body.replace(/^# .*\n/,''),source)}/><a href={url('downloads/'+source)} download>원본 규칙 내려받기 ↓</a></details>:<p class="caption">세부 신호·체결 조건과 구현 근거는 <a href={url(`research/${s.batch}/#source-report`)}>연결된 분석 원문 →</a>에서 확인할 수 있습니다.</p>}</section>
+  <div class="page-heading"><div class="report-meta"><span class="status-pill">역할 · {info.role}</span><span class="status-pill">검증 · {info.status}</span>{isVO&&<span class="status-pill addon-on-badge">addon ON</span>}{isIXIC&&<span class="status-pill addon-on-badge">addon 선택 가능</span>}<span>{s.category}</span></div><h1>{s.title}</h1><p>{isVO?'현재 운용 프로필은 기본 VO에 5/20 상향돌파·고변동성 구간당 1회 addon을 활성화합니다. 오른쪽 아래 ADDON 버튼으로 기본 VO와 즉시 비교할 수 있습니다.':isIXIC?'기본 IXIC 규칙에 두 가지 선택 addon을 조합할 수 있습니다. 오른쪽 아래 ADDON 버튼에서 켜면 현재 성과와 차트가 즉시 바뀝니다.':s.summary}</p></div>
+  <nav class="report-sections" aria-label="방법 목차"><a href="#rules">작동 규칙</a><a href="#performance">성과와 차트</a><a href="#yearly">연도별 수익률</a><a href="#stress">하락 스트레스</a><a href="#evidence">선택 근거·관련 분석</a>{addonDocs.length>0&&<a href="#strategy-addons">Addon</a>}</nav>
+  <section id="rules" class="method-rules paper"><h2>작동 규칙</h2><p>{s.mechanics}</p>{isVO&&<><div class="active-addon-rule" data-vo-profile-view="addon"><strong>활성 addon</strong><p>VO 목표가 100% 미만일 때 TQQQ 5일선이 20일선을 새로 상향돌파하면 구간당 한 번, 다음 시가에 목표를 50%p 높입니다. 실제 매수가보다 종가가 낮아지면 addon 비중만 다음 시가에 제거합니다.</p></div><div class="active-addon-rule is-core" data-vo-profile-view="core"><strong>addon 비활성화</strong><p>30일 변동성만으로 100%·50%·0% 목표를 정하는 기본 VO를 표시합니다.</p></div></>}{isIXIC&&<><div class="active-addon-rule is-core" data-ixic-profile-view="core"><strong>addon 비활성화</strong><p>급락 상태와 10개 변동성 구간만 사용하는 기본 IXIC 규칙입니다.</p></div><div class="active-addon-rule" data-ixic-profile-view="full"><strong>상태 종료 후 전액 투자</strong><p>패닉 종료 다음 시가에 100%로 복귀하고, 진입 구간보다 한 단계 악화되거나 저장한 고점을 넘으면 기본 규칙으로 돌아갑니다.</p></div><div class="active-addon-rule" data-ixic-profile-view="recovery"><strong>QQQ 저점 대비 10% 회복</strong><p>패닉 중 QQQ 종가가 이후 저점에서 10% 회복하면 패닉 상태를 끝냅니다. 대공황 상태에는 적용하지 않습니다.</p></div><div class="active-addon-rule" data-ixic-profile-view="all"><strong>두 addon 조합</strong><p>QQQ 10% 회복으로 패닉을 끝낸 뒤 전액 투자 복귀 규칙까지 연속 적용합니다.</p></div></>}<p class="method-cadence">{s.cadence}</p><RuleExample id={s.id}/>{doc?<details class="full-rules"><summary>전체 규칙과 실행 조건 읽기</summary><div class="prose" set:html={markdown(doc.body.replace(/^# .*\n/,''),source)}/><a href={url('downloads/'+source)} download>원본 규칙 내려받기 ↓</a></details>:<p class="caption">세부 신호·체결 조건과 구현 근거는 <a href={url(`research/${s.batch}/#source-report`)}>연결된 분석 원문 →</a>에서 확인할 수 있습니다.</p>}</section>
   <p class="note">검증 범위: 과거 데이터 백테스트입니다. {isVO?'30일 기본값은 과거 데이터를 보고 선정했으며 미래 성과의 독립 검증을 마친 것은 아닙니다.':s.limitation}</p>
   <section id="performance" class="section-block"><h2>성과와 차트</h2>
-    {hasResult?<div class="paper historical-spec"><h3>연구 당시 결과</h3><MethodConditions method={s} showRecent/><MethodMetrics metrics={s.metrics} recent={s.recent_metrics}/><div class="downloads">{s.metric_source&&<a href={url('downloads/'+s.metric_source)} download>성과 원본 CSV ↓</a>}<a href={url(`research/${s.batch}/#results`)}>다른 평가 기간과 전체 결과</a><a href={resultLink(s)}>이 수치와 같은 모델·기간 보기 →</a></div></div>:<div class="paper historical-spec"><h3>{s.is_family?'설정별 결과':'성과 미생성'}</h3><p>{s.is_family?`${rows.length}개 설정을 하나의 대표 성과로 합치지 않았습니다. 설정별 수치는 연결된 분석 기록에서 비교할 수 있습니다.`:'사전등록한 실행 조건을 통과하지 못해 성과·연도별 값·하락 분포를 생성하지 않았습니다.'}</p><div class="downloads"><a href={url(`research/${s.batch}/${s.status==='실행 실패'?'#failure':'#results'}`)}>분석 기록에서 확인 →</a></div></div>}
-    {hasResult&&performanceStudy?<YearlyPerformance study={performanceStudy} model={s.model}/>:<section id="yearly" class="paper yearly-performance"><h2>연도별 수익률과 MDD</h2><p class="empty">{s.is_family?'여러 설정을 하나의 연도별 값으로 합치지 않습니다. 연결된 분석 기록에서 설정을 선택해 확인하세요.':'저장된 일별 자산 곡선이 없어 계산할 수 없습니다.'}</p></section>}
-    {s.stress?<StressDots stress={s.stress}/>:<section id="stress" class="paper stress-section"><h2>하락 스트레스 분포</h2><p class="empty">{s.is_family?'여러 설정을 하나의 하락 분포로 합치지 않습니다. 연결된 분석 기록에서 설정별 결과를 확인하세요.':'검증 가능한 단일 자산 곡선이 없어 계산하지 않았습니다.'}</p></section>}
-    {isVO?<LatestBacktest/>:previewPeriods.length>0?<><h3>기간별 자산 변화</h3><p>최신 구간부터 표시하며, 각 구간은 같은 초기자산으로 다시 시작합니다.</p><div class="split-chart-grid">{previewPeriods.map((period:any)=><Chart comparisonControls={false} file={period.file} title={`${period.label} · 자산 변화`}/>)}</div><p class="caption">연구 당시 저장된 코드·데이터로 복원한 곡선입니다. <a href={url(`research/${s.batch}/#downloads`)}>입력 데이터 해시·복원 정보 →</a></p></>:<div class="paper"><h3>성과 차트</h3><p class="empty">대표 설정을 임의로 고르지 않아 이 방법군의 단일 차트를 표시하지 않습니다.</p></div>}
+    {isVO?<div class="paper historical-spec"><h3>현재 운용 프로필 · {comparison.market_date}</h3><div data-vo-profile-view="addon"><p class="profile-result-label">VO + 5/20 addon 활성화</p><MethodMetrics metrics={addonMetrics.full} recent={addonMetrics.recent}/></div><div data-vo-profile-view="core"><p class="profile-result-label">기본 VO · addon 비활성화</p><MethodMetrics metrics={coreMetrics.full} recent={coreMetrics.recent}/></div><div class="downloads"><a href={url('research/batch-15/#results')}>addon 연구 결과</a><a href="#addon-one-shot-sma-reentry">정확한 addon 규칙</a></div><details class="full-rules"><summary>기본 VO 선정 당시 결과 보기</summary><MethodConditions method={s} showRecent/><MethodMetrics metrics={s.metrics} recent={s.recent_metrics}/></details></div>:isIXIC?<div class="paper historical-spec"><h3>현재 선택 프로필 · {ixic.market_date}</h3>{ixic.profiles.map((profile:any)=>{const full=ixicFull.metrics.find((m:any)=>m.model===profile.model),recent=ixicRecent.metrics.find((m:any)=>m.model===profile.model);return <div data-ixic-profile-view={profile.id}><p class="profile-result-label">{profile.label}</p><MethodMetrics metrics={full} recent={recent}/></div>})}<div class="downloads">{ixic.addons.map((addon:any)=><a href={`#addon-${addon.anchor}`}>{addon.short_label} 규칙</a>)}</div><details class="full-rules"><summary>연구 당시 기본 IXIC 결과 보기</summary><MethodConditions method={s} showRecent/><MethodMetrics metrics={s.metrics} recent={s.recent_metrics}/></details></div>:hasResult?<div class="paper historical-spec"><h3>연구 당시 결과</h3><MethodConditions method={s} showRecent/><MethodMetrics metrics={s.metrics} recent={s.recent_metrics}/><div class="downloads">{s.metric_source&&<a href={url('downloads/'+s.metric_source)} download>성과 원본 CSV ↓</a>}<a href={url(`research/${s.batch}/#results`)}>다른 평가 기간과 전체 결과</a><a href={resultLink(s)}>이 수치와 같은 모델·기간 보기 →</a></div></div>:<div class="paper historical-spec"><h3>{s.is_family?'설정별 결과':'성과 미생성'}</h3><p>{s.is_family?`${rows.length}개 설정을 하나의 대표 성과로 합치지 않았습니다. 설정별 수치는 연결된 분석 기록에서 비교할 수 있습니다.`:'사전등록한 실행 조건을 통과하지 못해 성과·연도별 값·하락 분포를 생성하지 않았습니다.'}</p><div class="downloads"><a href={url(`research/${s.batch}/${s.status==='실행 실패'?'#failure':'#results'}`)}>분석 기록에서 확인 →</a></div></div>}
+    {isVO?<div id="yearly"><div data-vo-profile-view="addon"><YearlyPerformance sectionId="yearly-addon" study={currentYearly} model="vo_addon_5_20" title="연도별 수익률과 MDD · VO + addon"/></div><div data-vo-profile-view="core"><YearlyPerformance sectionId="yearly-core" study={currentYearly} model="vo" title="연도별 수익률과 MDD · 기본 VO"/></div></div>:isIXIC?<div id="yearly">{ixic.profiles.map((profile:any)=><div data-ixic-profile-view={profile.id}><YearlyPerformance sectionId={`yearly-${profile.id}`} study={ixicYearly} model={profile.model} title={`연도별 수익률과 MDD · ${profile.label}`}/></div>)}</div>:hasResult&&performanceStudy?<YearlyPerformance study={performanceStudy} model={s.model}/>:<section id="yearly" class="paper yearly-performance"><h2>연도별 수익률과 MDD</h2><p class="empty">{s.is_family?'여러 설정을 하나의 연도별 값으로 합치지 않습니다. 연결된 분석 기록에서 설정을 선택해 확인하세요.':'저장된 일별 자산 곡선이 없어 계산할 수 없습니다.'}</p></section>}
+    {isVO?<div id="stress"><div data-vo-profile-view="addon"><StressDots sectionId="stress-addon" stress={comparison.stress_profiles.addon}/></div><div data-vo-profile-view="core"><StressDots sectionId="stress-core" stress={comparison.stress_profiles.core}/></div></div>:isIXIC?<div id="stress">{ixic.profiles.map((profile:any)=><div data-ixic-profile-view={profile.id}><StressDots sectionId={`stress-${profile.id}`} stress={ixic.stress_profiles[profile.id]}/></div>)}</div>:s.stress?<StressDots stress={s.stress}/>:<section id="stress" class="paper stress-section"><h2>하락 스트레스 분포</h2><p class="empty">{s.is_family?'여러 설정을 하나의 하락 분포로 합치지 않습니다. 연결된 분석 기록에서 설정별 결과를 확인하세요.':'검증 가능한 단일 자산 곡선이 없어 계산하지 않았습니다.'}</p></section>}
+    {isVO?<LatestBacktest/>:isIXIC?<IxicAddonBacktest/>:previewPeriods.length>0?<><h3>기간별 자산 변화</h3><p>최신 구간부터 표시하며, 각 구간은 같은 초기자산으로 다시 시작합니다.</p><div class="split-chart-grid">{previewPeriods.map((period:any,index:number)=><PeriodChart file={period.file} title={`${period.label} · 자산 변화`} defaultOpen={index===0}/>)}</div><p class="caption">연구 당시 저장된 코드·데이터로 복원한 곡선입니다. <a href={url(`research/${s.batch}/#downloads`)}>입력 데이터 해시·복원 정보 →</a></p></>:<div class="paper"><h3>성과 차트</h3><p class="empty">대표 설정을 임의로 고르지 않아 이 방법군의 단일 차트를 표시하지 않습니다.</p></div>}
   </section>
   <section id="evidence" class="section-block"><h2>선택 근거와 관련 분석</h2><div class="summary-grid"><div class="paper"><h3>판단 · {info.verdict}</h3><p>{s.decision}</p></div><div class="paper"><h3>한계와 해석</h3><p>{s.limitation}</p></div></div>
     <div class="evidence-list">{studies.map((r:any)=><article><div><a href={url(`research/${r.id}/`)}>{r.title} →</a><span class="status-pill">{r.status}</span></div><p>{r.finding}</p>{s.id==='ixic-three-percent-rule'&&r.id==='batch-11'&&<p class="caption">판본 비교 참고: 이 페이지의 10구간 규칙 성과는 단일 자산 타이밍 연구이며, Jordan 공개 규칙 연구와는 다른 판본입니다.</p>}</article>)}</div>
   </section>
-  {related.length>0&&<section id="variants" class="section-block paper link-list"><h2>대체·추가 규칙</h2><p>대체 설정은 기본값 일부를 바꾸고, 추가 규칙은 기본 방법 위에 조합합니다. 위의 성과는 기본 설정 기준입니다.</p>{related.map((d:any)=><a href={docUrl(d.path)}>{d.title} →</a>)}</section>}
+  {addonDocs.length>0&&<section id="strategy-addons" class="section-block paper addon-details"><h2>Addon</h2><p>현재 이 전략에서 선택할 수 있는 addon만 표시합니다. 모두 기본적으로 접혀 있으며 열어서 정확한 규칙을 확인할 수 있습니다.</p>{addonDocs.map((addon:any)=><details id={`addon-${addon.anchor}`}><summary><span>{addon.label}</span><small>상세 규칙 보기</small></summary><div class="prose" set:html={markdown(addon.document.body.replace(/^# .*\n/,''),addon.source)}/></details>)}</section>}
   <div class="method-bottom-nav"><a href={url('strategies/')}>← 투자 방법</a><a href={url('research/')}>전체 분석 기록 →</a></div>
 </Layout>
+<script>
+  const openAddon=()=>{const target=document.querySelector(location.hash);if(target instanceof HTMLDetailsElement&&target.closest('#strategy-addons'))target.open=true};
+  openAddon();window.addEventListener('hashchange',openAddon);
+</script>

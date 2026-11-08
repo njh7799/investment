@@ -1,6 +1,8 @@
 name: Publish investment reports
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
   workflow_dispatch:
@@ -9,18 +11,18 @@ permissions:
   contents: read
 
 concurrency:
-  group: investment-pages
+  group: investment-pages-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  validate:
+    name: Validate
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Check out latest default branch after data commit
+      - name: Check out source revision
         uses: actions/checkout@v7
         with:
-          ref: main
           fetch-depth: 0
       - uses: actions/setup-python@v7
         with:
@@ -55,11 +57,15 @@ jobs:
       - name: Verify browser interactions
         run: pnpm --dir site exec playwright test
       - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
       - uses: actions/upload-pages-artifact@v4
+        if: github.event_name != 'pull_request'
         with:
           path: site/dist
   deploy:
-    needs: build
+    name: Deploy GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       pages: write

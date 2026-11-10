@@ -58,6 +58,23 @@ def rolling_decades(latest,first):
         ('recent-10y','',str(recent.date()),str(latest.date())),
     ]
 
+def current_vo_snapshot(prices):
+    """Return the latest 30-session inputs behind the default VO signal."""
+    returns=prices['Close'].pct_change().dropna().tail(30)
+    if len(returns)!=30:
+        raise ValueError('VO snapshot requires 30 daily returns')
+    daily_std=float(returns.std(ddof=1))
+    annualized_volatility=daily_std*np.sqrt(252)
+    if annualized_volatility<=.60: target_weight=1.0
+    elif annualized_volatility<=.90: target_weight=.5
+    else: target_weight=0.0
+    return dict(
+        mean_daily_return=float(returns.mean()),
+        daily_standard_deviation=daily_std,
+        annualized_volatility=annualized_volatility,
+        target_weight=target_weight,
+    )
+
 def stress_history(equity):
     """Serialize drawdown episodes for one strategy equity curve."""
     episodes=drawdown_episodes(equity)
@@ -167,7 +184,7 @@ def comparison():
     due=next_session['close']+pd.Timedelta(hours=2)
     return dict(
         market_date=str(latest.date()),periods=choices,stress=stress_profiles['addon'],yearly=yearly_file,
-        stress_profiles=stress_profiles,active_profile='addon',
+        stress_profiles=stress_profiles,active_profile='addon',vo_snapshot=current_vo_snapshot(data.tqqq),
         profiles=[
             dict(id='addon',model='vo_addon_5_20',label='VO + 5/20 addon',default=True),
             dict(id='core',model='vo',label='기본 VO',default=False),

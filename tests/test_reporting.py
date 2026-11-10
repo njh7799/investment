@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from reporting.catalog import catalog, validate_coverage
-from reporting.build import periods, rolling_decades, clean, events, audits, stress_history, yearly_performance
+from reporting.build import periods, rolling_decades, clean, events, audits, stress_history, yearly_performance, current_vo_snapshot
 from scripts.send_daily_briefing import build_briefing, load_prices
 from backtests import load_market_data, build_target_weights, run_weight_strategy
 from backtests.vo_v_recovery import build_active_vo_weights
@@ -40,6 +40,17 @@ def test_rolling_decades_are_disjoint_and_use_available_history():
         ('prior-10y','2006-10-12','2016-10-11'),
         ('recent-10y','2016-10-12','2026-10-12'),
     ]
+
+
+def test_current_vo_snapshot_uses_latest_30_returns_and_default_boundaries():
+    prices=load_market_data(ROOT).tqqq
+    returns=prices.Close.pct_change().dropna().tail(30)
+    snapshot=current_vo_snapshot(prices)
+    assert snapshot['mean_daily_return']==pytest.approx(returns.mean())
+    assert snapshot['daily_standard_deviation']==pytest.approx(returns.std(ddof=1))
+    assert snapshot['annualized_volatility']==pytest.approx(returns.std(ddof=1)*252**.5)
+    expected=1.0 if snapshot['annualized_volatility']<=.60 else .5 if snapshot['annualized_volatility']<=.90 else 0.0
+    assert snapshot['target_weight']==expected
 
 
 def test_tqqq_research_has_no_actual_only_evaluation_period():

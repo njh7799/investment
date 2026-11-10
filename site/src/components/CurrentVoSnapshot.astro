@@ -1,0 +1,21 @@
+---
+import {data,pct} from '../lib/content';
+const snapshot=data.comparison.vo_snapshot;
+const target=snapshot.target_weight===1?'TQQQ 100%':snapshot.target_weight===.5?'TQQQ 50% · 현금 50%':'현금 100%';
+---
+<aside class="vo-snapshot" aria-labelledby="vo-snapshot-title">
+  <div class="vo-snapshot-head">
+    <div>
+      <span>현재 계산값</span>
+      <h3 id="vo-snapshot-title">최근 30거래일 VO 변동성</h3>
+    </div>
+    <time datetime={data.comparison.market_date}>기준일 {data.comparison.market_date}</time>
+  </div>
+  <dl>
+    <div><dt>평균 일간 수익률</dt><dd>{pct(snapshot.mean_daily_return)}</dd></div>
+    <div><dt>일간 표준편차</dt><dd>{pct(snapshot.daily_standard_deviation)}<small>p</small></dd></div>
+    <div><dt>연율화 변동성</dt><dd>{pct(snapshot.annualized_volatility)}</dd></div>
+    <div><dt>기본 VO 목표</dt><dd>{target}</dd></div>
+  </dl>
+  <p>평균 일간 수익률은 비중을 정하는 별도 신호가 아니라, 최근 수익률이 얼마나 퍼져 있는지 계산할 때 사용하는 중심값입니다.</p>
+</aside>

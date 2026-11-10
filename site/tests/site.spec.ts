@@ -234,6 +234,11 @@ test('methods connect rules, stored historical specs and research in both direct
   await expect(page.locator('.sidebar-parent.active')).toContainText('투자 방법');
   await expect(page.locator('.sidebar-subnav a[aria-current]')).toContainText('TQQQ Buy & Hold');
   await page.goto('strategies/volatility-allocation/#기본값-선택-근거');
+  await expect(page.locator('.vo-snapshot')).toContainText('최근 30거래일 VO 변동성');
+  await expect(page.locator('.vo-snapshot dd').nth(0)).toHaveText(/^-?\d+\.\d{2}%$/);
+  await expect(page.locator('.vo-snapshot dd').nth(1)).toHaveText(/^\d+\.\d{2}%p$/);
+  await expect(page.locator('.vo-snapshot dd').nth(2)).toHaveText(/^\d+\.\d{2}%$/);
+  await expect(page.locator('.vo-snapshot dd').nth(3)).toHaveText(/^(TQQQ 100%|TQQQ 50% · 현금 50%|현금 100%)$/);
   await expect(page.locator('#rules .full-rules')).toHaveAttribute('open','');
   await expect(page.locator('#rules .full-rules')).toContainText('기본값 선택 근거');
   await page.locator('.evidence-list a').filter({hasText:'이동평균'}).click();

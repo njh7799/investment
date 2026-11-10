@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import AddonControl from '../../components/AddonControl.astro';
+import CurrentVoSnapshot from '../../components/CurrentVoSnapshot.astro';
 import DetailContext from '../../components/DetailContext.astro';
 import IxicAddonBacktest from '../../components/IxicAddonBacktest.astro';
 import LatestBacktest from '../../components/LatestBacktest.astro';
@@ -76,6 +77,7 @@ const previewPeriods=s.preview
       </div>
     </ProfileView>)}
     <p class="method-cadence">{s.cadence}</p>
+    {isVO&&<CurrentVoSnapshot/>}
     <RuleExample id={s.id}/>
     {doc?<details class="full-rules">
       <summary>전체 규칙과 실행 조건 읽기</summary>

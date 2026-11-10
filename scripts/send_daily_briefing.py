@@ -31,6 +31,9 @@ KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
 KAKAO_MEMO_URL = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
 KAKAO_IMAGE_UPLOAD_URL = "https://kapi.kakao.com/v2/api/talk/message/image/upload"
 REPOSITORY_URL = "https://github.com/njh7799/investment"
+VO_DETAIL_URL = (
+    "https://njh7799.github.io/investment/strategies/volatility-allocation/"
+)
 
 
 @dataclass(frozen=True)
@@ -358,9 +361,9 @@ def send_to_kakao(
             "image_url": image_url,
             "image_width": 800,
             "image_height": 1067,
-            "link": {"web_url": REPOSITORY_URL, "mobile_web_url": REPOSITORY_URL},
+            "link": {"web_url": VO_DETAIL_URL, "mobile_web_url": VO_DETAIL_URL},
         },
-        "button_title": "저장소 열기",
+        "button_title": "VO 상세 보기",
     }
     response = requests.post(
         KAKAO_MEMO_URL,

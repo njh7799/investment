@@ -17,6 +17,8 @@ from dotenv import load_dotenv
 BASE_URL = "https://openapi.tossinvest.com"
 ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 REQUEST_TIMEOUT = 15
+TRANSIENT_REQUEST_RETRIES = 3
+TRANSIENT_RETRY_BASE_DELAY = 1.0
 
 
 class TossApiError(RuntimeError):
@@ -77,6 +79,31 @@ class TossApiClient:
             details.append(f"requestId={request_id}")
         raise TossApiError(": ".join(details))
 
+    def _get_with_transient_retries(
+        self,
+        url: str,
+        *,
+        transient_retries: int = TRANSIENT_REQUEST_RETRIES,
+        **kwargs: Any,
+    ) -> requests.Response:
+        """Retry temporary transport and server failures without restarting a download."""
+        if transient_retries < 0:
+            raise ValueError("transient_retries cannot be negative")
+
+        for attempt in range(transient_retries + 1):
+            try:
+                response = self.session.get(url, **kwargs)
+            except requests.RequestException:
+                if attempt == transient_retries:
+                    raise
+            else:
+                if response.status_code < 500 or attempt == transient_retries:
+                    return response
+
+            self._sleep(TRANSIENT_RETRY_BASE_DELAY * (2**attempt))
+
+        raise AssertionError("transient retry loop did not return or raise")
+
     def issue_access_token(self) -> str:
         response = self.session.post(
             f"{self.base_url}/oauth2/token",
@@ -126,6 +153,7 @@ class TossApiClient:
         before: str | None = None,
         adjusted: bool = True,
         rate_limit_retries: int = 5,
+        transient_retries: int = TRANSIENT_REQUEST_RETRIES,
     ) -> dict[str, Any]:
         """Return one validated candle page, respecting Toss retry headers."""
         if interval not in {"1m", "1d"}:
@@ -134,6 +162,8 @@ class TossApiClient:
             raise ValueError("count must be between 1 and 200")
         if rate_limit_retries < 0:
             raise ValueError("rate_limit_retries cannot be negative")
+        if transient_retries < 0:
+            raise ValueError("transient_retries cannot be negative")
 
         token = self._access_token or self.issue_access_token()
         params: dict[str, str | int] = {
@@ -147,11 +177,12 @@ class TossApiClient:
 
         response: requests.Response | None = None
         for attempt in range(rate_limit_retries + 1):
-            response = self.session.get(
+            response = self._get_with_transient_retries(
                 f"{self.base_url}/api/v1/candles",
                 headers={"Authorization": f"Bearer {token}"},
                 params=params,
                 timeout=REQUEST_TIMEOUT,
+                transient_retries=transient_retries,
             )
             if response.status_code != 429 or attempt == rate_limit_retries:
                 break

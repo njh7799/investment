@@ -1,6 +1,12 @@
 import pytest
+import requests
 
-from scripts.toss_api import REQUEST_TIMEOUT, TossApiClient, TossApiError
+from scripts.toss_api import (
+    REQUEST_TIMEOUT,
+    TRANSIENT_REQUEST_RETRIES,
+    TossApiClient,
+    TossApiError,
+)
 
 
 class FakeResponse:
@@ -25,7 +31,10 @@ class FakeSession:
 
     def get(self, url, **kwargs):
         self.calls.append(("GET", url, kwargs))
-        return next(self.responses)
+        response = next(self.responses)
+        if isinstance(response, Exception):
+            raise response
+        return response
 
 
 def test_get_accounts_authenticates_and_uses_bearer_token():
@@ -181,3 +190,46 @@ def test_candles_retry_rate_limit_and_validate_page():
     assert result["candles"][0]["closePrice"] == "101"
     assert sleeps == [0.25]
     assert session.calls[-1][2]["params"]["adjusted"] == "true"
+
+
+def test_candles_retry_transient_transport_failure_without_restarting_download():
+    sleeps = []
+    session = FakeSession(
+        [
+            FakeResponse(200, {"access_token": "token"}),
+            requests.ConnectionError("connection reset"),
+            FakeResponse(
+                200,
+                {"result": {"candles": [], "nextBefore": None}},
+            ),
+        ]
+    )
+
+    result = TossApiClient(
+        "client", "secret", session=session, sleep=sleeps.append
+    ).get_candles("QQQ")
+
+    assert result == {"candles": [], "nextBefore": None}
+    assert sleeps == [1.0]
+    assert len([call for call in session.calls if call[0] == "GET"]) == 2
+
+
+def test_candles_retry_transient_server_failure_with_exponential_backoff():
+    sleeps = []
+    session = FakeSession(
+        [
+            FakeResponse(200, {"access_token": "token"}),
+            FakeResponse(503, {"error": {"code": "unavailable"}}),
+            FakeResponse(502, {"error": {"code": "bad-gateway"}}),
+            FakeResponse(
+                200,
+                {"result": {"candles": [], "nextBefore": None}},
+            ),
+        ]
+    )
+
+    TossApiClient("client", "secret", session=session, sleep=sleeps.append).get_candles(
+        "QQQ", transient_retries=TRANSIENT_REQUEST_RETRIES
+    )
+
+    assert sleeps == [1.0, 2.0]

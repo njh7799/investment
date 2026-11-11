@@ -32,7 +32,7 @@ KAKAO_MEMO_URL = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
 KAKAO_IMAGE_UPLOAD_URL = "https://kapi.kakao.com/v2/api/talk/message/image/upload"
 REPOSITORY_URL = "https://github.com/njh7799/investment"
 VO_DETAIL_URL = (
-    "https://njh7799.github.io/investment/strategies/volatility-allocation/"
+    "https://njh7799.github.io/investment/strategies/volatility-allocation"
 )
 
 
@@ -354,6 +354,7 @@ def send_to_kakao(
     briefing: Briefing,
     image_url: str,
 ) -> None:
+    detail_link = {"web_url": VO_DETAIL_URL, "mobile_web_url": VO_DETAIL_URL}
     template = {
         "object_type": "feed",
         "content": {
@@ -361,9 +362,9 @@ def send_to_kakao(
             "image_url": image_url,
             "image_width": 800,
             "image_height": 1067,
-            "link": {"web_url": VO_DETAIL_URL, "mobile_web_url": VO_DETAIL_URL},
+            "link": detail_link,
         },
-        "button_title": "VO 상세 보기",
+        "buttons": [{"title": "VO 상세 보기", "link": detail_link}],
     }
     response = requests.post(
         KAKAO_MEMO_URL,

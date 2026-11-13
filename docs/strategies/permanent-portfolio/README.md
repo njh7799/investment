@@ -13,7 +13,7 @@ Harry Browne의 Permanent Portfolio를 일별 ETF 데이터와 저장소 공통 
 
 - 네 ETF의 첫 공통 거래일 시가에 각 자산을 목표 비중으로 매수한다.
 - 수량은 정수이며 소수점 이하는 버린다. 매수 뒤 남은 금액은 이자 없는 현금으로 둔다.
-- Toss의 분할조정 OHLC를 사용하며 현금배당은 포함하지 않는다.
+- SPY는 Toss 분할조정 OHLC, TLT·GLD·SHY는 Yahoo Finance 원시 OHLC를 사용하며 현금배당은 포함하지 않는다.
 
 ## 연례 15/35 규칙
 

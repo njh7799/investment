@@ -24,8 +24,30 @@ except ModuleNotFoundError:  # direct execution: python scripts/update_market_da
 
 
 OHLC = ["Open", "High", "Low", "Close"]
-YAHOO_INDEX_SYMBOLS = {"IXIC": "^IXIC"}
-TOSS_SYMBOLS = (
+YAHOO_SYMBOLS = {
+    "IXIC": "^IXIC",
+    "AGG": "AGG",
+    "DBC": "DBC",
+    "EEM": "EEM",
+    "EFA": "EFA",
+    "EWJ": "EWJ",
+    "GLD": "GLD",
+    "GSG": "GSG",
+    "HYG": "HYG",
+    "IEF": "IEF",
+    "IWM": "IWM",
+    "IYR": "IYR",
+    "LQD": "LQD",
+    "SGOV": "SGOV",
+    "SHY": "SHY",
+    "TLT": "TLT",
+    "VEU": "VEU",
+    "VGK": "VGK",
+    "VNQ": "VNQ",
+}
+TOSS_SYMBOLS = ("QQQ", "TQQQ", "SPY")
+SYMBOLS = (
+    "IXIC",
     "AGG",
     "DBC",
     "EEM",
@@ -48,7 +70,7 @@ TOSS_SYMBOLS = (
     "VGK",
     "VNQ",
 )
-SYMBOLS = ("IXIC",) + TOSS_SYMBOLS
+DAILY_SYMBOLS = ("IXIC", "QQQ", "TQQQ", "SPY")
 NEW_YORK = ZoneInfo("America/New_York")
 ROUNDING_TOLERANCE = 1e-10
 DEFAULT_TOSS_REQUESTS_PER_SECOND = 10.0
@@ -119,10 +141,10 @@ def normalize_history(frame: pd.DataFrame, symbol: str) -> pd.DataFrame:
     return fix_ohlc_roundoff(result.astype(float))
 
 
-def download_yahoo_index(
+def download_yahoo_symbol(
     symbol: str, through: pd.Timestamp | None = None
 ) -> pd.DataFrame:
-    """Download an unadjusted index series from Yahoo Finance."""
+    """Download raw OHLC history from Yahoo Finance."""
     if hasattr(yf, "config"):
         yf.config.debug.hide_exceptions = False
     end = None
@@ -314,35 +336,78 @@ def latest_settled_session(now: pd.Timestamp | None = None) -> pd.Timestamp:
     return pd.Timestamp(previous).tz_localize(None)
 
 
+def fetch_symbols(
+    symbols: tuple[str, ...],
+    through: pd.Timestamp | None = None,
+    *,
+    toss_client: TossApiClient | None = None,
+    toss_requests_per_second: float = DEFAULT_TOSS_REQUESTS_PER_SECOND,
+) -> Dict[str, pd.DataFrame]:
+    unknown = set(symbols).difference(SYMBOLS)
+    if unknown:
+        raise ValueError(f"unknown market symbols: {', '.join(sorted(unknown))}")
+
+    downloaded = {
+        name: download_yahoo_symbol(YAHOO_SYMBOLS[name], through)
+        for name in symbols
+        if name in YAHOO_SYMBOLS
+    }
+
+    toss_symbols = [name for name in symbols if name in TOSS_SYMBOLS]
+    if toss_symbols:
+        client = toss_client or TossApiClient.from_env()
+        throttle = RequestThrottle(toss_requests_per_second)
+        downloaded.update(
+            {
+                symbol: download_toss_symbol(
+                    client,
+                    symbol,
+                    through,
+                    throttle=throttle,
+                )
+                for symbol in toss_symbols
+            }
+        )
+
+    if "TQQQ" in symbols:
+        if "QQQ" not in symbols:
+            raise ValueError("TQQQ download requires QQQ for pre-launch synthesis")
+        downloaded["TQQQ"] = build_synthetic_tqqq(
+            downloaded["QQQ"], downloaded["TQQQ"]
+        )
+
+    for name in symbols:
+        frame = downloaded[name]
+        validate_ohlc(frame, name)
+    return downloaded
+
+
 def fetch_all(
     through: pd.Timestamp | None = None,
     *,
     toss_client: TossApiClient | None = None,
     toss_requests_per_second: float = DEFAULT_TOSS_REQUESTS_PER_SECOND,
 ) -> Dict[str, pd.DataFrame]:
-    client = toss_client or TossApiClient.from_env()
-    throttle = RequestThrottle(toss_requests_per_second)
-    downloaded = {
-        name: download_yahoo_index(symbol, through)
-        for name, symbol in YAHOO_INDEX_SYMBOLS.items()
-    }
-    downloaded.update(
-        {
-            symbol: download_toss_symbol(
-                client,
-                symbol,
-                through,
-                throttle=throttle,
-            )
-            for symbol in TOSS_SYMBOLS
-        }
+    return fetch_symbols(
+        SYMBOLS,
+        through,
+        toss_client=toss_client,
+        toss_requests_per_second=toss_requests_per_second,
     )
-    downloaded["TQQQ"] = build_synthetic_tqqq(
-        downloaded["QQQ"], downloaded["TQQQ"]
+
+
+def fetch_daily(
+    through: pd.Timestamp | None = None,
+    *,
+    toss_client: TossApiClient | None = None,
+    toss_requests_per_second: float = DEFAULT_TOSS_REQUESTS_PER_SECOND,
+) -> Dict[str, pd.DataFrame]:
+    return fetch_symbols(
+        DAILY_SYMBOLS,
+        through,
+        toss_client=toss_client,
+        toss_requests_per_second=toss_requests_per_second,
     )
-    for name, frame in downloaded.items():
-        validate_ohlc(frame, name)
-    return downloaded
 
 
 def verify_target_session(data: Dict[str, pd.DataFrame], target: pd.Timestamp) -> None:
@@ -380,15 +445,19 @@ def fetch_with_retries(
     raise RuntimeError(f"market data update failed after {attempts} attempts") from last_error
 
 
-def write_csvs(data: Dict[str, pd.DataFrame], output_dir: Path) -> None:
+def write_csvs(
+    data: Dict[str, pd.DataFrame],
+    output_dir: Path,
+    symbols: tuple[str, ...] = SYMBOLS,
+) -> None:
     """Validate every frame, then atomically replace each destination file."""
-    for name in SYMBOLS:
+    for name in symbols:
         validate_ohlc(data[name], name)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     temporary: Dict[str, Path] = {}
     try:
-        for name in SYMBOLS:
+        for name in symbols:
             temp_path = output_dir / f".{name}.csv.tmp"
             data[name].to_csv(
                 temp_path,
@@ -445,11 +514,13 @@ def main() -> int:
                 f"{target.date()} has not been closed for two hours yet"
             )
 
+    symbols = DAILY_SYMBOLS if args.mode == "daily" else SYMBOLS
+    download = fetch_daily if args.mode == "daily" else fetch_all
     data = fetch_with_retries(
         target,
         args.attempts,
         args.retry_delay,
-        fetcher=lambda: fetch_all(
+        fetcher=lambda: download(
             settled_session,
             toss_requests_per_second=args.toss_requests_per_second,
         ),
@@ -457,12 +528,12 @@ def main() -> int:
     data = {name: frame.loc[:settled_session].copy() for name, frame in data.items()}
     for name, frame in data.items():
         validate_ohlc(frame, name)
-    write_csvs(data, args.output_dir)
+    write_csvs(data, args.output_dir, symbols)
     print(
         "Updated "
         + ", ".join(
             f"{name} ({len(data[name])} rows through {data[name].index.max().date()})"
-            for name in SYMBOLS
+            for name in symbols
         )
     )
     return 0

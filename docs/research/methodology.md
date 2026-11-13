@@ -22,8 +22,8 @@ VO보다 CAGR이 낮다는 이유만으로 저위험·분산·인컴 등 목적�
 
 ## 시장 데이터
 
-- 미국 상장 ETF는 Toss Open API의 `adjusted=true` 분할조정 OHLC를 사용한다. 현금배당은 과거 가격에 소급되지 않으며 백테스트에도 별도 현금 수익으로 더하지 않는다.
-- Toss가 지원하지 않는 Nasdaq Composite 지수 IXIC만 Yahoo Finance 원시 OHLC를 사용한다.
+- QQQ, TQQQ, SPY는 Toss Open API의 `adjusted=true` 분할조정 OHLC를 사용한다. IXIC와 나머지 미국 상장 ETF는 Yahoo Finance 원시 OHLC를 사용한다.
+- 어느 출처에서도 현금배당을 과거 가격에 소급하거나 백테스트에 별도 현금 수익으로 더하지 않는다.
 - 따라서 ETF 결과는 총수익이 아닌 배당 제외 가격수익 기준이다. 원전이 총수익 지수를 사용했다면 그 차이를 전략 보고서의 한계에 명시한다.
 
 ## 성과 지표

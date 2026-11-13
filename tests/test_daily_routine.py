@@ -73,8 +73,11 @@ def test_market_update_retries_a_failed_full_refresh(monkeypatch):
     target = pd.Timestamp("2026-10-28")
     dates = iter(
         [
-            {symbol: target - pd.Timedelta(days=1) for symbol in routine.SYMBOLS},
-            {symbol: target for symbol in routine.SYMBOLS},
+            {
+                symbol: target - pd.Timedelta(days=1)
+                for symbol in routine.DAILY_SYMBOLS
+            },
+            {symbol: target for symbol in routine.DAILY_SYMBOLS},
         ]
     )
     commands = []

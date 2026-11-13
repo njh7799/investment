@@ -5,11 +5,16 @@ import pytest
 
 from scripts.list_market_events import identify_downturns, load_event_labels
 from scripts.update_market_data import (
+    DAILY_SYMBOLS,
     DataValidationError,
     OHLC,
     SYMBOLS,
+    TOSS_SYMBOLS,
+    YAHOO_SYMBOLS,
     build_synthetic_tqqq,
     download_toss_symbol,
+    fetch_all,
+    fetch_daily,
     is_nasdaq_session,
     latest_settled_session,
     validate_ohlc,
@@ -101,6 +106,70 @@ def test_write_csvs_has_stable_schema(tmp_path: Path):
     assert text.splitlines()[0] == "Date,Open,High,Low,Close"
     assert text.splitlines()[1].startswith("2010.01.04,")
     assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_daily_download_uses_yahoo_for_ixic_and_toss_for_three_etfs(monkeypatch):
+    yahoo_calls = []
+    toss_calls = []
+    prices = frame([[100, 101, 99, 100], [101, 102, 100, 101]])
+    monkeypatch.setattr(
+        "scripts.update_market_data.download_yahoo_symbol",
+        lambda symbol, through: yahoo_calls.append(symbol) or prices,
+    )
+    monkeypatch.setattr(
+        "scripts.update_market_data.download_toss_symbol",
+        lambda client, symbol, through, throttle: toss_calls.append(symbol) or prices,
+    )
+    monkeypatch.setattr(
+        "scripts.update_market_data.build_synthetic_tqqq",
+        lambda qqq, tqqq: tqqq,
+    )
+
+    result = fetch_daily(toss_client=object())
+
+    assert tuple(result) == DAILY_SYMBOLS
+    assert yahoo_calls == ["^IXIC"]
+    assert toss_calls == ["QQQ", "TQQQ", "SPY"]
+
+
+def test_full_download_routes_only_three_etfs_to_toss(monkeypatch):
+    yahoo_calls = []
+    toss_calls = []
+    prices = frame([[100, 101, 99, 100], [101, 102, 100, 101]])
+    monkeypatch.setattr(
+        "scripts.update_market_data.download_yahoo_symbol",
+        lambda symbol, through: yahoo_calls.append(symbol) or prices,
+    )
+    monkeypatch.setattr(
+        "scripts.update_market_data.download_toss_symbol",
+        lambda client, symbol, through, throttle: toss_calls.append(symbol) or prices,
+    )
+    monkeypatch.setattr(
+        "scripts.update_market_data.build_synthetic_tqqq",
+        lambda qqq, tqqq: tqqq,
+    )
+
+    result = fetch_all(toss_client=object())
+
+    assert set(result) == set(SYMBOLS)
+    assert set(yahoo_calls) == set(YAHOO_SYMBOLS.values())
+    assert set(toss_calls) == set(TOSS_SYMBOLS)
+    assert set(YAHOO_SYMBOLS).isdisjoint(TOSS_SYMBOLS)
+    assert set(YAHOO_SYMBOLS).union(TOSS_SYMBOLS) == set(SYMBOLS)
+
+
+def test_daily_write_does_not_replace_research_assets(tmp_path: Path):
+    research_asset = tmp_path / "AGG.csv"
+    research_asset.write_text("unchanged\n")
+    data = {name: frame([[100, 101, 99, 100]]) for name in DAILY_SYMBOLS}
+
+    write_csvs(data, tmp_path, DAILY_SYMBOLS)
+
+    assert research_asset.read_text() == "unchanged\n"
+    assert {path.stem for path in tmp_path.glob("*.csv")} == {
+        "AGG",
+        *DAILY_SYMBOLS,
+    }
 
 
 class FakeCandleClient:

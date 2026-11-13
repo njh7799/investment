@@ -31,6 +31,8 @@ from scripts.update_market_data import (
 )
 
 STATE_FILE = ROOT / ".daily-routine-state.json"
+MARKET_UPDATE_ATTEMPTS = 3
+MARKET_UPDATE_RETRY_DELAY_SECONDS = 60
 
 
 def target_session(now: pd.Timestamp | None = None) -> pd.Timestamp | None:
@@ -98,7 +100,9 @@ def update_market_data(target: pd.Timestamp) -> None:
             "--mode",
             "daily",
             "--attempts",
-            "1",
+            str(MARKET_UPDATE_ATTEMPTS),
+            "--retry-delay",
+            str(MARKET_UPDATE_RETRY_DELAY_SECONDS),
         ]
     )
     dates = latest_asset_dates()

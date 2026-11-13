@@ -66,3 +66,31 @@ def test_failed_push_resumes_without_resending_briefing(tmp_path, monkeypatch):
 
     assert [name for name, _ in calls] == ["update", "push"]
     assert routine.load_state(path)["pushed"] is True
+
+
+def test_market_update_retries_a_failed_full_refresh(monkeypatch):
+    target = pd.Timestamp("2026-10-28")
+    dates = iter(
+        [
+            {symbol: target - pd.Timedelta(days=1) for symbol in routine.SYMBOLS},
+            {symbol: target for symbol in routine.SYMBOLS},
+        ]
+    )
+    commands = []
+    monkeypatch.setattr(routine, "latest_asset_dates", lambda: next(dates))
+    monkeypatch.setattr(routine, "run_checked", commands.append)
+
+    routine.update_market_data(target)
+
+    assert commands == [
+        [
+            routine.sys.executable,
+            "scripts/update_market_data.py",
+            "--mode",
+            "daily",
+            "--attempts",
+            str(routine.MARKET_UPDATE_ATTEMPTS),
+            "--retry-delay",
+            str(routine.MARKET_UPDATE_RETRY_DELAY_SECONDS),
+        ]
+    ]

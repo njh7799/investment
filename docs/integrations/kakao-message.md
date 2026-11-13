@@ -59,6 +59,10 @@ VO 계산과 경계값 및 활성 addon은 [`docs/strategies/volatility-allocati
 - `KAKAO_CLIENT_SECRET`
 - `KAKAO_REFRESH_TOKEN`
 
+카카오 개발자 콘솔의 해당 앱에서 `앱 > 제품 링크 관리 > 웹 도메인`에
+`https://njh7799.github.io`를 등록해야 카드와 `VO 상세 보기` 버튼의 링크가
+활성화된다. 브리핑 payload는 PC와 모바일 모두 공개 VO 상세 경로를 명시한다.
+
 로컬 브리핑 전송 중 카카오가 새 리프레시 토큰을 반환하면 `.env`의 `KAKAO_REFRESH_TOKEN`을 자동으로 교체한다. GitHub Pages 배포 실패 알림은 별도 GitHub Actions secrets의 같은 카카오 값과 `GH_SECRETS_TOKEN`을 계속 사용한다.
 
 ## 로컬 확인

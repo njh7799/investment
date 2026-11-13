@@ -217,10 +217,19 @@ def test_kakao_message_uses_feed_template_with_card(monkeypatch):
     assert template["content"]["image_width"] == 800
     assert template["content"]["image_height"] == 1067
     assert template["content"]["link"] == {
-        "web_url": "https://njh7799.github.io/investment/strategies/volatility-allocation/",
-        "mobile_web_url": "https://njh7799.github.io/investment/strategies/volatility-allocation/",
+        "web_url": "https://njh7799.github.io/investment/strategies/volatility-allocation",
+        "mobile_web_url": "https://njh7799.github.io/investment/strategies/volatility-allocation",
     }
-    assert template["button_title"] == "VO 상세 보기"
+    assert template["buttons"] == [
+        {
+            "title": "VO 상세 보기",
+            "link": {
+                "web_url": "https://njh7799.github.io/investment/strategies/volatility-allocation",
+                "mobile_web_url": "https://njh7799.github.io/investment/strategies/volatility-allocation",
+            },
+        }
+    ]
+    assert "button_title" not in template
     assert "description" not in template["content"]
 
 

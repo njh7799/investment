@@ -136,7 +136,7 @@ def commit_and_push(target: pd.Timestamp) -> None:
     run_checked(["git", "push", "origin", "HEAD:main"])
 
 
-def notify_failure(target: pd.Timestamp, error: Exception) -> None:
+def notify_failure(target: pd.Timestamp) -> None:
     load_dotenv(ROOT / ".env")
     rest_api_key = os.environ.get("KAKAO_REST_API_KEY")
     refresh_token = os.environ.get("KAKAO_REFRESH_TOKEN")
@@ -147,21 +147,45 @@ def notify_failure(target: pd.Timestamp, error: Exception) -> None:
         os.environ.get("KAKAO_CLIENT_SECRET", ""),
         refresh_token,
     )
-    summary = str(error).strip().replace("\n", " ")[:500] or type(error).__name__
     send_text_to_kakao(
         access_token,
         "\n".join(
             [
-                "🚨 로컬 일일 투자 루틴 실패",
-                f"• 대상 거래일: {target.date()}",
-                f"• 오류: {summary}",
-                "다음 예약 실행은 누락분을 반복하지 않고 최신 거래일만 처리합니다.",
+                "📭 오늘 아침 브리핑을 보내지 못했어요",
+                "",
+                "브리핑을 준비하는 중 일시적인 문제가 생겼습니다.",
+                "자동으로 다시 시도했지만 아직 해결되지 않았어요.",
+                "다음 실행에서 다시 확인할게요.",
             ]
         ),
         REPOSITORY_URL,
     )
     if rotated_refresh_token:
         persist_rotated_refresh_token(rotated_refresh_token)
+
+
+def notify_failure_once(
+    target: pd.Timestamp, state_path: Path = STATE_FILE
+) -> None:
+    target_text = str(target.date())
+    state = load_state(state_path)
+    if state.get("market_date") == target_text and state.get("failure_notified") is True:
+        print(f"Failure notice already sent for {target_text}; skipping")
+        return
+
+    notify_failure(target)
+    state = load_state(state_path)
+    if state.get("market_date") != target_text:
+        state = {
+            "market_date": target_text,
+            "briefing_sent": False,
+            "pushed": False,
+        }
+    state["failure_notified"] = True
+    state["failure_notified_at"] = datetime.now().astimezone().isoformat(
+        timespec="seconds"
+    )
+    save_state(state, state_path)
 
 
 def execute(target: pd.Timestamp, state_path: Path = STATE_FILE) -> None:
@@ -172,6 +196,7 @@ def execute(target: pd.Timestamp, state_path: Path = STATE_FILE) -> None:
             "market_date": target_text,
             "briefing_sent": False,
             "pushed": False,
+            "failure_notified": False,
         }
         save_state(state, state_path)
     if state.get("pushed") is True:
@@ -197,9 +222,9 @@ def main() -> int:
         return 0
     try:
         execute(target)
-    except Exception as error:
+    except Exception:
         try:
-            notify_failure(target, error)
+            notify_failure_once(target)
         except Exception as notification_error:
             print(
                 f"Failed to send routine failure notice: {notification_error}",

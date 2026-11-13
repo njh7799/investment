@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 
 import pandas as pd
 
@@ -94,3 +95,47 @@ def test_market_update_retries_a_failed_full_refresh(monkeypatch):
             str(routine.MARKET_UPDATE_RETRY_DELAY_SECONDS),
         ]
     ]
+
+
+def test_failure_notice_is_friendly_and_hides_error_details(monkeypatch):
+    sent = []
+    monkeypatch.setattr(
+        routine,
+        "refresh_access_token",
+        lambda *_: ("access-token", None),
+    )
+    monkeypatch.setattr(routine, "send_text_to_kakao", lambda *args: sent.append(args))
+    monkeypatch.setenv("KAKAO_REST_API_KEY", "rest-api-key")
+    monkeypatch.setenv("KAKAO_REFRESH_TOKEN", "refresh-token")
+
+    routine.notify_failure(pd.Timestamp("2026-10-28"))
+
+    message = sent[0][1]
+    assert "오늘 아침 브리핑을 보내지 못했어요" in message
+    assert "자동으로 다시 시도" in message
+    assert "오류:" not in message
+    assert "ConnectionError" not in message
+
+
+def test_failure_notice_is_sent_only_once_per_market_date(tmp_path, monkeypatch):
+    path = tmp_path / "state.json"
+    target = pd.Timestamp("2026-10-28")
+    routine.save_state(
+        {
+            "market_date": "2026-10-28",
+            "briefing_sent": False,
+            "pushed": False,
+            "failure_notified": False,
+        },
+        path,
+    )
+    calls = []
+    monkeypatch.setattr(routine, "notify_failure", lambda value: calls.append(value))
+
+    routine.notify_failure_once(target, path)
+    routine.notify_failure_once(target, path)
+
+    assert calls == [target]
+    state = routine.load_state(path)
+    assert state["failure_notified"] is True
+    datetime.fromisoformat(state["failure_notified_at"])

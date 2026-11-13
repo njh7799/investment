@@ -24,8 +24,8 @@ from scripts.send_daily_briefing import (
     send_text_to_kakao,
 )
 from scripts.update_market_data import (
+    DAILY_SYMBOLS,
     NEW_YORK,
-    SYMBOLS,
     is_nasdaq_session,
     latest_settled_session,
 )
@@ -67,7 +67,7 @@ def save_state(state: dict[str, object], path: Path = STATE_FILE) -> None:
 
 def latest_asset_dates() -> dict[str, pd.Timestamp]:
     result = {}
-    for symbol in SYMBOLS:
+    for symbol in DAILY_SYMBOLS:
         dates = pd.read_csv(
             ROOT / "assets" / f"{symbol}.csv",
             usecols=["Date"],
@@ -124,7 +124,7 @@ def commit_and_push(target: pd.Timestamp) -> None:
     if branch != "main":
         raise RuntimeError(f"daily routine requires main branch, found {branch or 'detached HEAD'}")
 
-    asset_paths = [f"assets/{symbol}.csv" for symbol in SYMBOLS]
+    asset_paths = [f"assets/{symbol}.csv" for symbol in DAILY_SYMBOLS]
     run_checked(["git", "add", "--", *asset_paths])
     staged = subprocess.run(
         ["git", "diff", "--cached", "--quiet", "--", *asset_paths], cwd=ROOT

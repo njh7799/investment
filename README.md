@@ -2,7 +2,7 @@
 
 과거 시장 데이터를 일관된 형식으로 관리하고, 이를 이용해 지표 분석과 전략 백테스트를 수행하기 위한 저장소입니다.
 
-Nasdaq 계열과 공개 모델 검증에 필요한 미국 상장 ETF의 일별 분할조정 OHLC 데이터를 수집하고 매일 자동 갱신합니다. 분석과 백테스트의 공통 규칙은 [AGENTS.md](AGENTS.md), 전략별 규칙과 상태는 [전략 문서](docs/)에서 관리합니다.
+Nasdaq 계열과 공개 모델 검증에 필요한 미국 상장 ETF의 일별 OHLC 데이터를 수집합니다. 일일 브리핑 자산은 매일 자동 갱신하고 전체 연구 자산은 별도 전체 실행으로 재생성합니다. 분석과 백테스트의 공통 규칙은 [AGENTS.md](AGENTS.md), 전략별 규칙과 상태는 [전략 문서](docs/)에서 관리합니다.
 
 ## 구성
 
@@ -31,8 +31,8 @@ Nasdaq 계열과 공개 모델 검증에 필요한 미국 상장 ETF의 일별 �
 CSV 스키마는 모두 `Date,Open,High,Low,Close`입니다.
 
 - 날짜는 `YYYY.MM.DD` 형식이며 오름차순으로 정렬되고 중복되지 않습니다.
-- 미국 상장 ETF는 토스증권 Open API의 `adjusted=true` 일봉입니다. 액면분할은 반영하지만 현금배당을 과거 가격에 소급하지 않습니다.
-- 토스증권이 지원하지 않는 IXIC만 Yahoo Finance 원시 OHLC를 사용합니다.
+- QQQ·TQQQ·SPY는 토스증권 Open API의 `adjusted=true` 일봉입니다. 액면분할은 반영하지만 현금배당을 과거 가격에 소급하지 않습니다.
+- IXIC와 나머지 미국 상장 ETF는 Yahoo Finance 원시 OHLC를 사용합니다.
 
 ### TQQQ 상장 전 합성 데이터
 
@@ -50,13 +50,13 @@ python -m pip install --requirement requirements.txt
 
 ## 실행
 
-전체 이력을 다시 생성합니다.
+전체 연구 자산의 이력을 다시 생성합니다. QQQ·TQQQ·SPY만 토스증권에서 받고, IXIC와 나머지 ETF는 Yahoo Finance에서 받습니다.
 
 ```bash
 python scripts/update_market_data.py --mode full
 ```
 
-일일 갱신 모드는 Nasdaq 거래 여부와 장 마감 후 2시간 경과 여부를 확인하고 최신 거래일 데이터를 반영합니다. Toss 캔들 호출은 기본 초당 10회로 제한하며 429 응답의 재시도 지시를 따릅니다.
+일일 갱신 모드는 Nasdaq 거래 여부와 장 마감 후 2시간 경과 여부를 확인하고 IXIC·QQQ·TQQQ·SPY만 최신 거래일까지 다시 생성합니다. Toss 캔들 호출은 기본 초당 10회로 제한하며 429 응답의 재시도 지시를 따릅니다.
 
 ```bash
 python scripts/update_market_data.py --mode daily

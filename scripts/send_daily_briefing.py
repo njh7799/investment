@@ -21,7 +21,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from backtests import MarketData, drawdown_episodes, run_weight_strategy
+from backtests import (
+    MarketData,
+    build_active_vo_allocation,
+    drawdown_episodes,
+    run_weight_strategy,
+)
 from backtests.vo_v_recovery import build_active_vo_weights
 from scripts.render_briefing_card import render_briefing_card
 
@@ -81,10 +86,36 @@ class Briefing:
     historical_context: HistoricalMove | None = None
     stress_context: StressContext | None = None
     core_stock_weight: float | None = None
+    sgov_weight: float = 0.0
+    cash_weight: float | None = None
+    previous_sgov_weight: float = 0.0
+    previous_cash_weight: float | None = None
+    sgov_lower_sessions: int = 0
+    sgov_upper_sessions: int = 0
+
+    @property
+    def resolved_cash_weight(self) -> float:
+        if self.cash_weight is not None:
+            return self.cash_weight
+        return 1.0 - self.stock_weight - self.sgov_weight
+
+    @property
+    def resolved_previous_cash_weight(self) -> float:
+        if self.previous_cash_weight is not None:
+            return self.previous_cash_weight
+        return 1.0 - self.previous_stock_weight - self.previous_sgov_weight
+
+    @property
+    def tqqq_needs_trade(self) -> bool:
+        return not np.isclose(self.stock_weight, self.previous_stock_weight)
+
+    @property
+    def sgov_needs_trade(self) -> bool:
+        return not np.isclose(self.sgov_weight, self.previous_sgov_weight)
 
     @property
     def needs_trade(self) -> bool:
-        return self.stock_weight != self.previous_stock_weight
+        return self.tqqq_needs_trade or self.sgov_needs_trade
 
 
 def load_prices(root: Path = ROOT) -> dict[str, pd.DataFrame]:
@@ -216,24 +247,60 @@ def build_briefing(frames: dict[str, pd.DataFrame]) -> Briefing:
     if not np.isfinite(current_volatility) or not np.isfinite(previous_volatility):
         raise ValueError("TQQQ: 30 daily returns are required for VO volatility")
     data = MarketData(ixic=frames["IXIC"], qqq=frames["QQQ"], tqqq=frames["TQQQ"])
-    _, active_weights, core_weights = build_active_vo_weights(data)
+    _, allocation, core_weights, sgov_state = build_active_vo_allocation(data)
     return Briefing(
         market_date=frames["TQQQ"].index[-1],
         closes=closes,
         changes=changes,
         volatility=current_volatility,
-        stock_weight=float(active_weights.iloc[-1]),
-        previous_stock_weight=float(active_weights.iloc[-2]),
+        stock_weight=float(allocation.iloc[-1]["TQQQ"]),
+        previous_stock_weight=float(allocation.iloc[-2]["TQQQ"]),
         volatility_change=current_volatility - previous_volatility,
         historical_context=historical_move(frames["TQQQ"]["Close"], 5),
         stress_context=stress_context(frames),
         core_stock_weight=float(core_weights.iloc[-1]),
+        sgov_weight=float(allocation.iloc[-1]["SGOV"]),
+        cash_weight=float(allocation.iloc[-1]["Cash"]),
+        previous_sgov_weight=float(allocation.iloc[-2]["SGOV"]),
+        previous_cash_weight=float(allocation.iloc[-2]["Cash"]),
+        sgov_lower_sessions=int(sgov_state.iloc[-1]["LowerSessions"]),
+        sgov_upper_sessions=int(sgov_state.iloc[-1]["UpperSessions"]),
     )
 
 
 def _ratio(stock_weight: float) -> str:
     stock = int(round(stock_weight * 100))
     return f"주식 {stock}% · 현금 {100 - stock}%"
+
+
+def _allocation_ratio(briefing: Briefing) -> str:
+    stock = int(round(briefing.stock_weight * 100))
+    sgov = int(round(briefing.sgov_weight * 100))
+    cash = int(round(briefing.resolved_cash_weight * 100))
+    return f"TQQQ {stock}% · SGOV {sgov}% · 현금 {cash}%"
+
+
+def _sgov_wait_summary(briefing: Briefing) -> str:
+    active: list[str] = []
+    if briefing.sgov_lower_sessions:
+        active.append(f"60% 현금 {min(briefing.sgov_lower_sessions, 15)}/15")
+    if briefing.sgov_upper_sessions:
+        active.append(f"90% 현금 {min(briefing.sgov_upper_sessions, 15)}/15")
+    return " · ".join(active) if active else "없음"
+
+
+def _trade_actions(briefing: Briefing) -> list[str]:
+    actions: list[str] = []
+    for symbol, current, previous in (
+        ("TQQQ", briefing.stock_weight, briefing.previous_stock_weight),
+        ("SGOV", briefing.sgov_weight, briefing.previous_sgov_weight),
+    ):
+        delta = current - previous
+        if np.isclose(delta, 0.0):
+            continue
+        side = "매수" if delta > 0 else "매도"
+        actions.append(f"{symbol} {abs(delta):.0%} {side}")
+    return actions
 
 
 def _market_line(symbol: str, close: float, change: float) -> str:
@@ -286,20 +353,24 @@ def format_briefing(briefing: Briefing) -> str:
         [
             "",
             f"⚡ VO 변동성: {briefing.volatility:.1%} ({_volatility_change(briefing.volatility_change)})",
-            "🧩 활성 addon: 5/20 상향돌파 · 구간당 1회",
-            f"🎯 최종 권장 비중: {_ratio(briefing.stock_weight)}",
+            "🧩 활성 addon: 5/20 상향돌파 · 독립층 SGOV",
+            f"🎯 최종 권장 비중: {_allocation_ratio(briefing)}",
+            f"• SGOV 대기: {_sgov_wait_summary(briefing)}",
         ]
     )
     if briefing.core_stock_weight is not None:
         lines.append(f"• 기본 VO {_ratio(briefing.core_stock_weight)} · addon 반영 {_ratio(briefing.stock_weight)}")
     if briefing.needs_trade:
-        direction = "TQQQ 매수" if briefing.stock_weight > briefing.previous_stock_weight else "TQQQ 매도"
+        actions = " · ".join(_trade_actions(briefing))
         lines.extend(
             [
-                f"↔️ 직전 비중: {_ratio(briefing.previous_stock_weight)}",
+                "↔️ 직전 비중: "
+                f"TQQQ {briefing.previous_stock_weight:.0%} · "
+                f"SGOV {briefing.previous_sgov_weight:.0%} · "
+                f"현금 {briefing.resolved_previous_cash_weight:.0%}",
                 "",
                 "🚨 비중이 변경되어 매매가 필요합니다.",
-                f"다음 거래일 시가에 {direction}하여 목표 비중으로 리밸런싱하세요.",
+                f"다음 거래일 시가: {actions}",
             ]
         )
     else:

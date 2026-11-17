@@ -20,17 +20,21 @@ LINE = "#e5e8eb"
 UP = "#f04452"
 DOWN = "#3182f6"
 NEUTRAL = "#8b95a1"
+SGOV = "#00a67e"
 
 STRESS_PANEL = (60, 450, 740, 545)
-ALLOCATION_PANEL = (60, 675, 740, 830)
+ALLOCATION_PANEL = (60, 675, 740, 864)
 ALLOCATION_ICON_BOX = (86, 696, 126, 736)
 ALLOCATION_TITLE_POSITION = (142, 692)
 ALLOCATION_ROW_Y = (756, 808)
 ALLOCATION_BAR_X = 420
 ALLOCATION_BAR_WIDTH = 290
-ALLOCATION_BAR_HEIGHT = 18
-ALLOCATION_LABEL_FONT_SIZE = 25
-ALLOCATION_VALUE_FONT_SIZE = 25
+ALLOCATION_BAR_HEIGHT = 16
+ALLOCATION_LABEL_FONT_SIZE = 22
+ALLOCATION_VALUE_FONT_SIZE = 22
+SGOV_WAIT_POSITION = (710, 852)
+DEFENSIVE_BREAKDOWN_POSITION = (710, 830)
+SGOV_CONFIRMATION_SESSIONS = 15
 
 
 class BriefingLike(Protocol):
@@ -41,11 +45,27 @@ class BriefingLike(Protocol):
     volatility_change: float
     stock_weight: float
     previous_stock_weight: float
+    sgov_weight: float
+    previous_sgov_weight: float
+    sgov_lower_sessions: int
+    sgov_upper_sessions: int
     historical_context: "HistoricalMoveLike | None"
     stress_context: "StressContextLike | None"
 
     @property
     def needs_trade(self) -> bool: ...
+
+    @property
+    def resolved_cash_weight(self) -> float: ...
+
+    @property
+    def resolved_previous_cash_weight(self) -> float: ...
+
+    @property
+    def tqqq_needs_trade(self) -> bool: ...
+
+    @property
+    def sgov_needs_trade(self) -> bool: ...
 
 
 class HistoricalMoveLike(Protocol):
@@ -111,13 +131,62 @@ def volatility_gauge_angle(volatility: float) -> float:
 
 
 def allocation_display_values(briefing: BriefingLike) -> tuple[str, str]:
-    stock = int(round(briefing.stock_weight * 100))
-    cash = 100 - stock
-    if not briefing.needs_trade:
-        return f"{stock}%", f"{cash}%"
-    previous_stock = int(round(briefing.previous_stock_weight * 100))
-    previous_cash = 100 - previous_stock
-    return f"{previous_stock}% → {stock}%", f"{previous_cash}% → {cash}%"
+    current = (
+        briefing.stock_weight,
+        briefing.sgov_weight + briefing.resolved_cash_weight,
+    )
+    previous = (
+        briefing.previous_stock_weight,
+        briefing.previous_sgov_weight + briefing.resolved_previous_cash_weight,
+    )
+    values: list[str] = []
+    for before, after in zip(previous, current):
+        after_text = f"{after:.0%}"
+        values.append(
+            f"{before:.0%} → {after_text}"
+            if not math.isclose(before, after)
+            else after_text
+        )
+    return values[0], values[1]
+
+
+def defensive_breakdown_display(briefing: BriefingLike) -> str:
+    values: list[str] = []
+    for label, before, after in (
+        ("SGOV", briefing.previous_sgov_weight, briefing.sgov_weight),
+        ("현금", briefing.resolved_previous_cash_weight, briefing.resolved_cash_weight),
+    ):
+        current = f"{after:.0%}"
+        values.append(
+            f"{label} {before:.0%} → {current}"
+            if not math.isclose(before, after)
+            else f"{label} {current}"
+        )
+    return " · ".join(values)
+
+
+def sgov_wait_display(briefing: BriefingLike) -> str:
+    layers: list[str] = []
+    if briefing.sgov_lower_sessions:
+        lower = min(briefing.sgov_lower_sessions, SGOV_CONFIRMATION_SESSIONS)
+        layers.append(f"60% 현금 {lower}/15")
+    if briefing.sgov_upper_sessions:
+        upper = min(briefing.sgov_upper_sessions, SGOV_CONFIRMATION_SESSIONS)
+        layers.append(f"90% 현금 {upper}/15")
+    return "SGOV 대기  " + (" · ".join(layers) if layers else "없음")
+
+
+def trade_action_display(briefing: BriefingLike) -> str:
+    actions: list[str] = []
+    for symbol, current, previous in (
+        ("TQQQ", briefing.stock_weight, briefing.previous_stock_weight),
+        ("SGOV", briefing.sgov_weight, briefing.previous_sgov_weight),
+    ):
+        delta = current - previous
+        if math.isclose(delta, 0.0):
+            continue
+        actions.append(f"{symbol} {abs(delta):.0%} {'매수' if delta > 0 else '매도'}")
+    return " · ".join(actions)
 
 
 def _rounded_panel(
@@ -222,8 +291,7 @@ def _allocation_icon(draw: ImageDraw.ImageDraw) -> None:
     draw.line((cx, cy, x2 - 3, cy), fill=CARD_WHITE, width=3)
 
 
-def _status_icon(draw: ImageDraw.ImageDraw, *, trade: bool, side: str | None) -> None:
-    color = UP if side != "매도" else DOWN
+def _status_icon(draw: ImageDraw.ImageDraw, *, trade: bool, color: str = UP) -> None:
     if trade:
         draw.ellipse((82, 878, 148, 944), fill=color)
         draw.line((115, 893, 115, 921), fill="white", width=6)
@@ -339,21 +407,33 @@ def _draw_allocation_panel(draw: ImageDraw.ImageDraw, briefing: BriefingLike) ->
         fill=TEXT,
         anchor="la",
     )
-    if briefing.needs_trade:
-        draw.text((710, 709), "직전 → 현재", font=_font(17), fill=MUTED, anchor="ra")
-
     values = allocation_display_values(briefing)
     current = (briefing.stock_weight, 1.0 - briefing.stock_weight)
     previous = (briefing.previous_stock_weight, 1.0 - briefing.previous_stock_weight)
     increase_colors = (UP, DOWN)
-    for index, (label, value, y) in enumerate(zip(("주식", "현금"), values, ALLOCATION_ROW_Y)):
+    for index, (label, value, y) in enumerate(
+        zip(("TQQQ", "방어자산"), values, ALLOCATION_ROW_Y)
+    ):
         draw.text((92, y), label, font=_font(ALLOCATION_LABEL_FONT_SIZE, bold=True), fill=TEXT, anchor="lm")
         draw.text((375, y), value, font=_font(ALLOCATION_VALUE_FONT_SIZE, bold=True), fill=TEXT, anchor="rm")
         top = y - ALLOCATION_BAR_HEIGHT // 2
         box = (ALLOCATION_BAR_X, top, ALLOCATION_BAR_X + ALLOCATION_BAR_WIDTH, top + ALLOCATION_BAR_HEIGHT)
         draw.rounded_rectangle(box, radius=ALLOCATION_BAR_HEIGHT // 2, fill="#edf0f3")
         current_width = int(ALLOCATION_BAR_WIDTH * current[index])
-        if current_width:
+        if index == 1 and current_width:
+            draw.rounded_rectangle(
+                (ALLOCATION_BAR_X, top, ALLOCATION_BAR_X + current_width, top + ALLOCATION_BAR_HEIGHT),
+                radius=ALLOCATION_BAR_HEIGHT // 2,
+                fill=NEUTRAL,
+            )
+            sgov_width = int(ALLOCATION_BAR_WIDTH * briefing.sgov_weight)
+            if sgov_width:
+                draw.rounded_rectangle(
+                    (ALLOCATION_BAR_X, top, ALLOCATION_BAR_X + sgov_width, top + ALLOCATION_BAR_HEIGHT),
+                    radius=ALLOCATION_BAR_HEIGHT // 2,
+                    fill=SGOV,
+                )
+        elif current_width:
             draw.rounded_rectangle(
                 (ALLOCATION_BAR_X, top, ALLOCATION_BAR_X + current_width, top + ALLOCATION_BAR_HEIGHT),
                 radius=ALLOCATION_BAR_HEIGHT // 2,
@@ -366,6 +446,20 @@ def _draw_allocation_panel(draw: ImageDraw.ImageDraw, briefing: BriefingLike) ->
             radius = ALLOCATION_BAR_HEIGHT // 2
             draw.rectangle((start, top, max(start, end - radius), top + ALLOCATION_BAR_HEIGHT), fill=increase_colors[index])
             draw.ellipse((end - ALLOCATION_BAR_HEIGHT, top, end, top + ALLOCATION_BAR_HEIGHT), fill=increase_colors[index])
+    draw.text(
+        DEFENSIVE_BREAKDOWN_POSITION,
+        defensive_breakdown_display(briefing),
+        font=_font(13),
+        fill=MUTED,
+        anchor="ra",
+    )
+    draw.text(
+        SGOV_WAIT_POSITION,
+        sgov_wait_display(briefing),
+        font=_font(13),
+        fill=MUTED,
+        anchor="ra",
+    )
 
 
 def _draw_status_panel(
@@ -374,21 +468,33 @@ def _draw_status_panel(
 ) -> None:
     if not briefing.needs_trade:
         _rounded_panel(draw, (60, 870, 740, 1025), fill="#f3fbf5", outline="#dcefe1")
-        _status_icon(draw, trade=False, side=None)
+        _status_icon(draw, trade=False)
         draw.text((178, 925), "직전 비중과 동일합니다", font=_font(28, bold=True), fill=TEXT, anchor="lm")
         draw.text((178, 973), "오늘은 매매할 필요가 없습니다", font=_font(23), fill=TEXT, anchor="lm")
         return
 
-    side = "매수" if briefing.stock_weight > briefing.previous_stock_weight else "매도"
-    action_color = DOWN if side == "매도" else UP
-    _rounded_panel(draw, (60, 860, 740, 1032), fill="#fff5f6" if side != "매도" else "#f2f7ff", outline="#ffd7dc" if side != "매도" else "#d7e7ff")
-    _status_icon(draw, trade=True, side=side)
+    if briefing.tqqq_needs_trade:
+        action_color = UP if briefing.stock_weight > briefing.previous_stock_weight else DOWN
+    else:
+        action_color = SGOV
+    panel_fill = (
+        "#f2f7ff"
+        if action_color == DOWN
+        else "#f1fbf7" if action_color == SGOV else "#fff5f6"
+    )
+    panel_outline = (
+        "#d7e7ff"
+        if action_color == DOWN
+        else "#cceee4" if action_color == SGOV else "#ffd7dc"
+    )
+    _rounded_panel(draw, (60, 875, 740, 1032), fill=panel_fill, outline=panel_outline)
+    _status_icon(draw, trade=True, color=action_color)
     draw.text((178, 898), "리밸런싱이 필요합니다", font=_font(26, bold=True), fill=TEXT, anchor="lm")
 
-    action = f"주식 {briefing.stock_weight:.0%} · 현금 {1 - briefing.stock_weight:.0%}"
+    action = trade_action_display(briefing)
     detail = "다음 거래일 시가에 리밸런싱하세요"
     draw.rounded_rectangle((178, 920, 710, 974), radius=14, fill=action_color)
-    draw.text((444, 947), action, font=_font(28, bold=True), fill="white", anchor="mm")
+    draw.text((444, 947), action, font=_font(24, bold=True), fill="white", anchor="mm")
     draw.text((444, 995), detail[:34], font=_font(22, bold=True), fill=TEXT, anchor="mm")
 
 

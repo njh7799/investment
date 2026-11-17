@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 from PIL import Image, ImageColor, ImageFont
 
+import scripts.render_briefing_card as briefing_card_renderer
 from scripts.render_briefing_card import (
     ALLOCATION_BAR_HEIGHT,
     ALLOCATION_BAR_WIDTH,
@@ -25,6 +26,7 @@ from scripts.render_briefing_card import (
 from scripts.send_daily_briefing import (
     Briefing,
     StressContext,
+    format_briefing,
     send_to_kakao,
     send_text_to_kakao,
     upload_card_to_kakao,
@@ -48,7 +50,7 @@ def briefing(
         volatility_change=volatility_change,
         stress_context=StressContext(
             episode_start=pd.Timestamp("2026-06-02"),
-            vo_current_drawdown=-0.2697,
+            vo_current_drawdown=-0.2184,
             vo_episode_mdd=-0.2697,
             tqqq_current_drawdown=-0.2889,
             tqqq_episode_mdd=-0.3378,
@@ -68,6 +70,37 @@ def test_volatility_state_labels_match_vo_thresholds():
     assert volatility_state(0.61)[0] == "중변동"
     assert volatility_state(0.90)[0] == "중변동"
     assert volatility_state(0.91)[0] == "고변동"
+
+
+def test_stress_summary_uses_current_drawdown_instead_of_episode_mdd():
+    state = briefing(volatility=0.70, stock_weight=0.5, previous_stock_weight=0.5)
+
+    message = format_briefing(state)
+
+    assert "현재 고점 대비 -21.84%" in message
+    assert "구간 MDD" not in message
+    assert "-26.97%" not in message
+
+
+def test_stress_card_severity_uses_current_drawdown(tmp_path: Path, monkeypatch):
+    observed: list[float] = []
+    monkeypatch.setattr(
+        briefing_card_renderer,
+        "_stress_colors",
+        lambda drawdown: (observed.append(drawdown) or ("#f4f6f8", "#8b95a1")),
+    )
+    monkeypatch.setattr(
+        briefing_card_renderer,
+        "_font",
+        lambda size, **_: ImageFont.load_default(size=size),
+    )
+
+    render_briefing_card(
+        briefing(volatility=0.70, stock_weight=0.5, previous_stock_weight=0.5),
+        tmp_path / "briefing.png",
+    )
+
+    assert observed == [-0.2184]
 
 
 def test_volatility_gauge_marks_thresholds_and_clamps_extremes():

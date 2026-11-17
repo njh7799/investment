@@ -263,7 +263,7 @@ def _stress_colors(drawdown: float) -> tuple[str, str]:
 def _draw_stress_panel(draw: ImageDraw.ImageDraw, briefing: BriefingLike) -> None:
     stress = briefing.stress_context
     background, accent = (
-        _stress_colors(stress.vo_episode_mdd) if stress else (CARD_WHITE, LINE)
+        _stress_colors(stress.vo_current_drawdown) if stress else (CARD_WHITE, LINE)
     )
     _rounded_panel(draw, STRESS_PANEL, fill=background, outline=accent)
     draw.rounded_rectangle((72, 463, 80, 532), radius=4, fill=accent)
@@ -274,22 +274,17 @@ def _draw_stress_panel(draw: ImageDraw.ImageDraw, briefing: BriefingLike) -> Non
         return
 
     draw.line((383, 489, 383, 535), fill="#d9dde3", width=1)
-    depth_rank = (
-        f"{stress.depth_rank}/{stress.mdd_qualifying_episodes}위"
-        if stress.depth_rank is not None
-        else "10% 미만"
-    )
     duration_rank = (
         f"{stress.duration_rank}/{stress.duration_qualifying_episodes}위"
         if stress.duration_rank is not None
         else "30일 미만"
     )
-    draw.text((98, 507), "MDD", font=_font(19, bold=True), fill=TEXT, anchor="lm")
+    draw.text((98, 507), "현재 낙폭", font=_font(19, bold=True), fill=TEXT, anchor="lm")
     draw.text(
         (362, 507),
-        f"{stress.vo_episode_mdd:.2%} · {depth_rank}",
+        f"{stress.vo_current_drawdown:.2%}",
         font=_font(21, bold=True),
-        fill=DOWN if stress.vo_episode_mdd < 0 else NEUTRAL,
+        fill=DOWN if stress.vo_current_drawdown < 0 else NEUTRAL,
         anchor="rm",
     )
     draw.text((405, 507), "미회복", font=_font(19, bold=True), fill=TEXT, anchor="lm")
@@ -302,7 +297,7 @@ def _draw_stress_panel(draw: ImageDraw.ImageDraw, briefing: BriefingLike) -> Non
     )
     draw.text(
         (230, 534),
-        "-10% 이상 하락 사건 중",
+        "직전 고점 대비",
         font=_font(12),
         fill=MUTED,
         anchor="mm",

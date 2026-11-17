@@ -1,0 +1,80 @@
+id: batch-16b-vo-sgov-layered-sleeve
+status: registered
+preregistered_commit: this_file_introducing_commit
+blindness: none
+discovered_at: 2026-11-18
+discovery_agent_context: shared
+existing_research_seen: true
+information_leaks:
+  - "The user and investigator had seen all batch-16 results before identifying that its 50% to 0% TQQQ transition reset both SGOV clocks."
+  - "The user specified the layered replacement after reviewing the earlier rule and results."
+
+candidate_objective: "Replace the batch-16 whole-state SGOV timer with two independent 50% defensive layers whose clocks correspond directly to the 60% and 90% VO boundaries."
+independent_benchmark: "Batch-16 cash, immediate-full-sleeve and whole-state delayed-15-session rules over the identical SGOV period."
+
+layered_rule:
+  lower_layer:
+    size: 0.50
+    active_when: "Core VO volatility is above 60%, including observations above 90%."
+    clock: "Count consecutive signal closes while active; crossing 90% does not reset it."
+    buy: "At the next open after the 15th active signal close, target up to 50% SGOV for this layer."
+    deactivate: "At or below 60%, sell this layer as needed for TQQQ and reset its clock."
+  upper_layer:
+    size: 0.50
+    active_when: "Core VO volatility is above 90%."
+    clock: "Count consecutive signal closes above 90% independently of the lower layer."
+    buy: "At the next open after the 15th active signal close, target up to another 50% SGOV."
+    deactivate: "At or below 90%, sell this layer as needed for TQQQ and reset its clock."
+  common:
+    - "A layer below 15 sessions remains idle cash."
+    - "TQQQ reductions and restorations are never delayed by SGOV eligibility or holding duration."
+    - "No SGOV layer exceeds the portfolio cash allocation available after the applicable TQQQ target."
+
+active_profile_overlay:
+  core_clock_source: "The two clocks use core VO volatility boundaries, not the 5/20 addon target."
+  tqqq_target: "Use the currently active VO + 5/20 one-shot addon TQQQ target."
+  sgov_target: "Minimum of matured layered SGOV capacity and one minus the active-profile TQQQ target."
+  addon_entry: "If the 5/20 addon needs cash held in SGOV, sell SGOV immediately at the same next open."
+  addon_exit: "If a still-active core layer has already matured, newly freed cash may return to SGOV at the same next open; do not restart its clock."
+
+execution:
+  signal_observation_time: close
+  fill_time: next_trading_day_open
+  integer_shares: true
+  tqqq_fee_rate_each_side: 0.001
+  sgov_fee_rate_each_side: 0.001
+  base_slippage: 0
+  spread_sensitivity_sgov_each_side: 0.00005
+  idle_cash_return: 0
+  distribution_tax_sensitivity: [0.0, 0.15]
+  distributions: "Reuse batch-16 official ex-date entitlement, payable-date cash, persistent receivable and no automatic reinvestment rules."
+
+evaluation:
+  period: "Identical first-common-SGOV through current data period used by batch 16."
+  fixed_subperiods:
+    - {name: near_zero_rates, start: first_common_session, end: "2021-12-31"}
+    - {name: hiking_and_high_rates, start: "2022-01-01", end: "2024-12-31"}
+    - {name: recent, start: "2025-01-01", end: data_end}
+  comparisons:
+    - cash
+    - immediate_full_sleeve
+    - delayed_15_sessions
+    - layered_15_sessions
+    - active_vo_5_20_cash
+    - active_vo_5_20_layered_15_sessions
+  adoption_rule:
+    - "The layered base rule must exceed cash after base costs and after 15% distribution-tax sensitivity."
+    - "Prefer layered over whole-state delayed when it has higher after-cost ending equity or an economically negligible difference with clearer boundary-consistent state semantics."
+    - "The active-profile overlay must exceed active VO + 5/20 with idle cash after base costs and after 15% distribution-tax sensitivity."
+    - "Do not activate if SGOV mechanics delay a TQQQ increase or require unavailable historical state in daily operation."
+
+verification:
+  implementation_tests:
+    - lower_layer_clock_survives_60_to_90_transition
+    - upper_layer_clock_starts_only_above_90
+    - lower_layer_exits_and_resets_at_or_below_60
+    - upper_layer_exits_and_resets_at_or_below_90
+    - fourteen_day_lower_then_high_buys_lower_on_next_session_only
+    - active_addon_caps_sgov_to_available_cash
+    - active_addon_never_delays_tqqq_increase
+    - distribution_and_fee_tests_from_batch_16

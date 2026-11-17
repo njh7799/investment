@@ -258,11 +258,6 @@ def format_briefing(briefing: Briefing) -> str:
         )
     if briefing.stress_context:
         stress = briefing.stress_context
-        depth = (
-            f"{stress.depth_rank}위/{stress.mdd_qualifying_episodes}회"
-            if stress.depth_rank is not None
-            else "10% 미만"
-        )
         duration = (
             f"{stress.duration_rank}위/{stress.duration_qualifying_episodes}회"
             if stress.duration_rank is not None
@@ -272,8 +267,7 @@ def format_briefing(briefing: Briefing) -> str:
             [
                 "",
                 "📉 VO + 5/20 addon 스트레스 · 전체",
-                f"• 현재 낙폭 {stress.vo_current_drawdown:.2%} · "
-                f"구간 MDD {stress.vo_episode_mdd:.2%} ({depth})",
+                f"• 현재 고점 대비 {stress.vo_current_drawdown:.2%}",
                 f"• 고점 미회복 {stress.underwater_days:,}일 ({duration})",
                 f"• 같은 구간 TQQQ 현재 {stress.tqqq_current_drawdown:.2%} · "
                 f"최대 {stress.tqqq_episode_mdd:.2%}",

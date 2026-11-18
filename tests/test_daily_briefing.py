@@ -158,7 +158,7 @@ def test_trade_warning_is_shown_only_when_target_state_changes():
         previous_stock_weight=0.5,
     )
 
-    assert "TQQQ 매도" in format_briefing(changed)
+    assert "TQQQ 50% 매도" in format_briefing(changed)
     assert "비중이 변경되어 매매가 필요합니다" in format_briefing(changed)
     assert "매매할 필요가 없습니다" in format_briefing(unchanged)
 
@@ -184,8 +184,9 @@ def test_market_summary_shows_close_and_colored_change():
 • SPY: $689.21 (🔵 -0.26%)
 
 ⚡ VO 변동성: 24.6% (▼0.5%p)
-🧩 활성 addon: 5/20 상향돌파 · 구간당 1회
-🎯 최종 권장 비중: 주식 50% · 현금 50%
+🧩 활성 addon: 5/20 상향돌파 · 독립층 SGOV
+🎯 최종 권장 비중: TQQQ 50% · SGOV 0% · 현금 50%
+• SGOV 대기: 없음
 
 ✅ 직전 비중과 동일합니다.
 오늘은 매매할 필요가 없습니다."""

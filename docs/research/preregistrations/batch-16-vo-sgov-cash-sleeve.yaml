@@ -1,0 +1,91 @@
+id: batch-16-vo-sgov-cash-sleeve
+status: registered
+preregistered_commit: this_file_introducing_commit
+blindness: partial
+discovered_at: 2026-11-18
+discovery_agent_context: isolated
+existing_research_seen: true
+information_leaks:
+  - "The primary investigator had already seen the repository's distribution-excluded VO/SGOV comparison before this registration."
+  - "The user proposed immediate purchase above 60% volatility and a persistent 50% SGOV sleeve entered above 90%."
+  - "Blind candidate discovery and independent source validation did not inspect repository strategies or results."
+
+candidate_objective: "Earn short-Treasury income on the defensive cash created by VO without allowing short volatility-regime reversals and extra SGOV trades to consume the income."
+independent_benchmark: "Default VO with zero cash return over the common actual SGOV period."
+design_scope:
+  - "This is an execution and cash-management study; VO's 30-session volatility signal and 100%/50%/0% TQQQ targets do not change."
+  - "TQQQ risk reductions and restorations remain immediate at the next open. SGOV rules may delay only the investment of otherwise idle cash."
+  - "The study uses actual SGOV history only and does not synthesize SGOV before launch."
+
+sources:
+  - title: "iShares 0-3 Month Treasury Bond ETF"
+    url: "https://www.ishares.com/us/products/314116/ishares-0-3-month-treasury-bond-etf"
+    verified_facts: "Monthly distributions, official ex/record/pay dates and amounts, current expense ratio, SEC yield, volume and median bid/ask spread."
+  - title: "SGOV summary prospectus"
+    url: "https://www.sec.gov/Archives/edgar/data/1100663/000119312526287938/d126195d497k.htm"
+    verified_facts: "0.09% annual operating expenses as of the 2026 filing; ETF commissions and spreads are additional investor costs."
+  - title: "Investor Bulletin: Mutual Fund and ETF Distributions"
+    url: "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/fund-distributions-investor-bulletin"
+    verified_facts: "A distribution transfers value from fund NAV to cash; the ex-date price decline is not by itself an economic loss."
+
+execution:
+  signal_observation_time: close
+  fill_time: next_trading_day_open
+  rebalance_rule: "Trade only when VO or the registered SGOV execution state changes; integer TQQQ and SGOV shares. Sell before buy."
+  tqqq_fee_rate_each_side: 0.001
+  sgov_fee_rate_each_side: 0.001
+  base_slippage: 0
+  spread_sensitivity: "Add 0.00005 per SGOV side, one half of the currently reported 0.01% 30-day median spread; do not claim this is historical spread data."
+  tax_base: 0
+  distribution_tax_sensitivity: [0.0, 0.15]
+  idle_cash_return: 0
+  distributions: "Credit official per-share cash distributions on payable date to shares held at the close before ex-date. Do not auto-reinvest; use credited cash at the next strategy trade. Preserve receivables after an intervening sale."
+  warmup: "Use the default VO warmup. Begin comparison at the first common next-open execution session supported by TQQQ, SGOV and official distribution records."
+
+variants:
+  - name: cash
+    formula: "Keep every non-TQQQ allocation as idle cash."
+  - name: immediate_full_sleeve
+    formula: "Whenever VO targets less than 100% TQQQ, invest the entire target defensive allocation in SGOV at the same next open; sell the needed SGOV immediately when TQQQ target rises."
+  - name: delayed_15_sessions
+    formula: "Reduce TQQQ immediately, but buy the full defensive allocation as SGOV only after the same non-100% VO state has persisted for 15 consecutive signal sessions. A state change between 50% and 0% TQQQ restarts the count. Sell SGOV immediately for any TQQQ allocation increase."
+    rationale: "Fifteen trading sessions approximates the calendar-day break-even implied by 0.20% round-trip commission plus a 0.01% spread at roughly 3.6% annual yield."
+  - name: monthly_entry_after_5_sessions
+    formula: "Reduce TQQQ immediately. Buy the full defensive allocation as SGOV only on the first trading session of a month when a non-100% VO state has already persisted for at least five consecutive signal sessions. Sell SGOV immediately for any TQQQ allocation increase."
+  - name: high_band_full_then_hold
+    formula: "Enter SGOV only after VO reaches 0% TQQQ, using the entire defensive allocation. If VO next moves to 50% TQQQ, retain SGOV as the remaining 50% allocation; exit SGOV when VO returns to 100% TQQQ. A direct 0% to 100% restoration exits immediately."
+  - name: high_band_half_then_hold
+    formula: "Enter SGOV only after VO reaches 0% TQQQ, targeting 50% of portfolio in SGOV and leaving the rest as cash. Retain that 50% SGOV target through a later 50% TQQQ state and exit when VO returns to 100% TQQQ."
+
+evaluation:
+  data_period: "First common actual SGOV/TQQQ session through the latest locally validated session."
+  fixed_subperiods:
+    - {name: near_zero_rates, start: first_common_session, end: "2021-12-31"}
+    - {name: hiking_and_high_rates, start: "2022-01-01", end: "2024-12-31"}
+    - {name: recent, start: "2025-01-01", end: data_end}
+  fee_sensitivity_sgov_each_side: [0.0, 0.0005, 0.001, 0.002]
+  distribution_tax_sensitivity: [0.0, 0.15]
+  diagnostics:
+    - "VO defensive episode count and trading-session duration distribution."
+    - "SGOV buy/sell count, round trips, average and median completed holding sessions, and exits within 5/10/15/20 sessions."
+    - "Gross SGOV distributions, SGOV price P&L, SGOV fees, TQQQ fees and ending receivables."
+    - "CAGR, final equity, MDD, recovery metrics and annual rebalance dates."
+  selection_rule:
+    - "Recommend no SGOV rule unless its after-cost final equity exceeds cash in the base case and under the 0.15 distribution-tax sensitivity."
+    - "Among passing rules, prefer fewer SGOV trades unless a more active rule improves annualized return by at least 0.10 percentage point."
+    - "Do not delay TQQQ risk restoration to satisfy an SGOV minimum holding period."
+    - "Treat results as conditional on the short 2020-present SGOV history and the account's actual cash yield."
+
+verification:
+  source_reviewer: isolated-source-validation-agent
+  source_review_complete: true
+  implementation_tests:
+    - distribution_entitlement_uses_pre_ex_close_shares
+    - payable_date_cash_credit_survives_intervening_sale
+    - no_distribution_double_count
+    - exact_60_and_90_percent_vo_boundaries_unchanged
+    - delayed_entry_counter_resets_on_vo_state_change
+    - monthly_entry_does_not_delay_sgov_exit
+    - high_band_sleeve_persists_through_middle_band
+    - close_signal_executes_at_next_open
+    - integer_share_and_fee_affordability

@@ -1,11 +1,15 @@
 {
   "asset_sha256": {
-    "SGOV": "0474e07b0a6cc40ae11af0dd66e77c5716fd0f72410d310f30751990fcfbea46",
-    "TQQQ": "bbb150424eacbd1d7218638823cb830b1aece784c9a84a18512a2159871707cf"
+    "SGOV": "3a80decb230bd759de39fd8843b67620d62cd85a45fef73dbffb356f08102a78",
+    "TQQQ": "4ae66962400f52ebd175e41178335c78969fd9592cef8ccc8c919360dbda6650"
   },
-  "dividend_treatment": "Toss split-adjusted OHLC; cash distributions excluded",
-  "end": "2026-10-27",
-  "fee_model": "Toss Securities US stocks: 0.1%; orders <= $10 free; fee cents truncated",
+  "distribution_source": "https://www.ishares.com/us/products/314116/ishares-0-3-month-treasury-bond-etf",
+  "distribution_tax": 0.0,
+  "distribution_treatment": "official cash distributions; pre-ex-close entitlement; payable-date cash; no automatic reinvestment",
+  "end": "2026-11-12",
   "initial_cash": 100000.0,
-  "start": "2020-05-28"
+  "sgov_fee_each_side": 0.001,
+  "sgov_half_spread": 0.0,
+  "start": "2020-06-01",
+  "tqqq_fee_each_side": 0.001
 }

@@ -1,10 +1,10 @@
 # 변동성 배분
 
-VO(변동성 배분)는 TQQQ의 실현 변동성에 따라 TQQQ와 현금의 목표 비중을 조절하는 저장소의 기본 전략이다. 현재 운용 프로필은 이 기본 VO에 [5/20 상향돌파·고변동성 구간당 1회 addon](addons/one-shot-sma-reentry.md)을 활성화한다. 이 문서와 연결된 addon 문서만으로 현재 설정을 실행할 수 있으며 다른 관측기간과 중간 구간 비중, 거듭제곱 Target Volatility는 [대체 규칙](variants/)으로 관리한다.
+VO(변동성 배분)는 TQQQ의 실현 변동성에 따라 TQQQ와 현금의 목표 비중을 조절하는 저장소의 기본 전략이다. 현재 운용 프로필은 [5/20 상향돌파 addon](addons/one-shot-sma-reentry.md)과 [15거래일 독립층 SGOV addon](addons/layered-sgov-cash-sleeve.md)을 기본으로 활성화한다. 이 문서와 연결된 addon 문서만으로 현재 설정을 실행할 수 있으며 다른 관측기간과 중간 구간 비중, 거듭제곱 Target Volatility는 [대체 규칙](variants/)으로 관리한다.
 
 기본 전략 위에 사용자가 명시적으로 더 높은 위험을 선택하는 규칙은 [addon](addons/)으로 분리한다. GitHub Pages에서는 addon을 끄고 기본 VO 결과와 즉시 비교할 수 있지만, 일일 운용과 카카오 브리핑은 활성화된 현재 프로필을 따른다.
 
-별도 전략을 지정하지 않은 연구 비교군에는 addon 없는 기본 VO를 사용한다. 실제 운용 규칙·최신 리포트·알림에는 `VO + 5/20 addon` 프로필을 사용한다.
+별도 전략을 지정하지 않은 연구 비교군에는 addon 없는 기본 VO를 사용한다. 실제 운용 규칙과 카카오 브리핑에는 `VO + 5/20 + 독립층 SGOV` 프로필을 사용한다.
 
 ## 현재 운용 프로필
 
@@ -12,7 +12,8 @@ VO(변동성 배분)는 TQQQ의 실현 변동성에 따라 TQQQ와 현금의 목
 - 기본 목표가 100% 미만일 때 5/20 상향돌파 addon을 결합한다.
 - addon은 한 고변동성 구간에서 한 번만 시도하고 실제 매수가 이탈 시 addon 비중만 제거한다.
 - 기본 VO 목표가 100%로 돌아오면 addon 상태를 초기화한다.
-- 정확한 상태 전이와 체결 규칙은 [addon 문서](addons/one-shot-sma-reentry.md)를 따른다.
+- 60%와 90% 경계에서 생기는 현금 50%씩은 각각 15거래일을 확인한 뒤 SGOV로 운용한다.
+- 정확한 상태 전이와 체결 규칙은 [5/20 문서](addons/one-shot-sma-reentry.md)와 [SGOV 문서](addons/layered-sgov-cash-sleeve.md)를 따른다.
 
 ## 기본 설정
 
@@ -76,3 +77,4 @@ TQQQ 조정 종가의 최근 30거래일 일일 수익률 표준편차를 연율
 ## Addon
 
 - **활성화:** [5/20 상향돌파·고변동성 구간당 1회](addons/one-shot-sma-reentry.md)
+- **활성화:** [15거래일 독립층 SGOV 현금 운용](addons/layered-sgov-cash-sleeve.md)

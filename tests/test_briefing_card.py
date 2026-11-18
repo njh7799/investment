@@ -18,8 +18,13 @@ from scripts.render_briefing_card import (
     ALLOCATION_TITLE_POSITION,
     ALLOCATION_VALUE_FONT_SIZE,
     CARD_SIZE,
+    DEFENSIVE_BREAKDOWN_POSITION,
+    SGOV_WAIT_POSITION,
     allocation_display_values,
+    defensive_breakdown_display,
     render_briefing_card,
+    sgov_wait_display,
+    trade_action_display,
     volatility_gauge_angle,
     volatility_state,
 )
@@ -39,6 +44,10 @@ def briefing(
     stock_weight: float,
     previous_stock_weight: float,
     volatility_change: float = 0.0,
+    sgov_weight: float = 0.0,
+    previous_sgov_weight: float = 0.0,
+    lower_sessions: int = 0,
+    upper_sessions: int = 0,
 ) -> Briefing:
     return Briefing(
         market_date=pd.Timestamp("2026-08-06"),
@@ -48,6 +57,10 @@ def briefing(
         stock_weight=stock_weight,
         previous_stock_weight=previous_stock_weight,
         volatility_change=volatility_change,
+        sgov_weight=sgov_weight,
+        previous_sgov_weight=previous_sgov_weight,
+        sgov_lower_sessions=lower_sessions,
+        sgov_upper_sessions=upper_sessions,
         stress_context=StressContext(
             episode_start=pd.Timestamp("2026-06-02"),
             vo_current_drawdown=-0.2184,
@@ -111,12 +124,36 @@ def test_volatility_gauge_marks_thresholds_and_clamps_extremes():
     assert volatility_gauge_angle(1.50) == 360.0
 
 
-def test_allocation_rows_keep_stock_then_cash_semantics_when_state_changes():
+def test_allocation_rows_group_sgov_and_cash_as_defensive_assets():
     unchanged = briefing(volatility=0.246, stock_weight=1.0, previous_stock_weight=1.0)
     changed = briefing(volatility=0.246, stock_weight=1.0, previous_stock_weight=0.5)
+    sgov_only = briefing(
+        volatility=0.70,
+        stock_weight=0.5,
+        previous_stock_weight=0.5,
+        sgov_weight=0.5,
+        previous_sgov_weight=0.0,
+    )
 
     assert allocation_display_values(unchanged) == ("100%", "0%")
     assert allocation_display_values(changed) == ("50% → 100%", "50% → 0%")
+    assert allocation_display_values(sgov_only) == ("50%", "50%")
+    assert defensive_breakdown_display(sgov_only) == "SGOV 0% → 50% · 현금 50% → 0%"
+    assert trade_action_display(sgov_only) == "SGOV 50% 매수"
+
+
+def test_sgov_wait_is_a_compact_capped_single_line():
+    active = briefing(
+        volatility=0.95,
+        stock_weight=0.0,
+        previous_stock_weight=0.0,
+        lower_sessions=18,
+        upper_sessions=3,
+    )
+    inactive = briefing(volatility=0.50, stock_weight=1.0, previous_stock_weight=1.0)
+
+    assert sgov_wait_display(active) == "SGOV 대기  60% 현금 15/15 · 90% 현금 3/15"
+    assert sgov_wait_display(inactive) == "SGOV 대기  없음"
 
 
 def test_all_card_states_share_one_allocation_layout(tmp_path: Path, monkeypatch):
@@ -137,14 +174,16 @@ def test_all_card_states_share_one_allocation_layout(tmp_path: Path, monkeypatch
         assert rendered[name].size == CARD_SIZE
         assert path.stat().st_size < 5 * 1024 * 1024
 
-    assert ALLOCATION_PANEL == (60, 675, 740, 830)
+    assert ALLOCATION_PANEL == (60, 675, 740, 864)
     assert ALLOCATION_ICON_BOX == (86, 696, 126, 736)
     assert ALLOCATION_TITLE_POSITION == (142, 692)
     assert ALLOCATION_ROW_Y == (756, 808)
-    assert (ALLOCATION_BAR_X, ALLOCATION_BAR_WIDTH, ALLOCATION_BAR_HEIGHT) == (420, 290, 18)
-    assert ALLOCATION_LABEL_FONT_SIZE == ALLOCATION_VALUE_FONT_SIZE == 25
+    assert (ALLOCATION_BAR_X, ALLOCATION_BAR_WIDTH, ALLOCATION_BAR_HEIGHT) == (420, 290, 16)
+    assert ALLOCATION_LABEL_FONT_SIZE == ALLOCATION_VALUE_FONT_SIZE == 22
+    assert DEFENSIVE_BREAKDOWN_POSITION == (710, 830)
+    assert SGOV_WAIT_POSITION == (710, 852)
 
-    fixed_header = (75, 685, 310, 745)
+    fixed_header = (75, 685, 310, 735)
     assert rendered["low"].crop(fixed_header).tobytes() == rendered["high"].crop(
         fixed_header
     ).tobytes()
@@ -177,24 +216,24 @@ def test_allocation_bars_use_color_only_for_increases(tmp_path: Path, monkeypatc
 
     quarter = ALLOCATION_BAR_X + ALLOCATION_BAR_WIDTH // 4
     three_quarters = ALLOCATION_BAR_X + ALLOCATION_BAR_WIDTH * 3 // 4
-    stock_y, cash_y = ALLOCATION_ROW_Y
+    stock_y, defensive_y = ALLOCATION_ROW_Y
     gray = ImageColor.getrgb("#8b95a1")
     empty = ImageColor.getrgb("#edf0f3")
     red = ImageColor.getrgb("#f04452")
     blue = ImageColor.getrgb("#3182f6")
 
     assert rendered["unchanged"].getpixel((quarter, stock_y)) == gray
-    assert rendered["unchanged"].getpixel((quarter, cash_y)) == gray
+    assert rendered["unchanged"].getpixel((quarter, defensive_y)) == gray
     assert rendered["unchanged"].getpixel((three_quarters, stock_y)) == empty
-    assert rendered["unchanged"].getpixel((three_quarters, cash_y)) == empty
+    assert rendered["unchanged"].getpixel((three_quarters, defensive_y)) == empty
 
     assert rendered["stock_increase"].getpixel((quarter, stock_y)) == gray
     assert rendered["stock_increase"].getpixel((three_quarters, stock_y)) == red
-    assert rendered["stock_increase"].getpixel((quarter, cash_y)) == empty
+    assert rendered["stock_increase"].getpixel((quarter, defensive_y)) == empty
 
     assert rendered["cash_increase"].getpixel((quarter, stock_y)) == empty
-    assert rendered["cash_increase"].getpixel((quarter, cash_y)) == gray
-    assert rendered["cash_increase"].getpixel((three_quarters, cash_y)) == blue
+    assert rendered["cash_increase"].getpixel((quarter, defensive_y)) == gray
+    assert rendered["cash_increase"].getpixel((three_quarters, defensive_y)) == blue
 
 
 class FakeResponse:

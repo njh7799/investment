@@ -3,6 +3,7 @@
 from .core import BacktestResult, MarketData, load_market_data, run_weight_strategy, toss_us_stock_fee
 from .metrics import drawdown_episodes, summarize
 from .models import BATCHES, MODEL_SPECS, build_target_weights
+from .vo_sgov import build_active_vo_allocation, layered_sgov_state
 from .documented import causal_reference_high, run_three_percent_rule, run_vr_5
 from .portfolio import common_index, load_assets, run_portfolio_strategy
 from .permanent import PERMANENT_ASSETS, permanent_band_trigger, run_permanent_portfolio
@@ -14,6 +15,8 @@ __all__ = [
     "MarketData",
     "MODEL_SPECS",
     "build_target_weights",
+    "build_active_vo_allocation",
+    "layered_sgov_state",
     "load_market_data",
     "run_weight_strategy",
     "toss_us_stock_fee",

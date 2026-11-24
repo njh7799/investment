@@ -1,0 +1,126 @@
+id: batch-17-fixed-weight-leveraged-allocation
+status: registered
+preregistered_commit: this_file_introducing_commit
+blindness: full
+discovered_at: 2026-11-24
+discovery_agent_context: isolated_design_and_source_review
+existing_research_seen: false
+information_leaks:
+  - "The source reviewer encountered public performance claims while verifying that 50:50 TQQQ/QQQ and TQQQ/cash policies are discussed. Those claims are not used as selection or promotion evidence."
+
+candidates:
+  - name: fixed_weight_leveraged_allocation_grid
+    source:
+      title: "Dynamic Strategies for Asset Allocation"
+      url: "https://rpc.cfainstitute.org/research/financial-analysts-journal/1988/dynamic-strategies-for-asset-allocation"
+      authors: [Andre F. Perold, William F. Sharpe]
+      date: "1988-01-01"
+    supporting_sources:
+      - title: "TQQQ Summary Prospectus"
+        url: "https://prod.proshares.com/globalassets/proshares/prospectuses/tqqq_summary_prospectus.pdf"
+        author: ProShares
+      - title: "Factors that Affect Rebalancing Frequency"
+        url: "https://www.profunds.com/globalassets/proshares/pdfs/strategies/rebalancing_leveraged_and_inverse_fund_positions.pdf"
+        author: ProShares
+      - title: "Best practices for portfolio rebalancing"
+        url: "https://indexacapital.com/bundles/unaiadvisor/docs/papers/2010-Vanguard-Best-practices-for-portfolio-rebalancing.pdf?v=312"
+        author: Vanguard
+      - title: "Public TQQQ/QQQ 50:50 discussion used only as evidence that the policy is in circulation"
+        url: "https://www.reddit.com/r/LETFs/comments/1tj25sj/tqqqqqq_rebalancing_strategy/"
+        author: community_example
+    original_objective: "Maintain a simple, predetermined leveraged Nasdaq exposure while testing whether periodic or tolerance-band restoration of fixed TQQQ, QQQ and zero-yield cash weights improves the return, drawdown and recovery trade-off versus allowing the same starting basket to drift."
+    independent_benchmark: matching_start_weight_buy_and_hold
+    secondary_benchmarks: [tqqq_hold, qqq_hold, cash_hold]
+    asset_universe: [TQQQ, QQQ, zero_yield_cash]
+    nominal_daily_nasdaq_exposure: "3 * TQQQ_weight + QQQ_weight; this is an interpretation label, not an assertion that a mixture has the same long-horizon path as a daily-reset ETF at that leverage."
+    signal:
+      observation_time: scheduled_close
+      formula: "No market signal. At a registered calendar close, or after a registered absolute weight-drift threshold is breached, restore the predetermined long-only target weights."
+      warmup: none
+      boundaries: "Calendar periods use their final available common trading session. A band triggers when at least one risky asset's close-valued weight differs from target by at least the registered absolute percentage-point threshold. Equality triggers. Residual cash is included in portfolio equity."
+      initial_allocation: "Buy to target weights at the first selected-period open, with no prior close signal because the policy is predetermined."
+    parameters:
+      primary_weight_grid: "All nonnegative (TQQQ, QQQ, cash) triples summing to 100% in 10 percentage-point increments (66 targets)."
+      stability_weight_grid: "The full simplex in 5 percentage-point increments (231 targets), used only to assess plateaus and neighbor stability rather than to select a new isolated optimum."
+      economic_anchor_targets:
+        - {TQQQ: "1/3", QQQ: 0, cash: "2/3", interpretation: approximately_1x_nominal_exposure}
+        - {TQQQ: "1/2", QQQ: 0, cash: "1/2", interpretation: approximately_1_5x_nominal_exposure}
+        - {TQQQ: "2/3", QQQ: 0, cash: "1/3", interpretation: approximately_2x_nominal_exposure}
+        - {TQQQ: "1/2", QQQ: "1/2", cash: 0, interpretation: approximately_2x_nominal_exposure}
+        - {TQQQ: "1/3", QQQ: "1/3", cash: "1/3", interpretation: approximately_1_33x_nominal_exposure}
+      calendar_frequencies: [daily, weekly_last_session, monthly_last_session, quarterly_last_session, annual_last_session, never]
+      band_thresholds_absolute_percentage_points: [5, 10, 20]
+      band_monitoring_frequency: daily_close
+      no_trade_band: none_for_calendar_models
+    execution:
+      fill_time: next_common_trading_day_open
+      rebalance_rule: "At each registered signal, sell before buying and floor desired risky-asset shares to integers. Use opening portfolio equity, preserve nonnegative cash and restore the target as closely as whole shares permit. A final-data close signal without a later common open remains unfilled."
+      fee_rate_each_side: 0.001
+      slippage: 0
+      tax: 0
+      cash_return: 0
+    source_differences:
+      - "No authoritative source establishes 50:50 TQQQ/QQQ or 50:50 TQQQ/cash as an optimum; they are registered as public, simple anchors rather than privileged winners."
+      - "TQQQ targets three times the Nasdaq-100 daily return, not three times a multi-day return. Nominal exposure labels do not equate mixtures to a different leveraged ETF."
+      - "Calendar dates, tolerance bands, next-open fills, whole shares and fees are deterministic repository implementations rather than rules fixed by Perold and Sharpe."
+      - "Cash earns 0%, following the repository default. This understates a realizable Treasury-bill or money-market sleeve, especially in high-rate periods, and is a conservative limitation for cash-heavy targets."
+      - "QQQ and TQQQ price series exclude separate cash-dividend reinvestment."
+
+evaluation:
+  data_period: {start: "1999-03-10", end: latest_common_session}
+  fixed_periods:
+    - {name: synthetic_full, start: "1999-03-10", end: data_end}
+    - {name: first_decade, start: "1999-03-10", end: "2009-03-09"}
+    - {name: second_decade, start: "2009-03-10", end: "2019-03-09"}
+    - {name: latest_segment, start: "2019-03-10", end: data_end}
+    - {name: recent_10y_auxiliary, start: data_end_minus_10_calendar_years, end: data_end}
+  rolling_windows_years: [5, 10]
+  stress_periods:
+    - {name: dotcom_bust, start: "2000-03-24", end: "2002-10-09"}
+    - {name: global_financial_crisis, start: "2007-10-09", end: "2009-03-09"}
+    - {name: covid_crash, start: "2020-02-19", end: "2020-03-23"}
+    - {name: 2022_bear, start: "2021-11-19", end: "2022-12-28"}
+  fee_sensitivity: [0, 0.001, 0.002, 0.005]
+  required_metrics:
+    - cagr
+    - total_return
+    - mdd
+    - drawdown_duration_days
+    - recovery_period_days
+    - longest_time_underwater_days
+    - rolling_median_and_worst_cagr
+    - rolling_median_and_worst_mdd
+    - rolling_median_and_worst_longest_time_underwater
+    - rebalance_dates_and_annualized_count
+    - turnover
+    - fees
+  integration_benchmarks: [vo, tqqq_hold, qqq_hold]
+  selection_rules:
+    - "Report the full primary grid, not only winners. Identify CAGR-MDD-longest-TUW Pareto sets separately by frequency and for the combined grid."
+    - "A useful ratio must show the same trade-off direction in at least two major fixed periods and the 5- and 10-year rolling medians, without a contradictory rolling worst case or registered stress result."
+    - "A useful ratio must belong to a connected 5%-grid plateau or have plus/minus 10 percentage-point primary-grid neighbors with the same improvement direction; an isolated best point is not promoted."
+    - "Calendar-frequency conclusions must remain directionally intact at a 0.2% one-way fee. Daily and weekly models exceeding 20 annual rebalances are diagnostic unless they retain a clear purpose advantage under higher fees."
+    - "Weekly weekday timing is not optimized. Weekly means the last available common session of each ISO week."
+    - "Band and calendar families are judged separately; the best threshold is not retroactively substituted for a calendar rule."
+  promotion_roles: [independent_strategy, vo_replacement]
+
+verification:
+  source_reviewer: isolated_source_verify_17
+  source_review_complete: true
+  source_notes:
+    - "Perold and Sharpe define constant-mix as restoring a constant risky-asset proportion and explain its buy-low/sell-high payoff and trend risk."
+    - "ProShares distinguishes TQQQ's daily reset from investor-level position rebalancing and says leverage, volatility, costs and taxes affect monitoring frequency."
+    - "General diversified-portfolio literature supports testing lower frequencies but is not treated as TQQQ-specific evidence."
+  implementation_tests:
+    - target_weights_are_nonnegative_and_sum_to_one
+    - initial_allocation_occurs_at_first_open
+    - scheduled_close_executes_at_next_common_open
+    - final_close_signal_remains_unfilled
+    - weekly_monthly_quarterly_and_annual_boundaries
+    - band_equality_triggers
+    - band_below_boundary_does_not_trigger
+    - sells_before_buys_and_cash_stays_nonnegative
+    - whole_share_targets
+    - one_rebalance_date_for_multiple_orders
+    - synthetic_to_live_tqqq_boundary_is_continuous
+    - fee_charged_on_buys_and_sells

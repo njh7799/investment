@@ -1,6 +1,6 @@
 id: batch-17-fixed-weight-leveraged-allocation
-status: registered
-preregistered_commit: this_file_introducing_commit
+status: completed
+preregistered_commit: d107409
 blindness: full
 discovered_at: 2026-11-24
 discovery_agent_context: isolated_design_and_source_review

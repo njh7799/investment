@@ -1,0 +1,25 @@
+{
+  "asset_sha256": {
+    "QQQ": "437782526c31870775b0ff29e740ca86fbd5154ccfc360aa12cf77111151f766",
+    "TQQQ": "462b4f9e8c7c244426c39971de5351fef48b8391a6a1a04074fee404b441cb62"
+  },
+  "base_fee_rate_each_side": 0.001,
+  "cash_return": 0,
+  "generated_through": "2026-11-23",
+  "initial_cash": 100000,
+  "policies": [
+    "calendar_daily",
+    "calendar_weekly",
+    "calendar_monthly",
+    "calendar_quarterly",
+    "calendar_annual",
+    "calendar_never",
+    "band_05pp",
+    "band_10pp",
+    "band_20pp"
+  ],
+  "preregistration_commit": "d107409",
+  "primary_targets": 66,
+  "rolling_start_cadence": "first common trading session of every calendar month; windows use the continuous full-history policy path",
+  "stability_targets": 231
+}

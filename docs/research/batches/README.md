@@ -19,3 +19,4 @@
 | [13차](13-vo-rebound-entry.md) | 온라인 저점·급등·최근 고점·5/20 돌파와 실제 매수가 손절 VO 재진입 |
 | [14차](14-vo-consecutive-up.md) | QQQ·TQQQ 연속 상승·누적수익과 실제 매수가 손절 VO 재진입 |
 | [15차](15-vo-v-recovery-controls.md) | 구간당 1회·쿨다운·한시 참여·추적손절·단계 진입 V자 반등 제어 |
+| [17차](17-fixed-weight-leveraged-allocation.md) | TQQQ·QQQ·현금 고정비중과 달력·이탈밴드 리밸런싱 주기 |
